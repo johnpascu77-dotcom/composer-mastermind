@@ -1,0 +1,28 @@
+# Build output
+build/
+cmake-build-*/
+out/
+Release/
+Debug/
+
+# Vendored JUCE checkout: has its own nested .git, hundreds of MB, not
+# ours to version. Set it up by cloning JUCE into external/JUCE yourself
+# (or turn it into a proper git submodule later) rather than committing it.
+external/JUCE/
+
+# JUCE / IDE
+*.xcuserstate
+*.suo
+*.user
+*.VC.db
+*.VC.opendb
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary / cache
+*.tmp
+*.log
