@@ -39,3 +39,9 @@ cmake --build build --config Release --target ComposerMastermind_VST3
 
 **Known quirk:** the post-build step copies into `C:\Program Files\Common Files\VST3\`. If Bitwig has the plugin
 loaded, this fails with a file-lock error (not a permissions error) — close Bitwig first, then rebuild.
+
+## Version control
+
+Public GitHub remote: https://github.com/johnpascu77-dotcom/composer-mastermind (`origin/main`). `external/JUCE/`
+is gitignored (vendored, has its own nested `.git` — see the comment in `.gitignore`). Commit at phase milestones
+when asked; don't push without being asked each time.
