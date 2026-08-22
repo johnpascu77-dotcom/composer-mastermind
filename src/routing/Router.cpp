@@ -1,12 +1,23 @@
 #include "Router.h"
 #include "../midi/CCMapping.h"
+#include <algorithm>
 
-Router::Router(InstanceRegistry& registry, CCDispatcher& dispatcher)
-    : instanceRegistry(registry), ccDispatcher(dispatcher)
+Router::Router(InstanceRegistry& registry, CCDispatcher& dispatcher, PolicyEngine& policy, InstanceStateTracker& tracker)
+    : instanceRegistry(registry), ccDispatcher(dispatcher), policyEngine(policy), stateTracker(tracker)
 {
 }
 
-void Router::routeScene(const Scene& scene)
+void Router::setBudgetOverrideResolver(BudgetOverrideResolver resolver)
+{
+    budgetOverrideResolver = std::move(resolver);
+}
+
+void Router::setReservedValueChecker(ReservedValueChecker checker)
+{
+    reservedValueChecker = std::move(checker);
+}
+
+void Router::routeScene(const Scene& scene, int currentBar)
 {
     for (const auto& instanceRef : instanceRegistry.getAllInstances())
     {
@@ -35,27 +46,130 @@ void Router::routeScene(const Scene& scene)
     }
 
     for (const auto& mutation : scene.mutations)
-        routeMutation(mutation);
+        routeMutation(mutation, currentBar);
 }
 
-void Router::routeMutation(const Mutation& mutation)
+bool Router::routeMutation(const Mutation& mutation, int currentBar)
 {
     Instance instance;
     if (!instanceRegistry.getInstanceById(mutation.targetInstance, instance) || !instance.enabled)
-        return;
+        return false;
 
     const int baseCC = CCMapping::patternBaseCC(mutation.patternIndex);
     if (baseCC < 0)
-        return;
+        return false;
 
     CCMapping::MutationOffset offset;
     if (!CCMapping::mutationOffsetForType(mutation.type, offset))
-        return;
+        return false;
+
+    RoleBudget overrideBudget;
+    const RoleBudget* overrideBudgetPtr = nullptr;
+    if (budgetOverrideResolver && budgetOverrideResolver(instance.role, currentBar, overrideBudget))
+        overrideBudgetPtr = &overrideBudget;
+
+    if (!policyEngine.authorize(mutation, instance.role, currentBar, overrideBudgetPtr))
+        return false;
+
+    // A mutation is a nudge relative to the instance's last known state, not
+    // a full re-specification - "rotate by -2" should mean "2 steps back
+    // from wherever it currently is", not "set rotation to the literal
+    // value -2" (which, for a cyclic 0-15 parameter, silently wrapped to a
+    // musically unrelated +14 before this fix). Inversion is the one
+    // exception: a boolean has no sensible "delta", so amount != 0 stays an
+    // absolute on/off toggle.
+    InstanceParameterState currentState;
+    stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+    InstancePatternState updatedPattern = currentState.patterns[mutation.patternIndex];
+
+    int ccValue = 0;
+
+    switch (offset)
+    {
+        case CCMapping::MutationOffset::Transpose:
+            updatedPattern.transpose = std::clamp(updatedPattern.transpose + mutation.amount,
+                                                    -CCMapping::kMaxTranspose, CCMapping::kMaxTranspose);
+            ccValue = CCMapping::encodeTranspose(updatedPattern.transpose);
+            break;
+        case CCMapping::MutationOffset::Rotation:
+            updatedPattern.rotation = CCMapping::wrapRotation(updatedPattern.rotation + mutation.amount);
+            ccValue = CCMapping::encodeRotation(updatedPattern.rotation);
+            break;
+        case CCMapping::MutationOffset::Length:
+            updatedPattern.length = std::clamp(updatedPattern.length + mutation.amount,
+                                                CCMapping::kMinPatternLoopLength, CCMapping::kPatternSteps);
+            ccValue = CCMapping::encodeLength(updatedPattern.length);
+            break;
+        case CCMapping::MutationOffset::Inversion:
+            updatedPattern.inversion = (mutation.amount != 0);
+            ccValue = CCMapping::encodeInversion(updatedPattern.inversion);
+            break;
+    }
+
+    // Apex exclusivity: don't let this mutation reach a value a later
+    // blueprint section has reserved for itself - resolve the resulting
+    // absolute value per type (not the delta) since that's what's actually
+    // "reached" from here on.
+    int resultingValue = 0;
+    switch (offset)
+    {
+        case CCMapping::MutationOffset::Transpose: resultingValue = updatedPattern.transpose; break;
+        case CCMapping::MutationOffset::Rotation:  resultingValue = updatedPattern.rotation; break;
+        case CCMapping::MutationOffset::Length:    resultingValue = updatedPattern.length; break;
+        case CCMapping::MutationOffset::Inversion: resultingValue = updatedPattern.inversion ? 1 : 0; break;
+    }
+
+    if (reservedValueChecker
+        && reservedValueChecker(instance.id, mutation.patternIndex, mutation.type, resultingValue, currentBar))
+        return false;
 
     const int ccNumber = baseCC + static_cast<int>(offset);
-    const int ccValue = CCMapping::encodeMutationAmount(offset, mutation.amount);
-
     ccDispatcher.sendCC(instance.midiChannel, ccNumber, ccValue);
+
+    stateTracker.recordPattern(instance.id, mutation.patternIndex, updatedPattern.transpose,
+                                updatedPattern.rotation, updatedPattern.length, updatedPattern.inversion);
+    return true;
+}
+
+void Router::routeContinuousTranspose(const std::string& targetInstance, int patternIndex, int absoluteTranspose)
+{
+    Instance instance;
+    if (!instanceRegistry.getInstanceById(targetInstance, instance) || !instance.enabled)
+        return;
+
+    const int baseCC = CCMapping::patternBaseCC(patternIndex);
+    if (baseCC < 0)
+        return;
+
+    const int clampedTranspose =
+        std::clamp(absoluteTranspose, -CCMapping::kMaxTranspose, CCMapping::kMaxTranspose);
+
+    InstanceParameterState currentState;
+    stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+    auto updatedPattern = currentState.patterns[patternIndex];
+    updatedPattern.transpose = clampedTranspose;
+
+    const int ccNumber = baseCC + static_cast<int>(CCMapping::MutationOffset::Transpose);
+    ccDispatcher.sendCC(instance.midiChannel, ccNumber, CCMapping::encodeTranspose(clampedTranspose));
+
+    stateTracker.recordPattern(instance.id, patternIndex, updatedPattern.transpose, updatedPattern.rotation,
+                                updatedPattern.length, updatedPattern.inversion);
+}
+
+void Router::routeContinuousSwing(const std::string& targetInstance, float absoluteSwingPercent)
+{
+    Instance instance;
+    if (!instanceRegistry.getInstanceById(targetInstance, instance) || !instance.enabled)
+        return;
+
+    const float clampedSwing = std::clamp(absoluteSwingPercent, 0.0f, CCMapping::kMaxSwing);
+
+    InstanceParameterState currentState;
+    stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+
+    ccDispatcher.sendCC(instance.midiChannel, CCMapping::kSwing, CCMapping::encodeSwing(clampedSwing));
+
+    stateTracker.recordGlobal(instance.id, currentState.activePattern, currentState.gridMode, clampedSwing);
 }
 
 void Router::sendSceneToInstance(const Scene& scene, const Instance& instance)
@@ -84,6 +198,8 @@ void Router::sendSceneToInstance(const Scene& scene, const Instance& instance)
                          CCMapping::encodeGridMode(gridMode));
     ccDispatcher.sendCC(instance.midiChannel, CCMapping::kSwing,
                          CCMapping::encodeSwing(swing));
+
+    stateTracker.recordGlobal(instance.id, activePattern, gridMode, swing);
 }
 
 void Router::sendScenePattern(const ScenePattern& pattern, const Instance& instance)
@@ -104,4 +220,7 @@ void Router::sendScenePattern(const ScenePattern& pattern, const Instance& insta
     ccDispatcher.sendCC(instance.midiChannel,
                          baseCC + static_cast<int>(CCMapping::MutationOffset::Inversion),
                          CCMapping::encodeInversion(pattern.inversion));
+
+    stateTracker.recordPattern(instance.id, pattern.patternIndex,
+                                pattern.transpose, pattern.rotation, pattern.length, pattern.inversion);
 }

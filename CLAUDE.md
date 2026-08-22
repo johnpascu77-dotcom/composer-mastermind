@@ -9,6 +9,10 @@ An autonomous MIDI "conductor" plugin (JUCE, VST3 + Standalone) that drives seve
 instrument plugin, MIDI Pattern Launcher (MPL), via MIDI CC, following a narrative arc over a piece. **"Composer"
 means the plugin itself is the autonomous composer — not a live-performance tool for a human to play.**
 
+**Using the Expert UI to actually build a piece?** Start with [docs/user_guide.md](docs/user_guide.md) instead —
+a real walkthrough, real values, zero to a playing piece. The list below is for continuing development on the
+plugin itself, not for operating it.
+
 Start here, in order:
 1. [docs/composer_mastermind_design.md](docs/composer_mastermind_design.md) — vision, architecture, phased
    roadmap (v0.1 through v1.1). Updated every session; read this before assuming anything about scope or status.
@@ -19,6 +23,10 @@ Start here, in order:
    — subsystem detail, as needed.
 4. [docs/atonal_phrase_engine_concepts.md](docs/atonal_phrase_engine_concepts.md) — mined concepts for future
    arc/governor work, not yet implemented.
+5. [docs/score_timeline_ui_concept.md](docs/score_timeline_ui_concept.md) — condensed-score piano roll, live sync,
+   MIDI drag-out; design conversation only, not yet implemented or in the phased roadmap.
+6. [docs/arc_dimension_mapping_concept.md](docs/arc_dimension_mapping_concept.md) — giving the 5 arc dimensions
+   real playback-time consumers (phrase-chaining, melodic curve, swing, mutation budget); design only, not built.
 
 ## Related projects outside this repo (easy to lose track of — not discoverable by exploring this folder alone)
 

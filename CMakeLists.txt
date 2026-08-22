@@ -54,18 +54,57 @@ target_sources(ComposerMastermind PRIVATE
     src/plugin/PluginProcessor.cpp
     src/plugin/PluginEditor.cpp
 
+    src/ui/MainShellView.cpp
+    src/ui/PrimaryView.cpp
+    src/ui/PianoRollView.cpp
+    src/ui/PatternSetupView.cpp
+    src/ui/EditorView.cpp
+    src/ui/InstanceView.cpp
+    src/ui/SceneListComponent.cpp
+    src/ui/SceneListView.cpp
+    src/ui/DebugPanel.cpp
+    src/ui/ArcGraphView.cpp
+    src/ui/BlueprintArcCurveView.cpp
+    src/ui/BlueprintSectionsContent.cpp
+    src/ui/BlueprintSectionsView.cpp
+    src/ui/BlueprintView.cpp
+    src/ui/PresetLibraryContent.cpp
+    src/ui/PresetLibraryView.cpp
+    src/ui/GenerateView.cpp
+    src/ui/ModulatorTargetView.cpp
+    src/ui/PatternAwarenessView.cpp
+    src/ui/ActivityLogView.cpp
+    src/ui/MilestoneView.cpp
+
     src/composer/ComposerCore.cpp
+    src/composer/PatternSyncServer.cpp
+    src/composer/McpBridgeServer.cpp
 
     src/routing/InstanceRegistry.cpp
+    src/routing/InstanceStateTracker.cpp
     src/routing/Router.cpp
 
     src/midi/CCDispatcher.cpp
-
     src/scheduling/Scheduler.cpp
 
     src/policy/SceneAdvancePolicy.cpp
+    src/policy/MutationPolicy.cpp
+    src/policy/PolicyEngine.cpp
+    src/policy/Arc.cpp
+    src/policy/ArcSet.cpp
+    src/policy/CoherenceEvaluator.cpp
+    src/policy/PresetResolver.cpp
+    src/policy/BlueprintGenerator.cpp
+    src/policy/MotifEngine.cpp
+    src/policy/MonophonicOverlap.cpp
 
     src/state/SceneLibrary.cpp
+    src/state/BlueprintLibrary.cpp
+    src/state/PresetLibrary.cpp
+    src/state/ModulatorTargetLibrary.cpp
+    src/state/LockedStepLibrary.cpp
+    src/state/MilestoneLibrary.cpp
+    src/state/InstancePatternCache.cpp
     src/state/StateSerializer.cpp
     src/state/StateSnapshotStore.cpp
 
@@ -119,14 +158,52 @@ endif()
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Source Files" FILES
     src/plugin/PluginProcessor.cpp
     src/plugin/PluginEditor.cpp
+    src/ui/MainShellView.cpp
+    src/ui/PrimaryView.cpp
+    src/ui/PianoRollView.cpp
+    src/ui/PatternSetupView.cpp
+    src/ui/EditorView.cpp
+    src/ui/InstanceView.cpp
+    src/ui/SceneListComponent.cpp
+    src/ui/SceneListView.cpp
+    src/ui/DebugPanel.cpp
+    src/ui/ArcGraphView.cpp
+    src/ui/BlueprintArcCurveView.cpp
+    src/ui/BlueprintSectionsContent.cpp
+    src/ui/BlueprintSectionsView.cpp
+    src/ui/BlueprintView.cpp
+    src/ui/PresetLibraryContent.cpp
+    src/ui/PresetLibraryView.cpp
+    src/ui/GenerateView.cpp
+    src/ui/ModulatorTargetView.cpp
+    src/ui/PatternAwarenessView.cpp
+    src/ui/ActivityLogView.cpp
+    src/ui/MilestoneView.cpp
     src/composer/ComposerCore.cpp
+    src/composer/PatternSyncServer.cpp
+    src/composer/McpBridgeServer.cpp
     src/routing/InstanceRegistry.cpp
+    src/routing/InstanceStateTracker.cpp
     src/routing/Router.cpp
     src/midi/CCDispatcher.cpp
-    src/midi/CCMapping.h
-    src/scheduling/Scheduler.cpp
+    src/midi/CCMapping.h    src/scheduling/Scheduler.cpp
     src/policy/SceneAdvancePolicy.cpp
+    src/policy/MutationPolicy.cpp
+    src/policy/PolicyEngine.cpp
+    src/policy/Arc.cpp
+    src/policy/ArcSet.cpp
+    src/policy/CoherenceEvaluator.cpp
+    src/policy/PresetResolver.cpp
+    src/policy/BlueprintGenerator.cpp
+    src/policy/MotifEngine.cpp
+    src/policy/MonophonicOverlap.cpp
     src/state/SceneLibrary.cpp
+    src/state/BlueprintLibrary.cpp
+    src/state/PresetLibrary.cpp
+    src/state/ModulatorTargetLibrary.cpp
+    src/state/LockedStepLibrary.cpp
+    src/state/MilestoneLibrary.cpp
+    src/state/InstancePatternCache.cpp
     src/state/StateSerializer.cpp
     src/state/StateSnapshotStore.cpp
     src/util/Validation.cpp

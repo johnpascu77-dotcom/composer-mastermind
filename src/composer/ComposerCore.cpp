@@ -1,9 +1,50 @@
 #include "ComposerCore.h"
 #include "../policy/SceneAdvancePolicy.h"
+#include "../policy/CoherenceEvaluator.h"
+#include "../policy/BlueprintGenerator.h"
+#include "../midi/CCMapping.h"
+#include "../util/Validation.h"
+#include "../state/StateSerializer.h"
+#include <cmath>
+#include <algorithm>
 
 ComposerCore::ComposerCore()
-    : router(instanceRegistry, ccDispatcher)
+    : router(instanceRegistry, ccDispatcher, policyEngine, instanceStateTracker)
 {
+    router.setBudgetOverrideResolver([this](const std::string& role, int currentBar, RoleBudget& outBudget)
+    {
+        return resolveSectionBudgetOverride(role, currentBar, outBudget);
+    });
+
+    router.setReservedValueChecker([this](const std::string& targetInstance, int patternIndex,
+                                            const std::string& type, int value, int currentBar)
+    {
+        return isValueReservedByLaterSection(targetInstance, patternIndex, type, value, currentBar);
+    });
+
+    patternSyncServer.setChannelResolver([this](int channel, std::string& outInstanceId)
+    {
+        for (const auto& instance : instanceRegistry.getAllInstances())
+        {
+            if (instance.midiChannel == channel)
+            {
+                outInstanceId = instance.id;
+                return true;
+            }
+        }
+
+        return false;
+    });
+
+    patternSyncServer.setCurrentBarProvider([this]
+    {
+        return getCurrentBar();
+    });
+
+    mcpBridgeServer.setRequestHandler([this](const juce::var& request)
+    {
+        return handleMcpBridgeRequest(request);
+    });
 }
 
 InstanceRegistry& ComposerCore::getInstanceRegistry()
@@ -31,6 +72,300 @@ SceneLibrary& ComposerCore::getSceneLibrary()
     return sceneLibrary;
 }
 
+PolicyEngine& ComposerCore::getPolicyEngine()
+{
+    return policyEngine;
+}
+
+InstanceStateTracker& ComposerCore::getInstanceStateTracker()
+{
+    return instanceStateTracker;
+}
+
+ArcSet& ComposerCore::getArcSet()
+{
+    return arcSet;
+}
+
+BlueprintLibrary& ComposerCore::getBlueprintLibrary()
+{
+    return blueprintLibrary;
+}
+
+PresetLibrary& ComposerCore::getPresetLibrary()
+{
+    return presetLibrary;
+}
+
+ModulatorTargetLibrary& ComposerCore::getModulatorTargetLibrary()
+{
+    return modulatorTargetLibrary;
+}
+
+PatternSyncServer& ComposerCore::getPatternSyncServer()
+{
+    return patternSyncServer;
+}
+
+McpBridgeServer& ComposerCore::getMcpBridgeServer()
+{
+    return mcpBridgeServer;
+}
+
+LockedStepLibrary& ComposerCore::getLockedStepLibrary()
+{
+    return lockedStepLibrary;
+}
+
+MilestoneLibrary& ComposerCore::getMilestoneLibrary()
+{
+    return milestoneLibrary;
+}
+
+void ComposerCore::captureMilestone(const std::string& label, int currentBar)
+{
+    Milestone milestone;
+    milestone.bar = currentBar;
+    milestone.label = label;
+
+    auto& cache = patternSyncServer.getCache();
+
+    for (const auto& instance : instanceRegistry.getAllInstances())
+    {
+        if (!instance.enabled)
+            continue;
+
+        MilestoneInstanceState instanceState;
+        instanceState.instanceId = instance.id;
+        instanceStateTracker.getState(instance.id, instanceState.trackerState);
+
+        for (int patternIndex = 0; patternIndex < CCMapping::kMaxPatterns; ++patternIndex)
+        {
+            CachedPattern cached;
+            if (cache.get(instance.id, patternIndex, cached))
+                instanceState.patterns.push_back(cached.snapshot);
+        }
+
+        milestone.instances.push_back(std::move(instanceState));
+    }
+
+    milestoneLibrary.capture(std::move(milestone));
+}
+
+bool ComposerCore::restoreMilestone(size_t index)
+{
+    Milestone milestone;
+    if (!milestoneLibrary.getByIndex(index, milestone))
+        return false;
+
+    for (const auto& instanceState : milestone.instances)
+    {
+        Instance instance;
+        if (!instanceRegistry.getInstanceById(instanceState.instanceId, instance) || !instance.enabled)
+            continue;
+
+        const auto& state = instanceState.trackerState;
+
+        ccDispatcher.sendCC(instance.midiChannel, CCMapping::kActivePattern,
+                             CCMapping::encodeActivePattern(state.activePattern));
+        ccDispatcher.sendCC(instance.midiChannel, CCMapping::kGridMode, CCMapping::encodeGridMode(state.gridMode));
+        ccDispatcher.sendCC(instance.midiChannel, CCMapping::kSwing, CCMapping::encodeSwing(state.swing));
+        instanceStateTracker.recordGlobal(instance.id, state.activePattern, state.gridMode, state.swing);
+
+        for (int patternIndex = 0; patternIndex < CCMapping::kMaxPatterns; ++patternIndex)
+        {
+            const int baseCC = CCMapping::patternBaseCC(patternIndex);
+            if (baseCC < 0)
+                continue;
+
+            const auto& pattern = state.patterns[patternIndex];
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::Transpose),
+                                 CCMapping::encodeTranspose(pattern.transpose));
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::Rotation),
+                                 CCMapping::encodeRotation(pattern.rotation));
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::Length),
+                                 CCMapping::encodeLength(pattern.length));
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::Inversion),
+                                 CCMapping::encodeInversion(pattern.inversion));
+
+            instanceStateTracker.recordPattern(instance.id, patternIndex, pattern.transpose, pattern.rotation,
+                                                pattern.length, pattern.inversion);
+        }
+
+        for (const auto& patternSnapshot : instanceState.patterns)
+        {
+            patternSyncServer.sendWriteFullPattern(instance.midiChannel, patternSnapshot.patternIndex,
+                                                    patternSnapshot.steps);
+            patternSyncServer.getCache().store(instance.id, patternSnapshot, getCurrentBar());
+        }
+    }
+
+    logActivity(getCurrentBar(),
+                "Restored milestone: " + milestone.label + " (bar " + std::to_string(milestone.bar) + ")");
+    return true;
+}
+
+MotifEngine::ApplicationMode ComposerCore::getMotifApplicationMode() const
+{
+    return motifApplicationMode.load();
+}
+
+void ComposerCore::setMotifApplicationMode(MotifEngine::ApplicationMode mode)
+{
+    motifApplicationMode.store(mode);
+}
+
+void ComposerCore::setCurrentBlueprint(const Blueprint& blueprint)
+{
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        currentBlueprintData = blueprint;
+        hasCurrentBlueprint = true;
+        currentActiveSectionId.clear();
+        motifPassCountForSection = 0;
+        lastMotifPassBar = -1;
+    }
+
+    // Sync the live ArcSet (Track B's continuous consumers and any
+    // "arc"-mode ModulatorTarget both read this every bar) from whatever
+    // this blueprint actually says its arc is - stored curves verbatim,
+    // anything else derived from its own sections. Previously nothing did
+    // this: the live ArcSet just kept whatever the Arcs tab or the last
+    // GenerateView commit happened to leave it at, decoupled from which
+    // blueprint was actually active. See BlueprintGenerator::resolveBlueprintArcSet.
+    std::vector<std::string> derivedDimensions; // not needed here, only the UI cares which dimensions are derived
+    const auto resolvedArcSet =
+        BlueprintGenerator::resolveBlueprintArcSet(blueprint, instanceRegistry.getAllInstances(), derivedDimensions);
+    for (const auto& dimensionName : resolvedArcSet.getArcNames())
+        arcSet.setArc(dimensionName, resolvedArcSet.getArc(dimensionName));
+}
+
+bool ComposerCore::getCurrentBlueprint(Blueprint& outBlueprint) const
+{
+    std::lock_guard<std::mutex> lock(blueprintMutex);
+    if (!hasCurrentBlueprint)
+        return false;
+
+    outBlueprint = currentBlueprintData;
+    return true;
+}
+
+std::string ComposerCore::getActiveSectionId() const
+{
+    std::lock_guard<std::mutex> lock(blueprintMutex);
+    return currentActiveSectionId;
+}
+
+bool ComposerCore::resolveSectionBudgetOverride(const std::string& role, int currentBar, RoleBudget& outBudget) const
+{
+    RoleBudget baseBudget;
+    bool sectionCoversBar = false;
+
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        if (!hasCurrentBlueprint)
+            return false;
+
+        for (const auto& section : currentBlueprintData.sections)
+        {
+            if (currentBar < section.startBar || currentBar >= section.startBar + section.durationBars)
+                continue;
+
+            sectionCoversBar = true;
+            baseBudget = MutationPolicy::budgetForRole(role);
+
+            for (const auto& budgetOverride : section.budgetOverrides)
+            {
+                if (budgetOverride.role != role)
+                    continue;
+
+                baseBudget.maxMinorPerBar = budgetOverride.maxMinorPerBar;
+                baseBudget.maxMediumPerBar = budgetOverride.maxMediumPerBar;
+                baseBudget.maxMajorPerBar = budgetOverride.maxMajorPerBar;
+                break;
+            }
+
+            break;
+        }
+    }
+
+    if (!sectionCoversBar)
+        return false; // no active section - Router falls back to the unscaled static table directly
+
+    // Complexity scales whatever base budget applies (an explicit section
+    // override, or the static per-role table) - v1.2 Track B, "more
+    // transformation authorized as complexity rises," doubling up
+    // Complexity's role alongside its phrase-chain-banding use
+    // (firePhraseChainIfDue) rather than inventing a 6th arc dimension. 1x
+    // at complexity 0 up to 2x at complexity 1; ceil so even a small base
+    // budget visibly grows rather than rounding back down to itself.
+    // Unlimited (-1) stays unlimited regardless.
+    const float complexityValue = arcSet.getArc("complexity").evaluate(currentBar).value;
+    const double multiplier = 1.0 + static_cast<double>(std::clamp(complexityValue, 0.0f, 1.0f));
+
+    const auto scale = [multiplier](int value)
+    {
+        return value < 0 ? value : static_cast<int>(std::ceil(static_cast<double>(value) * multiplier));
+    };
+
+    outBudget.maxMinorPerBar = scale(baseBudget.maxMinorPerBar);
+    outBudget.maxMediumPerBar = scale(baseBudget.maxMediumPerBar);
+    outBudget.maxMajorPerBar = scale(baseBudget.maxMajorPerBar);
+    return true;
+}
+
+bool ComposerCore::isValueReservedByLaterSection(const std::string& targetInstance, int patternIndex,
+                                                   const std::string& type, int value, int currentBar) const
+{
+    std::lock_guard<std::mutex> lock(blueprintMutex);
+    if (!hasCurrentBlueprint)
+        return false;
+
+    for (const auto& section : currentBlueprintData.sections)
+    {
+        if (section.startBar <= currentBar)
+            continue; // this section already started (or is the one playing now) - not "later" from here
+
+        for (const auto& reserved : section.reservedValues)
+        {
+            if (reserved.targetInstance == targetInstance && reserved.patternIndex == patternIndex
+                && reserved.type == type && reserved.value == value)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+float ComposerCore::getCurrentCoherence() const
+{
+    return CoherenceEvaluator::evaluate(instanceStateTracker.getAllStates());
+}
+
+std::vector<ActivityLogEntry> ComposerCore::getRecentActivityLog() const
+{
+    std::lock_guard<std::mutex> lock(activityLogMutex);
+    return { activityLog.begin(), activityLog.end() }; // newest first, see logActivity
+}
+
+void ComposerCore::logActivity(int bar, const std::string& message)
+{
+    std::lock_guard<std::mutex> lock(activityLogMutex);
+    activityLog.push_front(ActivityLogEntry { bar, message }); // newest first
+
+    if (activityLog.size() > kMaxActivityLogEntries)
+        activityLog.pop_back();
+}
+
+int ComposerCore::getCurrentBar() const
+{
+    return currentBarValue.load();
+}
+
 void ComposerCore::setCurrentScene(const Scene& scene)
 {
     std::lock_guard<std::mutex> lock(sceneMutex);
@@ -52,15 +387,18 @@ bool ComposerCore::getCurrentScene(Scene& outScene) const
 
 void ComposerCore::processBar(int currentBar)
 {
+    currentBarValue.store(currentBar);
     dispatchSceneIfNeeded(currentBar);
     advanceSceneChainIfNeeded(currentBar);
+    advanceBlueprintIfNeeded(currentBar);
+    sendModulatorTargetUpdates(currentBar);
 }
 
 void ComposerCore::fullRefresh()
 {
     Scene scene;
     if (getCurrentScene(scene))
-        router.routeScene(scene);
+        router.routeScene(scene, currentBarValue.load());
 }
 
 void ComposerCore::notifyTransportReset()
@@ -82,7 +420,7 @@ void ComposerCore::dispatchSceneIfNeeded(int currentBar)
     for (const auto& event : dueEvents)
     {
         if (event.type == "scene")
-            router.routeScene(scene);
+            router.routeScene(scene, currentBar);
     }
 }
 
@@ -120,5 +458,945 @@ void ComposerCore::advanceSceneChainIfNeeded(int currentBar)
         sceneStartPending = false;
     }
 
-    router.routeScene(nextScene);
+    router.routeScene(nextScene, currentBar);
+}
+
+void ComposerCore::advanceBlueprintIfNeeded(int currentBar)
+{
+    Blueprint blueprint;
+    std::string previousSectionId;
+
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        if (!hasCurrentBlueprint)
+            return;
+
+        blueprint = currentBlueprintData;
+        previousSectionId = currentActiveSectionId;
+    }
+
+    const BlueprintSection* activeSection = nullptr;
+    for (const auto& section : blueprint.sections)
+    {
+        if (currentBar >= section.startBar && currentBar < section.startBar + section.durationBars)
+        {
+            activeSection = &section;
+            break;
+        }
+    }
+
+    const std::string newSectionId = activeSection != nullptr ? activeSection->id : std::string();
+
+    if (newSectionId == previousSectionId)
+    {
+        // Still in the same section (or still outside every section) -
+        // routing hasn't changed, but a long-running section may still be
+        // due for its next motif pass (see fireMotifPassIfDue) or its next
+        // phrase-chain advance (see firePhraseChainIfDue).
+        if (activeSection != nullptr)
+        {
+            firePhraseChainIfDue(*activeSection, currentBar);
+            fireMotifPassIfDue(*activeSection, currentBar);
+            applyContinuousMelodicCurve(*activeSection, currentBar);
+            applyContinuousSwing(*activeSection, currentBar);
+        }
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        currentActiveSectionId = newSectionId;
+        motifPassCountForSection = 0;
+        lastMotifPassBar = currentBar;
+        hasPhraseChainRole = false; // sentinel - forces the first check this section to sync immediately
+    }
+
+    if (activeSection == nullptr)
+        return; // moved outside every section - nothing to enter
+
+    enterSection(*activeSection, currentBar);
+}
+
+void ComposerCore::enterSection(const BlueprintSection& section, int currentBar)
+{
+    if (section.sceneId.empty())
+        return;
+
+    // Novelty-aware preset selection (Phase 3, 2026-08-22) - carry forward
+    // whatever the OUTGOING section actually used as the new frozen avoid-id
+    // for this section's entire lifetime, before this section's own stamp
+    // overwrites currentSectionMotifPresetId with its own choice. See
+    // avoidMotifPresetIdForSection's own comment in ComposerCore.h for why
+    // this can't just be one member updated in place.
+    avoidMotifPresetIdForSection = currentSectionMotifPresetId;
+    currentSectionMotifPresetId.clear();
+
+    Scene scene;
+    if (!sceneLibrary.getSceneById(section.sceneId, scene))
+        return;
+
+    applyLayerRoleOverrides(section, scene);
+    router.routeScene(scene, currentBar);
+    sendSectionModulatorValues(section);
+
+    logActivity(currentBar, "Entered section '" + section.name + "' (" + section.archetype
+                                 + "), scene '" + section.sceneId + "'");
+
+    // Snapshot every registered instance's just-routed Active Pattern as
+    // this section's "home" - what the motif engine's call-and-response
+    // (CC20 stop/resume) should treat as this instance's real intent for
+    // the section, captured once rather than re-read live (see
+    // ComposerCore.h's motifHomePatternForSection comment).
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        motifHomePatternForSection.clear();
+        for (const auto& registeredInstance : instanceRegistry.getAllInstances())
+        {
+            InstanceParameterState state;
+            instanceStateTracker.getState(registeredInstance.id, state);
+            motifHomePatternForSection[registeredInstance.id] = state.activePattern;
+        }
+    }
+
+    resetRhythmBaselineForSection(section);
+    stampMotifForSection(section);
+    seedPhraseChainPatterns(section);
+    applyRhythmForSection(section, 0);
+    applyContinuousMelodicCurve(section, currentBar);
+    applyContinuousSwing(section, currentBar);
+
+    // Milestone capture (Phase 3, 2026-08-22) - after everything above has
+    // run, so this reflects what the section actually starts out sounding
+    // like (post-stamp/seed/rhythm), not the bare pre-entry state.
+    captureMilestone("Entered section '" + section.name + "' (" + section.archetype + ")", currentBar);
+}
+
+void ComposerCore::primeForPlayback()
+{
+    Blueprint blueprint;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        if (!hasCurrentBlueprint)
+            return;
+        blueprint = currentBlueprintData;
+    }
+
+    const BlueprintSection* firstSection = nullptr;
+    for (const auto& section : blueprint.sections)
+        if (firstSection == nullptr || section.startBar < firstSection->startBar)
+            firstSection = &section;
+
+    if (firstSection == nullptr)
+        return; // no sections to prime
+
+    logActivity(firstSection->startBar, "Prime for Playback pressed (transport stopped)");
+    enterSection(*firstSection, firstSection->startBar);
+}
+
+void ComposerCore::fireMotifPassIfDue(const BlueprintSection& section, int currentBar)
+{
+    int passIndex = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        if (currentBar - lastMotifPassBar < kPassIntervalBars)
+            return;
+
+        ++motifPassCountForSection;
+        lastMotifPassBar = currentBar;
+        passIndex = motifPassCountForSection;
+    }
+
+    applyMotifForSection(section, passIndex);
+    applyRhythmForSection(section, passIndex);
+}
+
+void ComposerCore::firePhraseChainIfDue(const BlueprintSection& section, int currentBar)
+{
+    if (section.archetype != "build" && section.archetype != "peak" && section.archetype != "release")
+        return;
+
+    const float complexityValue = arcSet.getArc("complexity").evaluate(currentBar).value;
+    const MotifEngine::PhraseRole targetRole = MotifEngine::phraseRoleFromComplexity(complexityValue);
+
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        if (hasPhraseChainRole && lastPhraseChainRole == targetRole)
+            return; // no role crossing since last check - hold the current phrase
+        hasPhraseChainRole = true;
+        lastPhraseChainRole = targetRole;
+    }
+
+    const auto touchedInstances =
+        MotifEngine::eligibleInstancesForArchetype(section.archetype, instanceRegistry.getAllInstances());
+    const auto motifPresets = presetLibrary.getAllMotifPresets();
+
+    for (const auto& instance : touchedInstances)
+    {
+        int nextPattern = 0;
+        {
+            std::lock_guard<std::mutex> lock(blueprintMutex);
+            const auto it = motifHomePatternForSection.find(instance.id);
+            if (it == motifHomePatternForSection.end() || it->second <= 0)
+                continue; // section wants this instance silent throughout - no chain position to advance
+
+            // Same 1->2->3->1 physical rotation as before, chosen purely to
+            // land on a slot that ISN'T the currently-active one (so nothing
+            // gets rewritten out from under live playback) - the *role*
+            // written into it, not which slot number it happens to be, is
+            // what the Complexity curve is actually driving now.
+            nextPattern = (it->second % 3) + 1;
+            it->second = nextPattern;
+        }
+
+        MotifEngine::restampPhraseChainSlot(instance, nextPattern - 1, section.archetype, motifPresets, targetRole,
+                                             patternSyncServer, instanceStateTracker, currentBar, lockedStepLibrary,
+                                             avoidMotifPresetIdForSection);
+
+        InstanceParameterState trackedState;
+        instanceStateTracker.getState(instance.id, trackedState);
+
+        const std::string roleSuffix = " (role " + MotifEngine::phraseRoleName(targetRole) + ")";
+
+        if (trackedState.activePattern != 0)
+        {
+            // Only re-send if currently audible - an instance CC20's own
+            // call-and-response has rested this pass keeps its rest; its
+            // chain position still just advanced silently, so it resumes to
+            // the new pattern next time whoPlaysThisPass lets it play,
+            // rather than un-resting it out of turn.
+            ccDispatcher.sendCC(instance.midiChannel, CCMapping::kActivePattern,
+                                 CCMapping::encodeActivePattern(nextPattern));
+            instanceStateTracker.recordGlobal(instance.id, nextPattern, trackedState.gridMode, trackedState.swing);
+            logActivity(currentBar, instance.id + ": phrase chain advanced to pattern "
+                                         + std::to_string(nextPattern) + roleSuffix);
+        }
+        else
+        {
+            logActivity(currentBar, instance.id + ": phrase chain position advanced to pattern "
+                                         + std::to_string(nextPattern) + roleSuffix + " (currently resting)");
+        }
+    }
+}
+
+void ComposerCore::applyLayerRoleOverrides(const BlueprintSection& section, Scene& scene) const
+{
+    for (const auto& layerRole : section.layerRoles)
+    {
+        if (layerRole.layerRole != "background")
+            continue;
+
+        bool found = false;
+        for (auto& override : scene.instanceOverrides)
+        {
+            if (override.targetInstance != layerRole.targetInstance)
+                continue;
+
+            found = true;
+            if (override.activePattern < 0) // scene didn't already say what this instance should do
+                override.activePattern = 0;
+            break;
+        }
+
+        if (!found)
+        {
+            SceneInstanceOverride backgroundOverride;
+            backgroundOverride.targetInstance = layerRole.targetInstance;
+            backgroundOverride.activePattern = 0;
+            scene.instanceOverrides.push_back(backgroundOverride);
+        }
+    }
+}
+
+void ComposerCore::applyMotifForSection(const BlueprintSection& section, int passIndex)
+{
+    std::map<std::string, int> homePatterns;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        homePatterns = motifHomePatternForSection;
+    }
+
+    MotifEngine::applyForSection(section,
+        instanceRegistry.getAllInstances(),
+        presetLibrary.getAllMotifPresets(),
+        patternSyncServer,
+        instanceStateTracker,
+        homePatterns,
+        motifApplicationMode.load(),
+        passIndex,
+        ccDispatcher,
+        lockedStepLibrary,
+        avoidMotifPresetIdForSection);
+
+    logActivity(getCurrentBar(), "Motif pass " + std::to_string(passIndex) + " fired for section '"
+                                      + section.name + "'");
+}
+
+void ComposerCore::stampMotifForSection(const BlueprintSection& section)
+{
+    std::map<std::string, int> homePatterns;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        homePatterns = motifHomePatternForSection;
+    }
+
+    // avoidMotifPresetIdForSection was frozen in enterSection just before
+    // this call, from whatever the OUTGOING section used - this call is
+    // what actually decides THIS section's preset; every later call this
+    // section makes (seedPhraseChainPatterns below, and applyForSection/
+    // restampPhraseChainSlot on subsequent bars) reuses the same frozen
+    // avoid-id so they all agree with this exact resolution, rather than
+    // reading currentSectionMotifPresetId (which would make them try to
+    // avoid the very preset this section is using).
+    currentSectionMotifPresetId = MotifEngine::stampMotifForSection(section,
+        instanceRegistry.getAllInstances(),
+        presetLibrary.getAllMotifPresets(),
+        patternSyncServer,
+        instanceStateTracker,
+        homePatterns,
+        getCurrentBar(),
+        lockedStepLibrary,
+        avoidMotifPresetIdForSection);
+
+    logActivity(getCurrentBar(), "Stamped section '" + section.name + "' home patterns with preset '"
+                                      + (currentSectionMotifPresetId.empty() ? "(none)" : currentSectionMotifPresetId)
+                                      + "'");
+}
+
+void ComposerCore::seedPhraseChainPatterns(const BlueprintSection& section)
+{
+    if (section.archetype != "build" && section.archetype != "peak" && section.archetype != "release")
+        return;
+
+    std::map<std::string, int> homePatterns;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        homePatterns = motifHomePatternForSection;
+    }
+
+    MotifEngine::seedPhraseChainPatterns(section,
+        instanceRegistry.getAllInstances(),
+        presetLibrary.getAllMotifPresets(),
+        patternSyncServer,
+        instanceStateTracker,
+        homePatterns,
+        getCurrentBar(),
+        lockedStepLibrary,
+        avoidMotifPresetIdForSection);
+
+    logActivity(getCurrentBar(), "Seeded phrase-chain patterns (P1/P2/P3) for section '" + section.name + "'");
+}
+
+void ComposerCore::resetRhythmBaselineForSection(const BlueprintSection& section)
+{
+    if (section.archetype != "presentation")
+        return;
+
+    std::map<std::string, int> homePatterns;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        homePatterns = motifHomePatternForSection;
+    }
+
+    const auto touchedInstances =
+        MotifEngine::eligibleInstancesForArchetype(section.archetype, instanceRegistry.getAllInstances());
+
+    for (const auto& instance : touchedInstances)
+    {
+        const auto homeIt = homePatterns.find(instance.id);
+        const int homePattern = (homeIt != homePatterns.end()) ? homeIt->second : 0;
+        if (homePattern <= 0)
+            continue; // section wants this instance silent throughout - nothing to reset
+
+        const int patternIndex = homePattern - 1;
+        const int baseCC = CCMapping::patternBaseCC(patternIndex);
+        if (baseCC < 0)
+            continue;
+
+        ccDispatcher.sendCC(instance.midiChannel, baseCC + static_cast<int>(CCMapping::MutationOffset::Transpose),
+                             CCMapping::encodeTranspose(0));
+        ccDispatcher.sendCC(instance.midiChannel, baseCC + static_cast<int>(CCMapping::MutationOffset::Rotation),
+                             CCMapping::encodeRotation(0));
+        ccDispatcher.sendCC(instance.midiChannel, baseCC + static_cast<int>(CCMapping::MutationOffset::Length),
+                             CCMapping::encodeLength(CCMapping::kPatternSteps));
+
+        instanceStateTracker.recordPattern(instance.id, patternIndex, 0, 0, CCMapping::kPatternSteps, false);
+
+        // Also clear the pattern's real step content and the cache's belief
+        // about it - not just the pattern-level parameters above. Without
+        // this, stampMotifForSection's own register-continuity math (stamp
+        // around the pattern's *existing* pitch center, so later sections
+        // drift organically rather than snapping to a fixed default) instead
+        // recenters around whatever the cache last believed this instance's
+        // content was - which, on a replay after a prior heavily-drifted
+        // playthrough, is itself already far out of range. Confirmed live,
+        // 2026-08-21: the Transpose/Rotation/Length reset alone still left
+        // one instance's stamped notes "sky-high," since only its parameters
+        // had actually been reset, not its remembered pitch center. Clearing
+        // here makes stampMotifForSection's own "existingEnabled.empty() ->
+        // fall back to middle C" branch the one that actually fires.
+        std::vector<StepSnapshot> clearedSteps(static_cast<size_t>(CCMapping::kPatternSteps), StepSnapshot {});
+
+        // Locked steps (Setup mode, v1.2 Phase 2) survive even this reset -
+        // "protected from automated writes" has to mean every automated
+        // write, not most of them, or locking would be unreliable. Splice
+        // in whatever the cache currently believes is there for each locked
+        // index before sending, using the pre-clear cache read below.
+        CachedPattern preClearCached;
+        const bool hadPriorCache = patternSyncServer.getCache().get(instance.id, patternIndex, preClearCached);
+        for (int lockedStepIndex : lockedStepLibrary.getLockedStepIndices(instance.id, patternIndex))
+        {
+            if (hadPriorCache && lockedStepIndex >= 0
+                && (size_t) lockedStepIndex < preClearCached.snapshot.steps.size()
+                && (size_t) lockedStepIndex < clearedSteps.size())
+            {
+                clearedSteps[(size_t) lockedStepIndex] = preClearCached.snapshot.steps[(size_t) lockedStepIndex];
+            }
+        }
+
+        patternSyncServer.sendWriteFullPattern(instance.midiChannel, patternIndex, clearedSteps);
+
+        PatternSnapshot clearedSnapshot;
+        clearedSnapshot.patternIndex = patternIndex;
+        clearedSnapshot.steps = clearedSteps;
+        patternSyncServer.getCache().store(instance.id, clearedSnapshot, getCurrentBar());
+
+        logActivity(getCurrentBar(), instance.id + ": Presentation baseline reset (Tr/Rot/Len + content cleared)");
+    }
+}
+
+void ComposerCore::applyRhythmForSection(const BlueprintSection& section, int passIndex)
+{
+    if (section.archetype.empty())
+        return;
+
+    // Presentation's Rotation/Length and step content stay completely
+    // frozen (user's own framing, 2026-08-21) - its gentle register drift
+    // now comes entirely from applyContinuousMelodicCurve, which runs
+    // regardless of this function, so there's nothing left for this pass-
+    // based mechanism to do here at all.
+    if (section.archetype == "presentation")
+        return;
+
+    const auto touchedInstances =
+        MotifEngine::eligibleInstancesForArchetype(section.archetype, instanceRegistry.getAllInstances());
+    if (touchedInstances.empty())
+        return;
+
+    std::map<std::string, int> homePatterns;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        homePatterns = motifHomePatternForSection;
+    }
+
+    // Rotation/Length alternate nudge direction by a different bit of
+    // passIndex so the groove/loop length "breathes" instead of marching
+    // toward an extreme and staying there (same restraint the note
+    // transform rotation already has). Amount stays within MutationPolicy::
+    // classifyWeight's Minor threshold (|amount| <= 2) - deliberately gentle,
+    // matching this whole pass cadence's restraint.
+    const int dimension = passIndex % 2;
+    const int sign = ((passIndex / 2) % 2 == 0) ? 1 : -1;
+    const int currentBar = getCurrentBar();
+
+    for (const auto& instance : touchedInstances)
+    {
+        const auto homeIt = homePatterns.find(instance.id);
+        const int homePattern = (homeIt != homePatterns.end()) ? homeIt->second : 0;
+        if (homePattern <= 0)
+            continue; // section wants this instance silent throughout - nothing to nudge
+
+        Mutation mutation;
+        mutation.targetInstance = instance.id;
+        mutation.patternIndex = homePattern - 1;
+        mutation.strength = "light";
+
+        if (dimension == 0)
+        {
+            mutation.type = "rotation";
+            mutation.amount = sign * 2;
+        }
+        else
+        {
+            mutation.type = "length";
+            mutation.amount = sign * 1;
+        }
+
+        const bool applied = router.routeMutation(mutation, currentBar);
+        const std::string signPrefix = mutation.amount >= 0 ? "+" : "";
+        logActivity(currentBar, instance.id + ": " + mutation.type + " "
+                                     + signPrefix + std::to_string(mutation.amount)
+                                     + (applied ? "" : " (blocked by policy)"));
+    }
+}
+
+void ComposerCore::applyContinuousMelodicCurve(const BlueprintSection& section, int currentBar)
+{
+    if (section.archetype.empty())
+        return;
+
+    const auto touchedInstances =
+        MotifEngine::eligibleInstancesForArchetype(section.archetype, instanceRegistry.getAllInstances());
+    if (touchedInstances.empty())
+        return;
+
+    std::map<std::string, int> homePatterns;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        homePatterns = motifHomePatternForSection;
+    }
+
+    // Energy -> amplitude, Tension -> register center, both sampled fresh
+    // this bar (v1.2 Track B, docs/arc_dimension_mapping_concept.md) -
+    // replaces the old flat constants entirely, including Presentation's
+    // former special case, which now falls out naturally from its own
+    // typically-lower Energy/Tension baseline instead of a separate
+    // hardcoded amplitude.
+    const float energyValue = arcSet.getArc("energy").evaluate(currentBar).value;
+    const float tensionValue = arcSet.getArc("tension").evaluate(currentBar).value;
+
+    const double amplitude = kMinMelodicCurveAmplitudeSemitones
+        + static_cast<double>(energyValue)
+              * (kMaxMelodicCurveAmplitudeSemitones - kMinMelodicCurveAmplitudeSemitones);
+    const double registerCenter = static_cast<double>(tensionValue) * kMaxTensionRegisterPullSemitones;
+
+    const double phase =
+        (2.0 * juce::MathConstants<double>::pi * static_cast<double>(currentBar)) / kMelodicCurvePeriodBars;
+    const int curveTargetTranspose = static_cast<int>(std::lround(registerCenter + amplitude * std::sin(phase)));
+
+    for (const auto& instance : touchedInstances)
+    {
+        const auto homeIt = homePatterns.find(instance.id);
+        const int homePattern = (homeIt != homePatterns.end()) ? homeIt->second : 0;
+        if (homePattern <= 0)
+            continue; // section wants this instance silent throughout - nothing to walk
+
+        router.routeContinuousTranspose(instance.id, homePattern - 1, curveTargetTranspose);
+    }
+}
+
+void ComposerCore::applyContinuousSwing(const BlueprintSection& section, int currentBar)
+{
+    if (section.archetype.empty())
+        return;
+
+    const auto touchedInstances =
+        MotifEngine::eligibleInstancesForArchetype(section.archetype, instanceRegistry.getAllInstances());
+    if (touchedInstances.empty())
+        return;
+
+    const float densityValue = arcSet.getArc("density").evaluate(currentBar).value;
+    const float targetSwing =
+        std::clamp(densityValue, 0.0f, 1.0f) * CCMapping::kMaxSwing;
+
+    // Unlike applyContinuousMelodicCurve, deliberately doesn't check
+    // motifHomePatternForSection/skip resting instances - Swing is a global
+    // per-instance groove setting, not tied to any one pattern, and reflects
+    // this section's overall density character regardless of which specific
+    // instance happens to be resting this particular bar. Keeping it current
+    // means an instance already has the right feel the moment it resumes.
+    for (const auto& instance : touchedInstances)
+        router.routeContinuousSwing(instance.id, targetSwing);
+}
+
+void ComposerCore::sendSectionModulatorValues(const BlueprintSection& section)
+{
+    for (const auto& modulatorValue : section.modulatorValues)
+    {
+        ModulatorTarget target;
+        if (!modulatorTargetLibrary.getTargetById(modulatorValue.modulatorTargetId, target))
+            continue; // authored value references a target that no longer exists - skip, don't guess
+
+        ccDispatcher.sendCC(target.midiChannel, target.ccNumber, modulatorValue.value);
+    }
+}
+
+void ComposerCore::sendModulatorTargetUpdates(int currentBar)
+{
+    for (const auto& target : modulatorTargetLibrary.getAllTargets())
+    {
+        if (target.mode != "arc")
+            continue; // "section" mode is driven by sendSectionModulatorValues instead
+
+        const Arc arc = arcSet.getArc(target.arcDimension);
+        const auto sample = arc.evaluate(currentBar);
+        const int ccValue = CCMapping::encodeFloat(sample.value, 0.0f, 1.0f);
+        ccDispatcher.sendCC(target.midiChannel, target.ccNumber, ccValue);
+    }
+}
+
+namespace
+{
+    juce::var mcpOk(juce::DynamicObject* result)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("ok", true);
+        obj->setProperty("result", juce::var(result));
+        return juce::var(obj);
+    }
+
+    juce::var mcpError(const juce::String& message)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("ok", false);
+        obj->setProperty("error", message);
+        return juce::var(obj);
+    }
+}
+
+juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
+{
+    const auto action = request["action"].toString();
+
+    if (action == "getInstances")
+    {
+        auto* result = new juce::DynamicObject();
+
+        juce::Array<juce::var> instancesArray;
+        for (const auto& instance : instanceRegistry.getAllInstances())
+        {
+            auto* instanceObj = new juce::DynamicObject();
+            instanceObj->setProperty("id", juce::String(instance.id));
+            instanceObj->setProperty("channel", instance.midiChannel);
+            instanceObj->setProperty("role",
+                instance.role.empty() ? juce::String("unrestricted") : juce::String(instance.role));
+            instanceObj->setProperty("enabled", instance.enabled);
+            instancesArray.add(juce::var(instanceObj));
+        }
+
+        result->setProperty("instances", instancesArray);
+        result->setProperty("coherence", getCurrentCoherence());
+        return mcpOk(result);
+    }
+
+    if (action == "getAwareness")
+    {
+        auto* result = new juce::DynamicObject();
+
+        juce::Array<juce::var> patternsArray;
+        for (const auto& cached : patternSyncServer.getCache().getAll())
+        {
+            auto* patternObj = new juce::DynamicObject();
+            patternObj->setProperty("instanceId", juce::String(cached.instanceId));
+            patternObj->setProperty("patternIndex", cached.snapshot.patternIndex);
+            patternObj->setProperty("capturedAtBar", cached.capturedAtBar);
+
+            juce::Array<juce::var> stepsArray;
+            for (size_t i = 0; i < cached.snapshot.steps.size(); ++i)
+            {
+                const auto& step = cached.snapshot.steps[i];
+                auto* stepObj = new juce::DynamicObject();
+                stepObj->setProperty("index", static_cast<int>(i));
+                stepObj->setProperty("enabled", step.enabled);
+                stepObj->setProperty("note", step.note);
+                stepObj->setProperty("velocity", step.velocity);
+                stepObj->setProperty("duration", step.duration);
+                stepsArray.add(juce::var(stepObj));
+            }
+            patternObj->setProperty("steps", stepsArray);
+
+            patternsArray.add(juce::var(patternObj));
+        }
+
+        result->setProperty("patterns", patternsArray);
+        return mcpOk(result);
+    }
+
+    if (action == "getBlueprintStatus")
+    {
+        auto* result = new juce::DynamicObject();
+
+        Blueprint blueprint;
+        const bool hasBlueprint = getCurrentBlueprint(blueprint);
+        result->setProperty("hasActiveBlueprint", hasBlueprint);
+        result->setProperty("currentBar", getCurrentBar());
+        result->setProperty("activeSectionId", juce::String(getActiveSectionId()));
+
+        if (hasBlueprint)
+        {
+            result->setProperty("blueprintId", juce::String(blueprint.id));
+            result->setProperty("blueprintName", juce::String(blueprint.name));
+
+            juce::Array<juce::var> sectionsArray;
+            for (const auto& section : blueprint.sections)
+            {
+                auto* sectionObj = new juce::DynamicObject();
+                sectionObj->setProperty("id", juce::String(section.id));
+                sectionObj->setProperty("name", juce::String(section.name));
+                sectionObj->setProperty("sceneId", juce::String(section.sceneId));
+                sectionObj->setProperty("startBar", section.startBar);
+                sectionObj->setProperty("durationBars", section.durationBars);
+                sectionObj->setProperty("archetype", juce::String(section.archetype));
+                sectionsArray.add(juce::var(sectionObj));
+            }
+            result->setProperty("sections", sectionsArray);
+        }
+
+        return mcpOk(result);
+    }
+
+    if (action == "getMotifPresets")
+    {
+        auto* result = new juce::DynamicObject();
+
+        juce::Array<juce::var> presetsArray;
+        for (const auto& preset : presetLibrary.getAllMotifPresets())
+        {
+            auto* presetObj = new juce::DynamicObject();
+            presetObj->setProperty("id", juce::String(preset.id));
+            presetObj->setProperty("name", juce::String(preset.name));
+
+            juce::Array<juce::var> tagsArray;
+            for (const auto& tag : preset.tags)
+                tagsArray.add(juce::var(juce::String(tag)));
+            presetObj->setProperty("tags", tagsArray);
+
+            juce::Array<juce::var> notesArray;
+            for (const auto& note : preset.notes)
+            {
+                auto* noteObj = new juce::DynamicObject();
+                noteObj->setProperty("semitoneOffset", note.semitoneOffset);
+                noteObj->setProperty("relativeDuration", note.relativeDuration);
+                noteObj->setProperty("relativeVelocity", note.relativeVelocity);
+                notesArray.add(juce::var(noteObj));
+            }
+            presetObj->setProperty("notes", notesArray);
+
+            presetsArray.add(juce::var(presetObj));
+        }
+
+        result->setProperty("presets", presetsArray);
+        result->setProperty("applicationMode",
+            getMotifApplicationMode() == MotifEngine::ApplicationMode::Phrase ? "Phrase" : "Nudge");
+        return mcpOk(result);
+    }
+
+    if (action == "getStatus")
+    {
+        auto* result = new juce::DynamicObject();
+        result->setProperty("currentBar", getCurrentBar());
+        result->setProperty("coherence", getCurrentCoherence());
+        result->setProperty("activeSectionId", juce::String(getActiveSectionId()));
+        result->setProperty("registeredInstanceCount", static_cast<int>(instanceRegistry.getAllInstances().size()));
+        return mcpOk(result);
+    }
+
+    if (action == "listBlueprints")
+    {
+        auto* result = new juce::DynamicObject();
+        juce::Array<juce::var> blueprintsArray;
+        for (const auto& blueprint : blueprintLibrary.getAllBlueprints())
+        {
+            auto* blueprintObj = new juce::DynamicObject();
+            blueprintObj->setProperty("id", juce::String(blueprint.id));
+            blueprintObj->setProperty("name", juce::String(blueprint.name));
+            blueprintObj->setProperty("sectionCount", static_cast<int>(blueprint.sections.size()));
+            blueprintsArray.add(juce::var(blueprintObj));
+        }
+        result->setProperty("blueprints", blueprintsArray);
+        return mcpOk(result);
+    }
+
+    if (action == "listScenes")
+    {
+        auto* result = new juce::DynamicObject();
+        juce::Array<juce::var> scenesArray;
+        for (const auto& scene : sceneLibrary.getAllScenes())
+        {
+            auto* sceneObj = new juce::DynamicObject();
+            sceneObj->setProperty("id", juce::String(scene.id));
+            sceneObj->setProperty("name", juce::String(scene.name));
+            sceneObj->setProperty("targetCount", static_cast<int>(scene.targets.size()));
+            scenesArray.add(juce::var(sceneObj));
+        }
+        result->setProperty("scenes", scenesArray);
+        return mcpOk(result);
+    }
+
+    if (action == "resyncInstance")
+    {
+        const auto instanceId = request["instanceId"].toString().toStdString();
+        const int patternIndex = static_cast<int>(request["patternIndex"]);
+
+        Instance instance;
+        if (!instanceRegistry.getInstanceById(instanceId, instance))
+            return mcpError("resyncInstance: unknown instance '" + juce::String(instanceId) + "'");
+
+        const bool connected = patternSyncServer.isChannelConnected(instance.midiChannel);
+        patternSyncServer.requestSync(instance.midiChannel, patternIndex);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("requested", true);
+        result->setProperty("channelConnected", connected);
+        if (!connected)
+            result->setProperty("note", "no IPC connection on this channel yet - request was sent but likely won't be answered");
+        return mcpOk(result);
+    }
+
+    if (action == "setMotifApplicationMode")
+    {
+        const auto mode = request["mode"].toString();
+        if (mode != "Nudge" && mode != "Phrase")
+            return mcpError("setMotifApplicationMode: mode must be 'Nudge' or 'Phrase', got '" + mode + "'");
+
+        setMotifApplicationMode(mode == "Phrase" ? MotifEngine::ApplicationMode::Phrase
+                                                  : MotifEngine::ApplicationMode::Nudge);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("applicationMode", mode);
+        return mcpOk(result);
+    }
+
+    if (action == "sendTestCC")
+    {
+        const auto instanceId = request["instanceId"].toString().toStdString();
+        const int cc = static_cast<int>(request["cc"]);
+        const int value = static_cast<int>(request["value"]);
+
+        Instance instance;
+        if (!instanceRegistry.getInstanceById(instanceId, instance))
+            return mcpError("sendTestCC: unknown instance '" + juce::String(instanceId) + "'");
+
+        if (cc < 0 || cc > 127 || value < 0 || value > 127)
+            return mcpError("sendTestCC: cc and value must be 0-127");
+
+        ccDispatcher.sendCC(instance.midiChannel, cc, value);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("sent", true);
+        result->setProperty("channel", instance.midiChannel);
+        return mcpOk(result);
+    }
+
+    if (action == "sendMutation")
+    {
+        Mutation mutation;
+        mutation.targetInstance = request["instanceId"].toString().toStdString();
+        mutation.patternIndex = static_cast<int>(request["patternIndex"]);
+        mutation.type = request["type"].toString().toStdString();
+        mutation.amount = static_cast<int>(request["amount"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidMutation(mutation, errorMessage))
+            return mcpError("sendMutation: " + juce::String(errorMessage));
+
+        const bool sent = router.routeMutation(mutation, getCurrentBar());
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("sent", sent);
+        if (!sent)
+            result->setProperty("reason", "blocked by policy budget for this bar, or unknown target instance");
+        return mcpOk(result);
+    }
+
+    if (action == "commitBlueprint")
+    {
+        const auto blueprintId = request["blueprintId"].toString().toStdString();
+
+        Blueprint blueprint;
+        if (!blueprintLibrary.getBlueprintById(blueprintId, blueprint))
+            return mcpError("commitBlueprint: unknown blueprint '" + juce::String(blueprintId) + "'");
+
+        setCurrentBlueprint(blueprint);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("blueprintId", juce::String(blueprint.id));
+        result->setProperty("sectionCount", static_cast<int>(blueprint.sections.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "createScene")
+    {
+        const Scene scene = StateSerializer::varToScene(request["scene"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidScene(scene, errorMessage))
+            return mcpError("createScene: " + juce::String(errorMessage));
+
+        sceneLibrary.addOrReplaceScene(scene);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("sceneId", juce::String(scene.id));
+        return mcpOk(result);
+    }
+
+    if (action == "createBlueprint")
+    {
+        const Blueprint blueprint = StateSerializer::varToBlueprint(request["blueprint"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidBlueprint(blueprint, errorMessage))
+            return mcpError("createBlueprint: " + juce::String(errorMessage));
+
+        blueprintLibrary.addOrReplaceBlueprint(blueprint);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("blueprintId", juce::String(blueprint.id));
+        result->setProperty("sectionCount", static_cast<int>(blueprint.sections.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "createMotifPreset")
+    {
+        const MotifPreset preset = StateSerializer::varToMotifPreset(request["preset"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidMotifPreset(preset, errorMessage))
+            return mcpError("createMotifPreset: " + juce::String(errorMessage));
+
+        presetLibrary.addOrReplaceMotifPreset(preset);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("presetId", juce::String(preset.id));
+        result->setProperty("noteCount", static_cast<int>(preset.notes.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "setArc")
+    {
+        const auto dimension = request["dimension"].toString().toStdString();
+
+        std::vector<ArcBreakpoint> points;
+        if (auto* pointsArray = request["breakpoints"].getArray())
+        {
+            for (const auto& pointVar : *pointsArray)
+            {
+                ArcBreakpoint point;
+                point.bar = static_cast<int>(pointVar["bar"]);
+                point.value = static_cast<float>(static_cast<double>(pointVar["value"]));
+                points.push_back(point);
+            }
+        }
+
+        if (points.empty())
+            return mcpError("setArc: 'breakpoints' must be a non-empty array of {bar, value}");
+
+        Arc arc;
+        arc.setBreakpoints(points);
+        arcSet.setArc(dimension, arc);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("dimension", juce::String(dimension));
+        result->setProperty("breakpointCount", static_cast<int>(points.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "setScene")
+    {
+        const auto sceneId = request["sceneId"].toString().toStdString();
+
+        Scene scene;
+        if (!sceneLibrary.getSceneById(sceneId, scene))
+            return mcpError("setScene: unknown scene '" + juce::String(sceneId) + "'");
+
+        setCurrentScene(scene);
+        fullRefresh();
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("sceneId", juce::String(scene.id));
+        result->setProperty("durationBars", scene.durationBars);
+        return mcpOk(result);
+    }
+
+    return mcpError("unknown action: " + action);
 }

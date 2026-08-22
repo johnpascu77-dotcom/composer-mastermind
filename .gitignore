@@ -26,3 +26,5 @@ Thumbs.db
 # Temporary / cache
 *.tmp
 *.log
+__pycache__/
+*.pyc

@@ -3,6 +3,7 @@
 #include <string>
 #include <cmath>
 #include <algorithm>
+#include <array>
 
 // Maps Composer Mastermind's scene/mutation model onto the External Control
 // CC protocol implemented by MIDI Pattern Launcher (see
@@ -14,8 +15,14 @@
 namespace CCMapping
 {
     constexpr int kActivePattern = 20;
+    constexpr int kTargetPattern = 21; // live in MPL since 2026-08-18 ("Option A") - see docs/routing_policy_v0_1.md
     constexpr int kGridMode = 22;
     constexpr int kSwing = 24;
+    constexpr int kTargetStep = 60;
+    constexpr int kTargetNote = 61;
+    constexpr int kTargetVelocity = 62;
+    constexpr int kTargetDuration = 63;
+    constexpr int kTargetEnabled = 64;
 
     constexpr int kMaxPatterns = 3;          // MPL numPatterns
     constexpr int kPatternSteps = 16;        // MPL patternLength
@@ -82,9 +89,27 @@ namespace CCMapping
         return encodeInt(semitones, -kMaxTranspose, kMaxTranspose);
     }
 
+    // Rotation is cyclic (a 16-step pattern rotated by -2 is equivalent to
+    // rotating it by +14), unlike transpose which is genuinely signed - so
+    // out-of-range values wrap modulo kPatternSteps rather than clamping to
+    // the boundary. Clamping would silently floor any negative amount to 0,
+    // discarding the caller's intent instead of expressing it correctly.
+    // Exposed separately (not just inlined into encodeRotation) so callers
+    // that need the resolved *plain* value - e.g. Router updating tracked
+    // state to match what was actually sent - can share this logic instead
+    // of duplicating the wrap.
+    inline int wrapRotation(int steps)
+    {
+        int wrapped = steps % kPatternSteps;
+        if (wrapped < 0)
+            wrapped += kPatternSteps;
+
+        return wrapped;
+    }
+
     inline int encodeRotation(int steps)
     {
-        return encodeInt(steps, 0, kPatternSteps - 1);
+        return encodeInt(wrapRotation(steps), 0, kPatternSteps - 1);
     }
 
     inline int encodeLength(int steps)
@@ -93,6 +118,44 @@ namespace CCMapping
     }
 
     inline int encodeInversion(bool on)
+    {
+        return on ? 127 : 0;
+    }
+
+    // Target Step Editing (CC 21/60-64) - live in MPL since 2026-08-18 (see
+    // docs/routing_policy_v0_1.md), consumed for the first time on this side
+    // by policy/MotifEngine. These write directly into a specific step of a
+    // specific pattern (matching MPL's own Target-parameter step editor
+    // rather than a whole-pattern transform like transpose/rotation/length/
+    // inversion above), so they take a step/pattern index rather than
+    // producing a delta - there's no "current value" to nudge relative to
+    // the way InstanceStateTracker tracks for the pattern-level parameters.
+    inline int encodeTargetPattern(int patternIndex) // 0..kMaxPatterns-1
+    {
+        return encodeInt(patternIndex, 0, kMaxPatterns - 1);
+    }
+
+    inline int encodeTargetStep(int stepIndex) // 1..kPatternSteps, matches MPL's own 1-indexed targetStepParam
+    {
+        return encodeInt(stepIndex, 1, kPatternSteps);
+    }
+
+    inline int encodeTargetNote(int note) // 0..127
+    {
+        return encodeInt(note, 0, 127);
+    }
+
+    inline int encodeTargetVelocity(int velocity) // 1..127
+    {
+        return encodeInt(velocity, 1, 127);
+    }
+
+    inline int encodeTargetDuration(int durationSteps) // 1..kPatternSteps
+    {
+        return encodeInt(durationSteps, 1, kPatternSteps);
+    }
+
+    inline int encodeTargetEnabled(bool on)
     {
         return on ? 127 : 0;
     }
@@ -108,18 +171,39 @@ namespace CCMapping
         return false;
     }
 
-    // Encodes a mutation's raw amount into the 0..127 CC value expected for
-    // its type. `amount` is interpreted per-type: transpose in semitones,
-    // rotation/length in steps, inversion as amount != 0 meaning "on".
-    inline int encodeMutationAmount(MutationOffset offset, int amount)
+    struct NamedCC
     {
-        switch (offset)
-        {
-            case MutationOffset::Transpose: return encodeTranspose(amount);
-            case MutationOffset::Rotation:  return encodeRotation(amount);
-            case MutationOffset::Length:    return encodeLength(amount);
-            case MutationOffset::Inversion: return encodeInversion(amount != 0);
-        }
-        return 0;
-    }
+        int cc;
+        const char* label;
+    };
+
+    // The full CC protocol MPL implements (docs/routing_policy_v0_1.md), for
+    // UI that needs to offer a raw CC number by name - e.g. a manual "send
+    // one CC now" diagnostic - without inventing its own copy of the map.
+    // Includes CC 21/60-64 (live in MPL since 2026-08-18) even though those
+    // aren't yet wired into Mutation/Router - this table is deliberately a
+    // separate, simpler concern from the encode*/routing machinery above.
+    inline constexpr std::array<NamedCC, 21> kNamedCCs { {
+        { 20, "20 - Active Pattern" },
+        { 21, "21 - Target Pattern" },
+        { 22, "22 - Grid Mode" },
+        { 24, "24 - Swing" },
+        { 30, "30 - P1 Transpose" },
+        { 31, "31 - P1 Rotation" },
+        { 32, "32 - P1 Length" },
+        { 33, "33 - P1 Inversion" },
+        { 40, "40 - P2 Transpose" },
+        { 41, "41 - P2 Rotation" },
+        { 42, "42 - P2 Length" },
+        { 43, "43 - P2 Inversion" },
+        { 50, "50 - P3 Transpose" },
+        { 51, "51 - P3 Rotation" },
+        { 52, "52 - P3 Length" },
+        { 53, "53 - P3 Inversion" },
+        { 60, "60 - Target Step" },
+        { 61, "61 - Target Note" },
+        { 62, "62 - Target Velocity" },
+        { 63, "63 - Target Duration" },
+        { 64, "64 - Target Enabled" },
+    } };
 }

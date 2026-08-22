@@ -79,9 +79,10 @@ instances should diverge from it — including deliberately running different gr
 makes a genuine poly-rhythmic relationship between two instances possible at the protocol level (previously
 impossible: every targeted instance was forced to the same grid mode).
 
-**Not yet built (this is the JSON-library vision, v0.2+):** the mechanism now exists, but nothing yet *authors*
-interesting combinations — no library of named, reusable, chainable presets. The plan (extending v0.2 scene
-persistence and v0.4/v0.5 roles/arcs):
+**Role presets built (2026-08-17), the other two categories not yet:** `model/Preset.h`'s `RolePreset` +
+`state/PresetLibrary` + `policy/PresetResolver` + the new **Presets** tab (`ui/PresetLibraryView`) implement the
+first bullet below for the *role-preset* category only — see v1.1 further down for the full status. The plan
+(extending v0.2 scene persistence and v0.4/v0.5 roles/arcs):
 
 - **Presets are the library's unit**, not raw scenes. A preset is a named, taggable, reusable bundle of
   differentiated parameter values expressing one musical intention — e.g. `polyrhythm_AB_16v12` (instance A
@@ -169,62 +170,327 @@ encoded to CC 30 value 57, and MPL's own debug panel confirmed receiving exactly
   playing turns out to need no special handling — see the scheduling doc for why.
 - **Confirmed working in Bitwig (2026-08-15)**: a 3-scene chain advanced correctly during playback.
 
-### v0.4 — Roles & Cognitive-Load Governor
-- Give `Instance::role` real meaning: role presets (anchor/motif/counterpoint/…) with default activity/mutation
-  ranges (§7).
-- `policy/PolicyEngine` becomes the single gate all mutation routing passes through — see
-  [mutation_policy_v0_1.md](mutation_policy_v0_1.md) for the change-weight and budget model (§8-9).
-- `Router::routeMutation` currently applies every mutation unconditionally; this version makes that the last step
-  of a pipeline, not the whole pipeline.
-- **Concrete governance model to adopt (2026-08-15):** rather than a flat "max N changes per bar" counter, budget
-  by category and key it to formal position and `Instance::role` — a `noveltyBudget` per section (low at
-  presentation/coda, high at climax) plus explicit "preserve this parameter / this parameter may transform"
-  lists per role, so the governor and role system are tied together from the start. Mined from
-  `atonal_phrase_engine`'s Formal Memory Map mechanism — see
-  [atonal_phrase_engine_concepts.md](atonal_phrase_engine_concepts.md).
-- **New gap to close here, not deferred:** a lightweight mutation-authorization check — before a `Mutation`
-  dispatches, verify it isn't touching a protected instance/role/bar combination (e.g. don't let anything mutate
-  the anchor instance during a climax bar). `Router::routeMutation` currently has no such concept at all.
+### v0.4 — Roles & Cognitive-Load Governor (done, confirmed working live in Bitwig 2026-08-16)
+- `Instance::role` now has real meaning: `policy/MutationPolicy::budgetForRole` gives anchor/motif/counterpoint
+  each a per-bar minor/medium/major mutation allowance (§7), plus a system-wide "max 1 major mutation per bar"
+  cap independent of role. Unrecognized/empty roles stay unrestricted — governance is opt-in per instance, not a
+  silent behavior change for instances set up before this milestone existed.
+- `policy/PolicyEngine::authorize` is the single gate — added *inside* `Router::routeMutation` rather than
+  requiring every caller to remember to check first, so the scene chain, `Scene::mutations`, and the manual UI
+  "Send Mutation" button all pass through it automatically, none of them bypassable. `routeMutation` now returns
+  `bool` (dispatched vs. blocked) so the UI can actually show when the governor did something.
+- Change-weight classification (`MutationPolicy::classifyWeight`) implemented per
+  [mutation_policy_v0_1.md](mutation_policy_v0_1.md) — inversion/octave-transpose = major, smaller transpose/
+  length = medium, subtle rotation = minor.
+- **What shipped vs. what was scoped:** the "noveltyBudget keyed to formal position" idea from
+  `atonal_phrase_engine`'s Formal Memory Map (mined 2026-08-15) needs section/arc awareness that doesn't exist
+  until v0.5 — a flat per-bar-reset budget can't express "rare" as anything other than "0 per bar," which is
+  what `anchor`'s medium/major budget is set to as the closest available approximation for now. Revisit once
+  arcs can modulate a budget over a section instead of resetting flatly every bar. Full reasoning and the exact
+  budget table are in [mutation_policy_v0_1.md](mutation_policy_v0_1.md) — read that for the numbers, not this
+  bullet.
+- **Explicitly not done, correctly deferred:** the "protected instance/role/bar combination" authorization
+  gap flagged 2026-08-15 turned out to collapse into the same mechanism once built — an anchor instance's 0
+  medium/major budget *is* its protection, there's no separate "protected zone" concept needed at this scope.
+  A literal "protected during climax bar" rule still needs v0.5's arc/section awareness to know what a climax
+  bar even is.
+- `ComposerCore::getCurrentBar()` (new, atomic) gives UI-thread actions a bar number to authorize against, since
+  message-thread button clicks aren't otherwise aware of "now."
+- Editor UI: Role dropdown added to the existing Instances row (Unrestricted/Anchor/Motif/Counterpoint, default
+  Unrestricted) rather than a new row, respecting the height-ceiling note from v1.0's checklist entry.
 
-### v0.5 — Arcs & Blueprints
-- Generic `Arc` evaluator (piecewise-linear breakpoints over bar position) reused for energy/tension/density/
-  complexity (§12) — one evaluator, not bespoke logic per arc type.
-- **Coherence / convergence arc (new, 2026-08-14, not in the source roadmap's §12 list):** how correlated the
-  instances' parameter states are with each other, independent of how much is changing or how intense it is.
-  Low coherence = instances diverge, each running its own trajectory via distinct `SceneInstanceOverride` entries
-  (rich, multi-voice, already validated musically — differentiated grid-mode/active-pattern overrides tested live
-  in Bitwig, see v0.1 above). High coherence = instances converge toward `Scene::global`'s shared values, so a
-  dense/loud moment still reads as *one* clear event rather than several independent ones — this is the technical
-  shape of a climax: not more information, the same information stated by everyone at once. Mechanically this arc
-  doesn't need new plumbing — it's the v0.4 governor deciding, over a section, how many `instanceOverrides` exist
-  and how far they diverge from `global`, driven by this arc's value at the current bar. **Concrete formula to
-  adopt (2026-08-15):** mined from `atonal_phrase_engine`'s Parameter Concordance Diagnostics — sample each
-  instance's current CC-parameter state, count how many are simultaneously near shared target extremes, derive a
-  scalar; separately validate, as a diagnostic pass over the scene chain, whether the scene actually marked as
-  the climax turns out to be the real convergence point. See
-  [atonal_phrase_engine_concepts.md](atonal_phrase_engine_concepts.md).
-- **Cross-scene apex exclusivity (new, 2026-08-15):** nothing today stops an earlier scene's `instanceOverrides`
-  or arc targets from prematurely reaching values reserved for a later climax scene down the `nextSceneId` chain.
-  The Arc evaluator needs to know about reserved ceiling values downstream and clamp earlier scenes accordingly —
-  a cross-scene constraint, not a per-scene one. Mined from the same source project's Arrival Reservation /
-  Global Apex Exclusivity mechanisms (see the concepts doc linked above) — without this, an earlier scene can
-  silently spend the climax's peak values before the climax scene itself plays.
-- Blueprint JSON (§11, §18) loads a full section list, each section setting foreground/support/background layers
-  and a mutation budget, consumed by the v0.4 governor.
+### v0.5 — Arcs & Blueprints (foundation confirmed working live in Bitwig 2026-08-16; Blueprint JSON and apex-exclusivity clamping still pending)
+
+**Built this pass — infrastructure, not yet consumed by a Blueprint (nothing authors breakpoints/sections yet):**
+
+- `policy/Arc` — generic piecewise-linear breakpoint evaluator (`ArcBreakpoint{bar,value}` →
+  `ArcSample{value,delta,distanceToNextBreakpoint}`), reused for any named dimension rather than bespoke logic
+  per type, per the original plan. Unconsumed for now, same as `Scheduler` sat unused for two milestones before
+  `SceneAdvancePolicy` used it — this is here so Blueprint JSON has something to plug into rather than needing
+  to invent it later.
+- `routing/InstanceStateTracker` (new, not originally scoped as its own item — turned out to be a genuine
+  prerequisite): nothing previously remembered what CC value was actually last sent to each instance. `Router`
+  now records it after every successful send. Needed by anything that measures instances against each other,
+  not just coherence.
+- **Coherence / convergence — implemented as a live diagnostic, not yet as an arc.** `policy/CoherenceEvaluator`
+  gives a concrete 0..1 score: averages grid-mode agreement, active-pattern agreement, and swing closeness across
+  currently-registered instances, adapted from `atonal_phrase_engine`'s Parameter Concordance Diagnostics (see
+  [atonal_phrase_engine_concepts.md](atonal_phrase_engine_concepts.md)). `ComposerCore::getCurrentCoherence()`
+  exposes it; the editor shows it as a live-updating line in the instance list. **Scope note:** only covers the
+  three instance-level dimensions (`SceneInstanceOverride`'s territory) — per-pattern transpose/rotation/length/
+  inversion (`Mutation`'s territory) isn't folded into the score yet, so sending mutations updates tracked state
+  but won't move the displayed number. This is a measurement of what's actually happening, not yet a *target*
+  a scene can author ("this section should reach coherence 0.9") — that direction-setting half is what turns it
+  into a true arc, and needs Blueprint JSON's section concept to mean anything (a coherence *target* only makes
+  sense attached to a section of the piece, which doesn't exist as a concept yet).
+- **Explicitly still not done:**
+  - **Cross-scene apex exclusivity (the clamping half)** — built 2026-08-17 as its own v1.0 slice
+    (`model/Blueprint.h`'s `ReservedValue`, `Router::ReservedValueChecker`, `ComposerCore::
+    isValueReservedByLaterSection`) — see v1.0 below. Note this ended up scoped to per-*parameter* value
+    reservation (a mutation's resulting transpose/rotation/length/inversion value), not the coherence arc's
+    *target* values the original phrasing here anticipated — coherence-as-target still isn't built, only
+    coherence-as-diagnostic (see above).
+  - **Blueprint JSON** (§11, §18) — sections, foreground/support/background, per-section mutation budget. Built
+    2026-08-16 as its own v1.0 slice (schema, persistence, and the Sections authoring UI) — see v1.0 below.
+    `PolicyEngine` consuming `SectionBudgetOverride` is what turns this from authored data into the clamping
+    half of apex exclusivity; not wired yet.
 
 ### v0.6 — Motivic Variation Engine
-- Pass-based variation (§13.2) — this is the point where step-level mutation matters, which depends on MPL's
-  v1.20.0 safe external step mutation existing first (see CC map discrepancy above).
+- **MPL-side blocker cleared 2026-08-18** (CC 21/60-64, "Option A"), scoped further 2026-08-19 into a real
+  motif/rule engine, and **built 2026-08-20, confirmed working live same day**: `policy/MotifEngine` fires per
+  blueprint section boundary, picks a `MotifPreset` (new preset category — relative pitch/rhythm cell) by
+  archetype tag, decides which instances to touch by role, applies a deterministic transform, and writes via the
+  CC 21/60-64 encoders in `CCMapping.h` — informed by real cross-instance pattern state via the IPC awareness
+  channel (see below), not assumed state. Global Nudge/Phrase application mode, user's explicit request.
+- **Pass-based variation sequencing built 2026-08-20** (§13.2, the "fires once and goes static" gap this section
+  used to flag): a still-active section now fires an additional motif pass every ~4 bars (`ComposerCore::
+  kPassIntervalBars`/`fireMotifPassIfDue`), not just once at its start. Each pass cycles through the full
+  transform vocabulary (rotate/invert/retrograde on top of the archetype's own base transform,
+  `MotifEngine::transformForPass`) and rotates which steps get touched, so a long section keeps developing. Built
+  and installed clean; not yet live-tested. See `docs/technical_spec_checklist.md`'s "Motif/rule engine" section
+  for the full mechanism and remaining honestly-scoped limitations (pattern index 0 only, no budget gating yet,
+  one preset per archetype).
+- **MCP bridge grew a compose layer, and became the actual mastermind (2026-08-20/21):** past read/write actions
+  (resync, mutation, scene set, etc.), the bridge gained `createScene`/`createBlueprint`/`createMotifPreset`/
+  `setArc` — reusing the exact save/load deserializers and validators, so a bridge-authored scene is validated
+  identically to a hand-authored one. User's own framing: "would you be the actual mastermind composer, showing
+  me what our tools can make?" — answered by authoring and pushing a complete original piece ("Vers la flamme,"
+  56 bars, Scriabin-referenced) entirely through the bridge, then live-testing it across several rounds. That
+  testing surfaced two real bugs (a preset tag-collision letting an old test preset shadow the real composition's
+  presets; a Length-window interaction leaving a shrunk pattern's audible window silent) and one real gap in the
+  engine itself: it could only ever *nudge* existing content, never author it.
+- **"Preparatory phase" — `MotifEngine::stampMotifForSection` (2026-08-21, user's own framing):** a section's
+  real seed content is now authored once at section entry (including "presentation," previously a total no-op),
+  rather than the engine forever nudging whatever sparse steps happened to survive from manual programming.
+- **Step-content writes moved off MIDI CC entirely, onto direct IPC (2026-08-21):** live-testing the stamp (many
+  steps written per instance at once, more than anything before) exposed that MPL's CC 60-64 protocol commits
+  through a once-per-block parameter poll built for one human turning one knob at a time — several step-edits
+  landing in the same block silently collapse to the last one. Fixed properly, not paced around: `PatternSyncServer`
+  (the same duplex local-socket connection every resync already uses) gained `writeStep`/`writeFullPattern`
+  message types, committing directly into MPL's real pattern storage with no MIDI, no parameter polling, and no
+  burst-timing risk at all. Confirmed live: stamped content now matches exactly between the Awareness cache and a
+  real MPL resync. Full mechanism in `docs/technical_spec_checklist.md`'s "v0.6.1" section.
+- **Replay-drift fix, Presentation gentle transpose, "Prime for Playback," and P1/P2/P3 phrase-chaining, all
+  built and confirmed live in one continuous arc (2026-08-21):** a replay from bar 1 no longer inherits the
+  previous playthrough's pitch/parameter drift; Presentation now walks a small, gentle register drift instead of
+  staying frozen or fully mutating; a new **Prime for Playback** button runs a section's full entry sequence
+  while transport is stopped (user's own idea — these writes land instantly regardless of transport state, so
+  there's no reason setup has to wait for playback, and priming while genuinely stopped sidesteps the exact kind
+  of MPL-engine race every CC-burst bug this session turned out to be some version of); and Build/Peak/Release now
+  cycle an instance through three related, seeded patterns (base/rotated/inverted) every 8 bars instead of
+  nudging one pattern forever — real phrase structure. User's verdict: "I really think this was a missing link."
+  Full detail in `docs/technical_spec_checklist.md`'s "v0.6.1" section.
 
-### v1.0 — Narrative Blueprint Composer
+### v1.0 — Narrative Blueprint Composer (full loop + apex exclusivity confirmed working live in Bitwig 2026-08-17; layerRole consumption built same day, not yet Bitwig-verified)
 - Full loop: JSON blueprint library, Save/Recall presets, mature UI exposing arcs/roles/budgets directly
   (§19-20.2), not just the current debug panel. This is the source roadmap's endpoint — a blueprint *player*.
+- **Tabbed UI shell built:** the single ~860px scrolling panel is gone. `ui/EditorView` now hosts four tabs
+  (Instances / Scenes / Mutations / Blueprint) via `juce::TabbedComponent`, each tab's content moved into its own
+  `Component` (`ui/InstanceView`, `ui/SceneListComponent`, `ui/DebugPanel` — no longer empty stubs). A shared
+  status bar and a 300ms refresh timer keep every tab in sync with state changed from any other tab, without
+  cross-page callback wiring. Full detail in [technical_spec_checklist.md](technical_spec_checklist.md)'s v1.0
+  section.
+- **Arc authoring is a visual, directly-editable graph, not a form:** `ui/BlueprintView` is now that graph — a
+  combo box picks which of the 5 `ArcSet` arcs is being edited, its points render as draggable circles on a
+  bar-vs-value grid (the other 4 arcs dim into the background for context), and dragging/double-clicking/
+  right-clicking a point moves/adds/removes it directly, no bar/value form involved. This *is* the authoring
+  interface for Blueprint JSON's arcs, not an extra feature alongside it: `policy/Arc`'s breakpoint model is
+  what this page reads and writes, via a new `Arc::getBreakpoints()` accessor. Confirmed working live in
+  Bitwig 2026-08-16.
+- **Blueprint JSON schema + authoring UI built:** `model/Blueprint.h` defines the sections/layer-role/
+  budget-override schema described below; `state/BlueprintLibrary` + `StateSerializer` + `StateSnapshotStore`
+  persist it the same way scenes already work; the Blueprint tab's new "Sections" inner tab
+  (`ui/BlueprintSectionsView`, alongside the arc graph editor now living in `ui/ArcGraphView`) authors it.
+  Confirmed working live in Bitwig (2026-08-17).
+- **`SectionBudgetOverride` now consumed by the policy gate:** `Router` holds an injected
+  `BudgetOverrideResolver`; `ComposerCore::resolveSectionBudgetOverride` finds the current blueprint's section
+  covering `currentBar` and hands its per-role override to `PolicyEngine::authorize`/`MutationPolicy::
+  tryConsume` in place of the static `budgetForRole` table. Both mutation dispatch paths (scene-chain
+  `Scene::mutations`, and `DebugPanel`'s manual test button) get it for free since both already flow through
+  `Router::routeMutation`. Confirmed working live in Bitwig (2026-08-17).
+- **The "full loop" — sections now drive playback themselves:** `ComposerCore::advanceBlueprintIfNeeded` runs
+  every bar tick alongside the existing scene chain, finds the active blueprint's section covering the current
+  bar, and routes that section's scene the moment the active section changes — deliberately decoupled from
+  (not replacing) the older `Scene::nextSceneId`/`durationBars` chain, so hand-authored chains and manual "Send
+  Scene Now" still work unchanged even while a blueprint is active. Any blueprint with sections now starts
+  driving playback automatically as soon as it's saved or loaded (`setCurrentBlueprint` is what marks it
+  current) — no separate activation step. The Sections tab shows a live "now playing" line. Confirmed working
+  live in Bitwig (2026-08-17): a 2-section blueprint switched sections and routed the new scene automatically
+  as the transport crossed the boundary bar.
+- **Cross-scene apex exclusivity (the clamping half) built:** `model/Blueprint.h`'s `ReservedValue`
+  (targetInstance/patternIndex/type/value) marks a resulting mutation value as belonging to a later section.
+  `Router` holds an injected `ReservedValueChecker`, mirroring the budget-override resolver's pattern exactly;
+  `ComposerCore::isValueReservedByLaterSection` implements it, blocking a mutation in `Router::routeMutation`
+  if a strictly-later section reserves the value it would reach. Same scope as the budget-override wiring:
+  only `routeMutation` is gated, not `routeScene`'s direct pattern/global sends. The section that owns a
+  reserved value is always free to reach it — the check never fires during or after that section itself.
+  Confirmed working live in Bitwig (2026-08-17). The Sections tab's form grew past the tab's
+  available height once this was added on top of layer roles + budget overrides, so `ui/BlueprintSectionsView`
+  is now a thin `juce::Viewport` host around the actual controls (`ui/BlueprintSectionsContent`, new).
+- **`SectionLayerRole` consumed:** `ComposerCore::applyLayerRoleOverrides` applies each `background`-tagged
+  instance as `SceneInstanceOverride(activePattern=0)` on a copy of the section's scene right before routing
+  it, unless that scene already authored an explicit override for the instance. `foreground`/`support` get no
+  forced behavior - MPL's CC protocol has no volume/velocity dimension to differentiate "prominent" from
+  "supporting" at, only engaged-vs-stopped, so only `background` gets real teeth. This closes out Blueprint
+  JSON's last authoring-only field. Compiled and installed clean; not yet live-tested in Bitwig.
+  Full detail in [technical_spec_checklist.md](technical_spec_checklist.md)'s v1.0 section and
+  [mutation_policy_v0_1.md](mutation_policy_v0_1.md).
 
-### v1.1 — Generative Blueprint Proposal
+### v1.1 — Generative Blueprint Proposal (all 3 preset categories built + the generative assembly layer itself built 2026-08-18, not yet Bitwig-verified)
 - The scope commitment described above ("Player vs. Composer"): assemble candidate blueprints from role/arc
   presets rather than requiring a fully hand-authored one, subject to the same governor/budget rules, always
   inspectable and editable before playback. This is Composer Mastermind's actual endpoint, beyond what the
   source roadmap itself scopes.
+- **Preset library, role presets only, built:** `model/Preset.h`'s `RolePreset` (id, name, `targetRole`, tags,
+  instance-level `activePattern`/`gridMode`/`swing` matching `SceneInstanceOverride`'s existing -1/-1.0f
+  "inherit" sentinel) is the first of the three preset categories from "'Send To All' Is One Preset Among Many"
+  above. `state/PresetLibrary` persists it exactly like `SceneLibrary`/`BlueprintLibrary`; `policy/
+  PresetResolver::applyRolePreset` (pure, JUCE-free) resolves a role-addressed preset into concrete
+  `SceneInstanceOverride` entries for whichever currently-registered instances actually hold that role - the
+  "resolved to actual instance ids at apply-time via each `Instance::role`" mechanism from the plan above,
+  built for real rather than staying aspirational. The new **Presets** tab (`ui/PresetLibraryView`) builds/
+  saves/loads/removes presets and applies a saved preset directly onto a saved scene in `SceneLibrary`,
+  persisting the resolved result - a one-shot authoring-time "stamp," not a live reference re-resolved at
+  playback, matching "always inspectable and editable before playback" above rather than an opaque runtime
+  dependency. Confirmed working live in Bitwig (2026-08-17): a swing-75 preset applied to a saved scene
+  correctly delivered CC 24 value 127 (=75%) to the matching instance on `Load and Send`, verified via MPL's
+  own "Last CC" debug readout.
+- **Rhythmic-relationship presets built:** `model/Preset.h`'s `RhythmicRelationshipPreset` is the second
+  category — a joint, deliberately-correlated choice across 2+ roles applied together in one call (e.g. role
+  `motif` Binary while role `counterpoint` Ternary, chosen together on purpose for a specific groove, not two
+  independent `RolePreset` applications that happen to coincide). `Validation` requires at least 2 role slots,
+  since a single-slot "relationship" isn't one. `policy/PresetResolver::applyRhythmicRelationshipPreset`
+  resolves each slot the same way `applyRolePreset` does (both share a private merge helper now). The Presets
+  tab gained a second authoring section for it; the combined tab outgrew its available height, so `ui/
+  PresetLibraryView` is now a `juce::Viewport` host (same fix as the Sections tab) around new `ui/
+  PresetLibraryContent`. Confirmed working live in Bitwig (2026-08-17): a 2-slot preset (`motif`=Binary,
+  `counterpoint`=Ternary) applied to a saved scene and landed correctly on both instances together.
+- **Arc presets built — the third and last category:** `model/Preset.h`'s `ArcPreset` is a reusable
+  *normalized* shape (`ArcPresetBreakpoint{position 0..1, value 0..1}`) rather than an absolute-bar curve -
+  "swell"/"plateau"/"arch" stampable onto any bar range without redrawing it, and deliberately decoupled from
+  which of `ArcSet`'s 5 dimensions it targets (chosen at apply-time, so one shape works across energy, tension,
+  or any other). `policy/PresetResolver::applyArcPreset` scales the points into the chosen range and replaces
+  any existing breakpoints strictly inside it (a preset deterministically owns its scope, same as the other two
+  categories), writing straight into the same `ArcSet` the Arcs tab's graph editor reads/writes - the result
+  shows up there immediately, no separate consumption path needed. `ArcSet::setArc` silently no-ops on an
+  unrecognized dimension name, confirmed by reading it before writing the resolver, so the resolver validates
+  against `ArcSet::getArcNames()` rather than trusting the caller blindly. Compiled and installed clean; not
+  yet live-tested in Bitwig. All three preset categories the design doc named are now built.
+- **Per-pattern preset fields still not built:** transpose/rotation/length/inversion aren't included in any of
+  the three categories - `ScenePattern` has no "leave this field untouched" sentinel the way
+  `SceneInstanceOverride` already does.
+- **The generative assembly layer itself, built:** `policy/BlueprintGenerator::generate` is the actual answer
+  to "assemble candidate blueprints from role/arc presets" above - deterministic and explainable throughout, on
+  purpose (the design principles below already warn against undisciplined randomness). Design settled through
+  direct back-and-forth rather than assumed: **one arc drives the section structure** (its consecutive
+  breakpoints become section boundaries - draw the shape once, structure falls out of it, no separate
+  boundary-authoring step); each section is classified into one of **four archetypes** purely from its
+  breakpoint values - `presentation`/`build`/`peak`/`release`, mirroring the `presentation`/
+  `local_climax_approach`/`global_climax`/`coda_echo_aftermath` vocabulary mined from `atonal_phrase_engine`
+  back in v0.4 and finally implementable now that roles/budgets/arcs/presets all exist; each archetype maps to
+  a **small fixed rule** reusing every mechanism this session built (`peak` foregrounds every instance and
+  reserves each one's own extreme values - apex exclusivity, automatically; `release` backgrounds
+  `counterpoint`; `build` loosens `motif`/`counterpoint` budgets); **presets are selected by tag**, not
+  invented - the `tags` field every preset type has carried since it first shipped, and that nothing had ever
+  read until now, is what a section's archetype name gets matched against; the **other 4 arc dimensions are
+  baked from the actual generated decisions** (density from the real foreground/background split, not a guess)
+  rather than left blank or hand-drawn separately.
+  - **Two design decisions locked in directly, both honored exactly:** (1) a section still sends its scene once
+    at the boundary, unchanged from the existing mechanism - no new mid-section CC re-sampling was built, and
+    "morphing" was scoped explicitly to the arc curves themselves (already free via `Arc::evaluate`'s
+    interpolation) rather than pretending categorical CC parameters like grid mode can glide continuously.
+    (2) **preview-before-commit**, chosen as the cheapest correct implementation: `ui/ArcGraphView` now takes
+    any `ArcSet&` rather than always reaching into the live one, so the exact same drag/add/delete interactions
+    work unmodified on a throwaway candidate - no new drawing code needed, just a different object handed to an
+    existing one. `ArcSet` needed an explicit copy constructor/assignment for this (a `std::mutex` member
+    deletes the implicit ones; each side locks its own).
+  - New **Generate** tab (`ui/GenerateView`, 6th outer tab): pick a base scene + driving arc, **Generate**
+    builds the whole proposal in memory only - nothing touches `BlueprintLibrary`/`SceneLibrary`/the live
+    `ArcSet` - and shows a section/archetype summary alongside the candidate curves in the reused graph.
+    **Commit** saves it for real (and activates it, matching every other "Save" in this app); **Discard**
+    throws it away untouched.
+  - Compiled and installed clean; not yet live-tested in Bitwig.
+  - **A user-suggested emergent-complexity technique, needing no new code:** since each Composer Mastermind
+    instance owns its own independent `ComposerCore` (its own registry, blueprint library, section timing),
+    running two instances with deliberately mismatched section lengths already produces overlapping,
+    non-aligned transitions between them - "morphing" at the ensemble level, for free, from the architecture
+    that already exists. Untested but worth trying.
+  - **Explicitly out of scope:** per-pattern preset fields (see above) mean generated sections only
+    differentiate instances on activePattern/gridMode/swing. Multi-arc blending (letting more than one arc
+    influence section boundaries) was considered and deliberately rejected in favor of one clean driving arc.
+
+### v1.2 — Score-Timeline UI & Real Arc Consumers (Track A + Track B mapping complete — 2026-08-22)
+
+**Track A status: complete, confirmed working live.** Phase 0 (Expert-button shell + graph/preset round-trip
+fix), Phase 1 (static Overlay/Lane piano roll), and all of Phase 2's Track A items (Setup mode, Locked Notes,
+Live sync's playhead reconstruction, drag-out MIDI export) are built, installed, and live-confirmed — see
+[score_timeline_ui_concept.md](score_timeline_ui_concept.md) for exact mechanisms and named limitations (the
+live playhead's phase-anchor edge case; the recorder buffer captures a playhead-position reconstruction, not yet
+the originally-envisioned full scrolling-timeline view).
+
+**Track B status: complete except Coherence (deliberately deferred).** `Router::routeContinuousTranspose`/
+`routeContinuousSwing` are the continuous-automation dispatch mode (bypasses `PolicyEngine` entirely, matching
+`routeScene`'s ungated pattern). `ComposerCore::applyContinuousMelodicCurve` (Energy→amplitude,
+Tension→register-center) and `applyContinuousSwing` (Density→Swing) run every bar a section is active, replacing
+the old flat-constant melodic curve and Presentation's special case, and Swing's old 100%-static-per-scene
+behavior. Complexity drives phrase-chain target banding (`firePhraseChainIfDue`, threshold-crossing, replacing
+the old flat 8-bar metronome) and mutation budget ceiling scaling (`resolveSectionBudgetOverride`, 1x-2x on
+whatever base budget applies). The swing/notation quantization rule (drag-out export's "for notation" variant
+snapping to the two clean straight/triplet ratios) is built, replacing an interim same-day simplification that
+would have gone stale the moment Swing became continuous. The richer phrase-role vocabulary is also built —
+`MotifEngine::PhraseRole`'s 5-way set (Base/Rotated/Inverted/Retrograde/InvertedRetrograde), with
+`firePhraseChainIfDue` re-stamping whichever physical slot is next due rather than trusting a fixed P1/P2/P3
+seed. See [arc_dimension_mapping_concept.md](arc_dimension_mapping_concept.md) for exact formulas. Phase 3's two
+small independents (novelty-aware preset selection, milestone-snapshot safety net) remain untouched — the only
+items left in the whole v1.2 phase besides Coherence.
+
+A full design pass, not yet touched in code — see [score_timeline_ui_concept.md](score_timeline_ui_concept.md)
+and [arc_dimension_mapping_concept.md](arc_dimension_mapping_concept.md) for the actual design content; this
+section is the implementation order only. Two previously-separate threads converged into one phase: a unified,
+score-like piano-roll UI (replacing the "expert mode" numbers/sliders as the primary surface, and the three
+floating MPL windows needed today to see pattern content), and giving the 5 arc dimensions
+(energy/tension/density/complexity/coherence) real playback-time consumers instead of mostly-decorative baselines.
+
+**Explicit constraint carried through every phase below, user's own requirement (2026-08-22):** the existing
+tabbed UI (`ui/EditorView`'s Instances/Scenes/Mutations/Blueprint/Presets/Generate/Sections/Modulators/Activity
+Log tabs) must remain fully available, unchanged, never at risk of regression — reachable via an "Expert" button
+from the new UI, not replaced by it.
+
+- **Phase 0 — Safety net + housekeeping.** The new score-timeline UI becomes the plugin's default top-level view;
+  an "Expert" button swaps to the existing `TabbedComponent`, completely unchanged — built first so every later
+  phase adds new content inside the new shell rather than ever touching the working tabs. Bundled alongside: the
+  graph↔preset-library round-trip fix (drag a point on `ui/ArcGraphView`, save it as an `ArcPreset` directly,
+  instead of re-entering breakpoints by hand in `ui/PresetLibraryContent`'s separate sliders) — small, contained,
+  useful immediately as the primary curve-authoring surface before Setup mode exists.
+- **Phase 1 — Piano-roll foundation, read-only and static.** Overlay + Lane view rendering from
+  `InstancePatternCache`'s last-dumped snapshot only, no playhead or live reconstruction yet — proves the
+  rendering approach (per-instance color, C3=60 note names, grid) in isolation first.
+- **Phase 2 — two independent tracks, different files, parallelizable:**
+  - **Track A (piano-roll):** Setup mode (editable lane view, writing via the already-built
+    `PatternSyncServer::sendWriteFullPattern`) before Live sync, since it directly replaces the 3-floating-MPL-
+    windows pain point and needs no new architecture beyond Phase 1 — then locked notes (small addition), then
+    Live sync (playhead + recorder buffer + reconstruction, the heavier piece), then Drag-out MIDI export
+    (stopped-transport only, per-track for voice separation, tempo map, section/archetype labels as MIDI
+    markers, as-performed/quantized-for-notation toggle, deliberate-drag gesture threshold), which depends on the
+    recorder buffer existing.
+  - **Track B (arc dimensions):** the continuous-automation dispatch path first (third mode alongside
+    `routeScene`/`routeMutation`, bypassing `PolicyEngine`'s mutation budget — foundational, everything else in
+    this track needs it) — then Energy→melodic-curve-amplitude and Tension→register-center together (same code
+    area in `ComposerCore.cpp`) — then Complexity→phrase-chain threshold-crossing and
+    Complexity→mutation-budget-ceiling (discrete-target work, independent of the continuous path) — then
+    Density→swing (needs the continuous path) and the swing/notation quantization rule (needs Density→swing, and
+    needs Track A's drag-out export to land it in) — then the richer phrase-role vocabulary
+    (Stellarizer-inspired), lowest priority in this track.
+- **Phase 3 — small independents, slot in anytime:** novelty-aware preset/motif selection (deprioritize whatever
+  preset the immediately preceding section already used); the milestone-snapshot safety net (a bounded,
+  session-local, browsable/restorable checkpoint ring buffer, distinct from Undo/Redo, from `StateSnapshotStore`,
+  and from the permanent preset/blueprint libraries).
+
+**Deliberately not scheduled into this phase:** curve-based blueprint/preset authoring (showing a loaded
+blueprint's "intended shape" as an editable curve when some pieces have no `ArcSet` data at all) still needs its
+own design conversation before any UI work — the data-model question (derive a curve from section/archetype
+sequence, vs. making arc authorship mandatory going forward) isn't resolved. Coherence-as-target is flagged as a
+bigger lift than the other 4 dimensions and deliberately left unmapped this pass.
 
 ## New Ideas (beyond the source roadmap)
 
@@ -252,6 +518,33 @@ encoded to CC 30 value 57, and MPL's own debug panel confirmed receiving exactly
    built-in table (anchor/motif/counterpoint/texture/pulse/accent/drone/response, per §23.6) that pre-fills
    sensible default activity/mutation ranges for that role — so a blueprint author assigns a role and gets
    reasonable behavior immediately, only overriding specifics when they want to.
+
+6. **Milestone-snapshot safety net (2026-08-22, inspired by a commercial JUCE plugin's "Recordings" atlas). Built
+   2026-08-22, compiled clean for both VST3 and Standalone, not yet live-tested in Bitwig.** Distinct from
+   everything persistence-related that already exists: `Undo`/`Redo` doesn't exist yet at all,
+   `state/StateSnapshotStore` only ever holds *current* state, and saving to `BlueprintLibrary`/`SceneLibrary`/
+   `PresetLibrary` is a deliberate, permanent authoring act, not a quick checkpoint. `state/MilestoneLibrary`
+   is a bounded (20-entry), session-local ring buffer capturing every registered instance's tracked CC state
+   (`InstanceParameterState`) plus any cached pattern content (`PatternSnapshot`), captured once per section entry
+   in `ComposerCore::enterSection` (after stamping/seeding/rhythm has already run, so the snapshot reflects what
+   the section actually starts out sounding like). Browsable and restorable via the new "Milestones" tab
+   (`ui/MilestoneView`) — a read-only list plus a combo + Restore button. `ComposerCore::restoreMilestone` re-sends
+   every captured CC (global + per-pattern) and any captured pattern content, bypassing `PolicyEngine` entirely
+   (a restore, not a discrete decision — same reasoning as the continuous arc-consumer dispatch above). Not
+   persisted across project save/reload, matching the "Recordings" inspiration being session-local too.
+
+7. **Novelty-aware preset/motif selection (2026-08-22, same source). Built 2026-08-22, compiled clean for both
+   VST3 and Standalone, not yet live-tested in Bitwig.** `policy/BlueprintGenerator`'s archetype→preset matching
+   (see v1.1 below) picks by tag alone, with no memory of what the *immediately preceding* section already used —
+   two adjacent sections of the same archetype could coincidentally land on the identical tagged preset, reading
+   as a mistake rather than a deliberate callback. Fixed via a section-lifetime-frozen "avoid" id
+   (`ComposerCore::avoidMotifPresetIdForSection`, carried forward from the previous section's resolved choice at
+   the top of `enterSection`) distinct from the "just resolved this section" id (`currentSectionMotifPresetId`) —
+   deliberately two members, not one updated immediately, since `stampMotifForSection` and
+   `seedPhraseChainPatterns` both run within the same section and must agree on what to avoid without one
+   invalidating the other's choice mid-section. `MotifEngine::findPresetForArchetype` deprioritizes (not
+   forbids — a genuine return can be its own device) the avoided id: prefers a different tagged match, falls back
+   to the avoided one only if it's the sole match.
 
 ## Design Principles (carried over from the source roadmap, §23)
 

@@ -1,0 +1,496 @@
+#include "PrimaryView.h"
+#include "../plugin/PluginProcessor.h"
+#include "../midi/CCMapping.h"
+#include "InstanceColours.h"
+#include <juce_audio_basics/juce_audio_basics.h>
+#include <cmath>
+#include <algorithm>
+#include <map>
+
+namespace
+{
+    // Fast enough for a visually smooth playhead sweep without meaningful
+    // cost - refreshFromCore only touches in-memory caches, no IO.
+    constexpr int kTimerIntervalMs = 60;
+    constexpr int kHeaderHeight = 30;
+    constexpr int kLegendHeight = 22;
+    constexpr int kMargin = 8;
+
+    // A bar is always 4 quarter-notes here, matching MPL's own hardcoded
+    // assumption (Source/PluginProcessor.cpp's gridStepLengthInPpq) - not a
+    // general time-signature read, since MPL itself doesn't do one either.
+    constexpr double kBarLengthInPpq = 4.0;
+
+    // Mirrors MPL's inversion axis (Source/PluginProcessor.h's
+    // inversionAxisNote) - not a coincidence that it matches our own C3=60
+    // note-naming convention, both anchor on MIDI note 60.
+    constexpr int kInversionAxisNote = 60;
+
+    // Swing/notation banding (docs/arc_dimension_mapping_concept.md's "Swing
+    // vs. notation" resolution, now real now that Density drives Swing
+    // continuously - v1.2 Track B, 2026-08-22). Worked out exactly from
+    // MPL's own swing formula: only two swing percentages give a clean,
+    // notatable long:short onset ratio in MPL's 0-75% range - 0% (1:1,
+    // straight) and 66.67% (2:1, true triplet feel). MPL's own maximum
+    // (75%) only reaches 2.2:1, not a clean ratio - a true 3:1 dotted
+    // shuffle would need 100%, outside MPL's range entirely. The quantized-
+    // for-notation export onset snaps to whichever of the two is nearer,
+    // crossing over at 33%; the as-performed onset keeps the real,
+    // unquantized value regardless.
+    constexpr float kSwingNotationCrossoverPercent = 33.0f;
+    constexpr float kSwingNotationTripletPercent = 200.0f / 3.0f; // 66.67%, exact 2:1 ratio
+
+    int gridStepCountFor(bool ternaryGridMode)
+    {
+        return ternaryGridMode ? 12 : 16;
+    }
+
+    double gridStepLengthInPpqFor(bool ternaryGridMode)
+    {
+        return kBarLengthInPpq / static_cast<double>(gridStepCountFor(ternaryGridMode));
+    }
+
+    // Mirrors MPL's own step clock (Source/PluginProcessor.cpp:
+    // getGridStepCount/gridStepLengthInPpq/playbackStepIndex) so the
+    // reconstructed playhead lands on the same grid position MPL is actually
+    // playing from, not just a plausible guess. Returns a 0..1 fraction
+    // across one grid-step-count's worth of columns (12 or 16), matching how
+    // PianoRollView renders the grid regardless of loop length.
+    float computeLivePlayheadFraction(bool ternaryGridMode, int trackedLength, double launchPpq, double currentPpq)
+    {
+        const int gridStepCount = gridStepCountFor(ternaryGridMode);
+        const double gridStepLengthInPpq = gridStepLengthInPpqFor(ternaryGridMode);
+        const int activeLoopLength = juce::jlimit(1, gridStepCount, trackedLength);
+
+        const double stepsSinceLaunch = (currentPpq - launchPpq) / gridStepLengthInPpq;
+        double loopPosition = std::fmod(stepsSinceLaunch, static_cast<double>(activeLoopLength));
+        if (loopPosition < 0.0)
+            loopPosition += static_cast<double>(activeLoopLength);
+
+        return static_cast<float>(loopPosition / static_cast<double>(gridStepCount));
+    }
+
+    // Mirrors MPL's getRotatedSourceStepIndex exactly (Source/PluginProcessor.cpp) -
+    // rotation is a lookup-time offset, never rewrites stored step data.
+    int rotatedSourceStepIndex(int playbackStepIndex, int rotation, int loopLength)
+    {
+        const int effectiveRotation = ((rotation % loopLength) + loopLength) % loopLength;
+        return ((playbackStepIndex - effectiveRotation) % loopLength + loopLength) % loopLength;
+    }
+
+    // Mirrors MPL's applyPatternTransformsToNote exactly.
+    int transformedNote(int storedNote, bool inverted, int transpose)
+    {
+        int result = storedNote;
+        if (inverted)
+            result = (kInversionAxisNote * 2) - result;
+        result += transpose;
+        return juce::jlimit(0, 127, result);
+    }
+}
+
+PrimaryView::PrimaryView(ComposerMastermindAudioProcessor& processor)
+    : processorRef(processor), patternSetupView(processor)
+{
+    addAndMakeVisible(liveSetupToggleButton);
+    liveSetupToggleButton.onClick = [this] { liveSetupToggleClicked(); };
+
+    addAndMakeVisible(modeToggleButton);
+    modeToggleButton.setButtonText("Lane View");
+    modeToggleButton.onClick = [this] { modeToggleClicked(); };
+
+    addAndMakeVisible(exportVariantButton);
+    exportVariantButton.setButtonText("Export: As Performed");
+    exportVariantButton.onClick = [this] { exportVariantToggleClicked(); };
+
+    addAndMakeVisible(pianoRoll);
+    pianoRoll.onRequestExportFile = [this] { return requestExportFile(); };
+    addChildComponent(patternSetupView); // starts hidden - Live is the default mode
+
+    refreshFromCore();
+    startTimer(kTimerIntervalMs);
+}
+
+PrimaryView::~PrimaryView()
+{
+    stopTimer();
+}
+
+void PrimaryView::paint(juce::Graphics& g)
+{
+    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+    if (!showingSetup)
+        paintLegend(g, legendArea);
+}
+
+void PrimaryView::resized()
+{
+    auto area = getLocalBounds().reduced(kMargin);
+
+    auto headerRow = area.removeFromTop(kHeaderHeight);
+    liveSetupToggleButton.setBounds(headerRow.removeFromRight(90));
+    headerRow.removeFromRight(6);
+    modeToggleButton.setBounds(headerRow.removeFromRight(110));
+    headerRow.removeFromRight(6);
+    exportVariantButton.setBounds(headerRow.removeFromRight(150));
+
+    legendArea = area.removeFromTop(kLegendHeight);
+    area.removeFromTop(4);
+
+    pianoRoll.setBounds(area);
+    patternSetupView.setBounds(area);
+}
+
+void PrimaryView::timerCallback()
+{
+    if (!showingSetup)
+        refreshFromCore();
+}
+
+void PrimaryView::modeToggleClicked()
+{
+    const bool switchingToLane = pianoRoll.getMode() == PianoRollView::Mode::Overlay;
+    pianoRoll.setMode(switchingToLane ? PianoRollView::Mode::Lane : PianoRollView::Mode::Overlay);
+    modeToggleButton.setButtonText(switchingToLane ? "Overlay View" : "Lane View");
+}
+
+void PrimaryView::liveSetupToggleClicked()
+{
+    showingSetup = !showingSetup;
+    updateLiveSetupVisibility();
+}
+
+void PrimaryView::updateLiveSetupVisibility()
+{
+    pianoRoll.setVisible(!showingSetup);
+    modeToggleButton.setVisible(!showingSetup);
+    exportVariantButton.setVisible(!showingSetup);
+    patternSetupView.setVisible(showingSetup);
+    liveSetupToggleButton.setButtonText(showingSetup ? "Live" : "Setup");
+
+    if (showingSetup)
+        patternSetupView.refreshInstanceList();
+    else
+        refreshFromCore();
+
+    repaint();
+}
+
+void PrimaryView::refreshFromCore()
+{
+    auto& composerCore = processorRef.getComposerCore();
+    const auto instances = composerCore.getInstanceRegistry().getAllInstances();
+    auto& stateTracker = composerCore.getInstanceStateTracker();
+    auto& cache = composerCore.getPatternSyncServer().getCache();
+
+    // Playhead read once per tick, on the message thread - AudioProcessor::
+    // getPlayHead() is safe to call off the audio thread (it just reads the
+    // host's own lock-free published transport snapshot), so no new plumbing
+    // through PluginProcessor::processBlock is needed for this.
+    bool isPlaying = false;
+    double currentPpq = 0.0;
+    double lastBarStartPpq = 0.0;
+    if (auto* playHead = processorRef.getPlayHead())
+    {
+        if (const auto position = playHead->getPosition())
+        {
+            isPlaying = position->getIsPlaying();
+            if (const auto ppq = position->getPpqPosition())
+                currentPpq = *ppq;
+            if (const auto barStart = position->getPpqPositionOfLastBarStart())
+                lastBarStartPpq = *barStart;
+            if (const auto bpm = position->getBpm())
+                if (*bpm > 0.0)
+                    lastKnownTempoBpm = *bpm;
+        }
+    }
+
+    if (!isPlaying)
+    {
+        // Re-anchor cleanly on the next play start rather than trusting
+        // launch bars from a since-ended playthrough (see PrimaryView.h's
+        // own comment on this bookkeeping's limitations). Deliberately does
+        // NOT clear recordedNotes - that's the take drag-out export reads
+        // once stopped; only a fresh *play start* below starts a new take.
+        lastSeenActivePattern.clear();
+        launchPpqByInstance.clear();
+    }
+    else if (!lastKnownIsPlaying)
+    {
+        // Transport just started - a new take begins, discarding whatever
+        // was recorded last time (matching the resolved "stopped-transport
+        // only" export design: the buffer only ever needs to hold the most
+        // recent take, not a history of takes).
+        recordedNotes.clear();
+        lastRecordedAbsoluteStep.clear();
+        takeStartPpq = lastBarStartPpq;
+    }
+    lastKnownIsPlaying = isPlaying;
+
+    std::vector<PianoRollLane> newLanes;
+    for (const auto& instance : instances)
+    {
+        if (!instance.enabled)
+            continue;
+
+        PianoRollLane lane;
+        lane.instanceId = instance.id;
+        lane.displayName = instance.name.empty() ? juce::String(instance.id) : juce::String(instance.name);
+        lane.colour = instanceColourForIndex((int) newLanes.size());
+
+        InstanceParameterState state;
+        const bool haveState = stateTracker.getState(instance.id, state);
+        if (haveState)
+            lane.activePatternNumber = state.activePattern;
+
+        CachedPattern cachedPattern;
+        bool haveCachedPattern = false;
+        if (lane.activePatternNumber >= 1 && lane.activePatternNumber <= CCMapping::kMaxPatterns)
+        {
+            haveCachedPattern = cache.get(instance.id, lane.activePatternNumber - 1, cachedPattern);
+            if (haveCachedPattern)
+            {
+                lane.hasData = true;
+                lane.steps = cachedPattern.snapshot.steps;
+            }
+        }
+
+        if (isPlaying && haveState && lane.activePatternNumber >= 1
+            && lane.activePatternNumber <= CCMapping::kMaxPatterns)
+        {
+            const auto seenIt = lastSeenActivePattern.find(instance.id);
+            if (seenIt == lastSeenActivePattern.end() || seenIt->second != lane.activePatternNumber)
+            {
+                lastSeenActivePattern[instance.id] = lane.activePatternNumber;
+                launchPpqByInstance[instance.id] = lastBarStartPpq;
+
+                // A new launch means a new absolute-step numbering epoch -
+                // the old lastRecordedAbsoluteStep value was relative to the
+                // *previous* launch and would corrupt the catch-up range
+                // below if left in place (either replaying already-recorded
+                // steps under bogus new indices, or skipping a huge bogus
+                // range). Drop it; the first step recorded under the new
+                // launch starts fresh, same "first sight, no backfill"
+                // policy as a fresh take.
+                lastRecordedAbsoluteStep.erase(instance.id);
+            }
+
+            const auto launchIt = launchPpqByInstance.find(instance.id);
+            if (launchIt != launchPpqByInstance.end())
+            {
+                const bool ternary = state.gridMode == 1;
+                const int patternIndex = lane.activePatternNumber - 1;
+                const auto& patternState = state.patterns[(size_t) patternIndex];
+
+                lane.hasLivePlayhead = true;
+                lane.livePlayheadFraction = computeLivePlayheadFraction(
+                    ternary, patternState.length, launchIt->second, currentPpq);
+
+                // Recorder buffer: catch up on every step boundary crossed
+                // since the last tick, not just the current one - a slow
+                // poll (or a very fast tempo) must never silently skip a
+                // note that already sounded between ticks.
+                if (haveCachedPattern)
+                {
+                    const int gridStepCount = gridStepCountFor(ternary);
+                    const double gridStepLengthInPpq = gridStepLengthInPpqFor(ternary);
+                    const int loopLength = juce::jlimit(1, gridStepCount, patternState.length);
+
+                    const double stepsSinceLaunch = (currentPpq - launchIt->second) / gridStepLengthInPpq;
+                    const int currentAbsoluteStep =
+                        static_cast<int>(std::floor(stepsSinceLaunch + 1.0e-9));
+
+                    auto recordedIt = lastRecordedAbsoluteStep.find(instance.id);
+                    const int firstUnrecorded =
+                        recordedIt == lastRecordedAbsoluteStep.end() ? currentAbsoluteStep : recordedIt->second + 1;
+
+                    for (int absStep = firstUnrecorded; absStep <= currentAbsoluteStep; ++absStep)
+                    {
+                        const int playbackStepIndex = ((absStep % loopLength) + loopLength) % loopLength;
+                        const int sourceStepIndex = rotatedSourceStepIndex(playbackStepIndex,
+                                                                            patternState.rotation, loopLength);
+
+                        if (sourceStepIndex < 0
+                            || (size_t) sourceStepIndex >= cachedPattern.snapshot.steps.size())
+                            continue;
+
+                        const auto& sourceStep = cachedPattern.snapshot.steps[(size_t) sourceStepIndex];
+                        if (!sourceStep.enabled || sourceStep.velocity <= 0 || sourceStep.duration <= 0)
+                            continue;
+
+                        const bool isSwingEligibleStep = (playbackStepIndex % 2) == 1;
+
+                        const float performedSwingPercent = state.swing;
+                        const double performedSwingDelayPpq =
+                            isSwingEligibleStep && performedSwingPercent > 0.0f
+                                ? gridStepLengthInPpq * 0.5 * (static_cast<double>(performedSwingPercent) / 100.0)
+                                : 0.0;
+
+                        // Quantized-for-notation: snap to whichever of the two clean
+                        // ratios (straight/triplet) the real swing value is nearer,
+                        // not just "drop swing entirely" - now that Density drives
+                        // Swing continuously, a genuinely swung passage should still
+                        // notate as swung, not silently flatten to straight.
+                        const float quantizedSwingPercent =
+                            performedSwingPercent >= kSwingNotationCrossoverPercent ? kSwingNotationTripletPercent
+                                                                                     : 0.0f;
+                        const double quantizedSwingDelayPpq =
+                            isSwingEligibleStep && quantizedSwingPercent > 0.0f
+                                ? gridStepLengthInPpq * 0.5 * (static_cast<double>(quantizedSwingPercent) / 100.0)
+                                : 0.0;
+
+                        const double stepPpq = launchIt->second + static_cast<double>(absStep) * gridStepLengthInPpq;
+
+                        RecordedNote recordedNote;
+                        recordedNote.instanceId = instance.id;
+                        recordedNote.note = transformedNote(sourceStep.note, patternState.inversion,
+                                                             patternState.transpose);
+                        recordedNote.velocity = juce::jlimit(1, 127, sourceStep.velocity);
+                        recordedNote.quantizedOnsetPpq = stepPpq + quantizedSwingDelayPpq - takeStartPpq;
+                        recordedNote.performedOnsetPpq = stepPpq + performedSwingDelayPpq - takeStartPpq;
+                        recordedNote.durationPpq = static_cast<double>(sourceStep.duration) * gridStepLengthInPpq;
+                        recordedNotes.push_back(recordedNote);
+                    }
+
+                    lastRecordedAbsoluteStep[instance.id] = currentAbsoluteStep;
+                }
+            }
+        }
+
+        newLanes.push_back(std::move(lane));
+    }
+
+    pianoRoll.setLanes(std::move(newLanes));
+    repaint(legendArea);
+}
+
+void PrimaryView::exportVariantToggleClicked()
+{
+    exportVariant =
+        exportVariant == ExportVariant::AsPerformed ? ExportVariant::ForNotation : ExportVariant::AsPerformed;
+    exportVariantButton.setButtonText(exportVariant == ExportVariant::AsPerformed ? "Export: As Performed"
+                                                                                   : "Export: For Notation");
+}
+
+// Drag-out MIDI export (v1.2, docs/score_timeline_ui_concept.md). Stopped-
+// transport only (user's explicit call, 2026-08-22 - avoids any issue from
+// dragging a buffer still being written to live) - returns an invalid File{}
+// while playing or once the take has produced nothing yet, which
+// PianoRollView treats as "don't start a drag." Format 1, one track per
+// instance (preserves voice separation - MPL instances are monophonic, so
+// this needs no polyphonic-merge logic), section/archetype labels as MIDI
+// markers, tempo track. quantizedOnsetPpq is already snapped to a clean
+// straight/triplet ratio at the point each RecordedNote was captured (see
+// kSwingNotationCrossoverPercent above), so "for notation" needs no separate
+// quantization pass here - see PrimaryView.h's RecordedNote comment.
+juce::File PrimaryView::requestExportFile()
+{
+    if (lastKnownIsPlaying || recordedNotes.empty())
+        return {};
+
+    auto& composerCore = processorRef.getComposerCore();
+    const auto instances = composerCore.getInstanceRegistry().getAllInstances();
+
+    constexpr int ticksPerQuarterNote = 960;
+    juce::MidiFile midiFile;
+    midiFile.setTicksPerQuarterNote(ticksPerQuarterNote);
+
+    juce::MidiMessageSequence tempoTrack;
+    tempoTrack.addEvent(juce::MidiMessage::textMetaEvent(3, "Composer Mastermind export"), 0.0);
+    const int microsecondsPerQuarterNote =
+        static_cast<int>(std::round(60000000.0 / juce::jmax(1.0, lastKnownTempoBpm)));
+    tempoTrack.addEvent(juce::MidiMessage::tempoMetaEvent(microsecondsPerQuarterNote), 0.0);
+
+    // Section markers - startBar is already relative to this take's own
+    // start (ComposerCore's own bar-0-at-play-start numbering, the same
+    // origin takeStartPpq anchors to), so no further offset is needed here.
+    Blueprint blueprint;
+    if (composerCore.getCurrentBlueprint(blueprint))
+    {
+        for (const auto& section : blueprint.sections)
+        {
+            const double markerPpq = static_cast<double>(section.startBar) * kBarLengthInPpq;
+            if (markerPpq < 0.0)
+                continue;
+
+            const juce::String label = section.name.empty() ? juce::String(section.id) : juce::String(section.name);
+            tempoTrack.addEvent(juce::MidiMessage::textMetaEvent(6, label), markerPpq * ticksPerQuarterNote);
+        }
+    }
+
+    tempoTrack.updateMatchedPairs();
+    midiFile.addTrack(tempoTrack);
+
+    std::vector<std::string> instanceOrder;
+    for (const auto& note : recordedNotes)
+        if (std::find(instanceOrder.begin(), instanceOrder.end(), note.instanceId) == instanceOrder.end())
+            instanceOrder.push_back(note.instanceId);
+
+    for (const auto& instanceId : instanceOrder)
+    {
+        juce::String trackName = instanceId;
+        for (const auto& instance : instances)
+            if (instance.id == instanceId)
+                trackName = instance.name.empty() ? juce::String(instance.id) : juce::String(instance.name);
+
+        juce::MidiMessageSequence track;
+        track.addEvent(juce::MidiMessage::textMetaEvent(3, trackName), 0.0);
+
+        for (const auto& note : recordedNotes)
+        {
+            if (note.instanceId != instanceId)
+                continue;
+
+            const double onsetPpq =
+                exportVariant == ExportVariant::ForNotation ? note.quantizedOnsetPpq : note.performedOnsetPpq;
+            const double onsetTicks = juce::jmax(0.0, onsetPpq) * ticksPerQuarterNote;
+            const double durationTicks = juce::jmax(1.0, note.durationPpq * ticksPerQuarterNote);
+
+            track.addEvent(juce::MidiMessage::noteOn(1, note.note, static_cast<juce::uint8>(note.velocity)),
+                           onsetTicks);
+            track.addEvent(juce::MidiMessage::noteOff(1, note.note), onsetTicks + durationTicks);
+        }
+
+        track.updateMatchedPairs();
+        midiFile.addTrack(track);
+    }
+
+    const auto tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory);
+    const auto file = tempDir.getChildFile("ComposerMastermind_"
+                                            + juce::String(juce::Time::getCurrentTime().toMilliseconds()) + ".mid");
+
+    juce::FileOutputStream stream(file);
+    if (!stream.openedOk())
+        return {};
+
+    midiFile.writeTo(stream);
+    stream.flush();
+
+    return file;
+}
+
+void PrimaryView::paintLegend(juce::Graphics& g, juce::Rectangle<int> area) const
+{
+    if (area.isEmpty())
+        return;
+
+    auto remaining = area;
+    g.setFont(juce::Font(juce::FontOptions().withHeight(12.0f)));
+
+    for (const auto& lane : pianoRoll.getLanes())
+    {
+        if (remaining.getWidth() < 20)
+            break;
+
+        constexpr int swatchSize = 10;
+        auto swatchArea = remaining.removeFromLeft(swatchSize).withSizeKeepingCentre(swatchSize, swatchSize);
+        g.setColour(lane.colour);
+        g.fillRoundedRectangle(swatchArea.toFloat(), 2.0f);
+
+        remaining.removeFromLeft(4);
+        const int textWidth = juce::jmin(120, remaining.getWidth());
+        g.setColour(getLookAndFeel().findColour(juce::Label::textColourId));
+        g.drawText(lane.displayName, remaining.removeFromLeft(textWidth), juce::Justification::centredLeft);
+        remaining.removeFromLeft(14);
+    }
+}

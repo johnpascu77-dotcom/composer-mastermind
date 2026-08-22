@@ -12,6 +12,11 @@
 class InstanceRegistry
 {
 public:
+    // Upserts by id - replaces an existing instance with this id in place
+    // (e.g. to change its role/channel) rather than rejecting the call,
+    // matching every other library's addOrReplace* convention in this
+    // codebase (SceneLibrary, PresetLibrary, BlueprintLibrary,
+    // ModulatorTargetLibrary). Always returns true.
     bool addInstance(const Instance& instance);
     bool removeInstance(const std::string& instanceId);
 

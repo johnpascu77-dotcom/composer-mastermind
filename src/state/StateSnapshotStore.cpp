@@ -10,10 +10,22 @@ namespace StateSnapshotStore
         obj->setProperty("schema", "ComposerMastermindSnapshot.v1");
         obj->setProperty("instances", StateSerializer::instancesToVar(core.getInstanceRegistry().getAllInstances()));
         obj->setProperty("sceneLibrary", StateSerializer::scenesToVar(core.getSceneLibrary().getAllScenes()));
+        obj->setProperty("blueprintLibrary", StateSerializer::blueprintsToVar(core.getBlueprintLibrary().getAllBlueprints()));
+        obj->setProperty("presetLibrary", StateSerializer::rolePresetsToVar(core.getPresetLibrary().getAllRolePresets()));
+        obj->setProperty("rhythmicRelationshipPresetLibrary",
+                          StateSerializer::rhythmicRelationshipPresetsToVar(core.getPresetLibrary().getAllRhythmicRelationshipPresets()));
+        obj->setProperty("arcPresetLibrary", StateSerializer::arcPresetsToVar(core.getPresetLibrary().getAllArcPresets()));
+        obj->setProperty("motifPresetLibrary", StateSerializer::motifPresetsToVar(core.getPresetLibrary().getAllMotifPresets()));
+        obj->setProperty("modulatorTargetLibrary",
+                          StateSerializer::modulatorTargetsToVar(core.getModulatorTargetLibrary().getAllTargets()));
 
         Scene currentScene;
         if (core.getCurrentScene(currentScene))
             obj->setProperty("currentSceneId", juce::String(currentScene.id));
+
+        Blueprint currentBlueprint;
+        if (core.getCurrentBlueprint(currentBlueprint))
+            obj->setProperty("currentBlueprintId", juce::String(currentBlueprint.id));
 
         return juce::JSON::toString(juce::var(obj));
     }
@@ -53,6 +65,59 @@ namespace StateSnapshotStore
             Scene currentScene;
             if (library.getSceneById(currentSceneId, currentScene))
                 core.setCurrentScene(currentScene);
+        }
+
+        auto& blueprintLibrary = core.getBlueprintLibrary();
+        for (const auto& blueprint : StateSerializer::varToBlueprints(parsed["blueprintLibrary"]))
+        {
+            std::string blueprintError;
+            if (Validation::isValidBlueprint(blueprint, blueprintError))
+                blueprintLibrary.addOrReplaceBlueprint(blueprint);
+        }
+
+        const auto currentBlueprintId = parsed["currentBlueprintId"].toString().toStdString();
+        if (!currentBlueprintId.empty())
+        {
+            Blueprint currentBlueprint;
+            if (blueprintLibrary.getBlueprintById(currentBlueprintId, currentBlueprint))
+                core.setCurrentBlueprint(currentBlueprint);
+        }
+
+        auto& presetLibrary = core.getPresetLibrary();
+        for (const auto& preset : StateSerializer::varToRolePresets(parsed["presetLibrary"]))
+        {
+            std::string presetError;
+            if (Validation::isValidRolePreset(preset, presetError))
+                presetLibrary.addOrReplaceRolePreset(preset);
+        }
+
+        for (const auto& preset : StateSerializer::varToRhythmicRelationshipPresets(parsed["rhythmicRelationshipPresetLibrary"]))
+        {
+            std::string presetError;
+            if (Validation::isValidRhythmicRelationshipPreset(preset, presetError))
+                presetLibrary.addOrReplaceRhythmicRelationshipPreset(preset);
+        }
+
+        for (const auto& preset : StateSerializer::varToArcPresets(parsed["arcPresetLibrary"]))
+        {
+            std::string presetError;
+            if (Validation::isValidArcPreset(preset, presetError))
+                presetLibrary.addOrReplaceArcPreset(preset);
+        }
+
+        for (const auto& preset : StateSerializer::varToMotifPresets(parsed["motifPresetLibrary"]))
+        {
+            std::string presetError;
+            if (Validation::isValidMotifPreset(preset, presetError))
+                presetLibrary.addOrReplaceMotifPreset(preset);
+        }
+
+        auto& modulatorTargetLibrary = core.getModulatorTargetLibrary();
+        for (const auto& target : StateSerializer::varToModulatorTargets(parsed["modulatorTargetLibrary"]))
+        {
+            std::string targetError;
+            if (Validation::isValidModulatorTarget(target, targetError))
+                modulatorTargetLibrary.addOrReplaceTarget(target);
         }
 
         return true;

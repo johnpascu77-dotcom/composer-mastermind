@@ -183,6 +183,12 @@ void ComposerMastermindAudioProcessor::setStateInformation(const void* data, int
         StateSnapshotStore::restoreSnapshot(xmlState->getStringAttribute("composerMastermindSnapshot"),
                                              composerCore, errorMessage);
     }
+
+    // If the editor window is already open (e.g. a project reload while the
+    // plugin GUI stayed up), its instance/scene lists were built before this
+    // restore ran and have no other way of finding out they're now stale.
+    if (auto* editor = dynamic_cast<ComposerMastermindAudioProcessorEditor*>(getActiveEditor()))
+        editor->refreshAll();
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

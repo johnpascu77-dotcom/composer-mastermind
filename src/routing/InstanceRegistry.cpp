@@ -4,10 +4,13 @@ bool InstanceRegistry::addInstance(const Instance& instance)
 {
     std::lock_guard<std::mutex> lock(instancesMutex);
 
-    for (const auto& existing : instances)
+    for (auto& existing : instances)
     {
         if (existing.id == instance.id)
-            return false;
+        {
+            existing = instance;
+            return true;
+        }
     }
 
     instances.push_back(instance);
