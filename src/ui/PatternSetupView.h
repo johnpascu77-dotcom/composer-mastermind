@@ -22,14 +22,18 @@ public:
 
     void resized() override;
 
-    // Called whenever this becomes visible again (PrimaryView's Live/Setup
-    // toggle) so the instance list reflects anything registered/removed
-    // while Setup mode was hidden.
+    // Called whenever this becomes visible again - both from PrimaryView's
+    // own Live/Setup toggle AND from PrimaryView::visibilityChanged() (the
+    // outer Expert<->Score-View shell switch, added 2026-08-23 to close a
+    // real staleness gap the first path alone didn't cover) - so the
+    // instance list reflects anything registered/removed while Setup mode
+    // was hidden either way.
     void refreshInstanceList();
 
 private:
     void selectionChanged();
     void loadCurrentSelection();
+    void gridModeChanged();
     void commitClicked();
     void discardClicked();
     void setDirty(bool isDirty);
@@ -39,6 +43,20 @@ private:
 
     juce::ComboBox instanceCombo;
     juce::ComboBox patternCombo;
+
+    // The grid this pattern is being AUTHORED against (2026-08-23, user's own
+    // design: "the binary or ternary decision of what is to be committed
+    // happens at this point" - Setup mode chooses the grid, MPL obeys it on
+    // Commit, rather than the piano roll only ever mirroring whatever MPL
+    // already happens to be in). Initialized from the instance's currently
+    // tracked grid mode when a selection loads (a sensible starting point,
+    // not a forced one) but fully user-editable from here on - changing it
+    // re-renders the grid immediately (12 vs 16 columns) without discarding
+    // any notes already drawn, and Commit pushes it to MPL as a real CC
+    // alongside the step content, so what plays back matches what was drawn.
+    juce::ComboBox gridModeCombo;
+    juce::Label gridModeLabel { {}, "Grid" };
+
     juce::TextButton commitButton { "Commit to MPL" };
     juce::TextButton discardButton { "Discard Changes" };
     juce::Label statusLabel;

@@ -25,6 +25,7 @@ private:
     void addInstanceClicked();
     void removeInstanceClicked();
     void loadSelectedClicked();
+    void resetClicked();
 
     ComposerMastermindAudioProcessor& processorRef;
     std::function<void(const juce::String&)> setStatus;
@@ -43,6 +44,14 @@ private:
     juce::ComboBox existingInstancesCombo;
     juce::TextButton removeInstanceButton { "Remove" };
     juce::TextButton loadSelectedButton { "Load" };
+
+    // Factory reset (2026-08-23, user's own request) - clears every library
+    // (instances, scenes, blueprints, all preset categories, modulator
+    // targets), not just this tab's own instances. Placed on the first tab a
+    // user sees, since "start completely over" is the intent. Confirms first
+    // (juce::NativeMessageBox, async) - resetClicked() itself never assumes
+    // the answer.
+    juce::TextButton resetButton { "New Project (Reset All)" };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(InstanceView)
 };

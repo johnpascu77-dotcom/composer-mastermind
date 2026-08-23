@@ -55,6 +55,7 @@ private:
     void removeSceneClicked();
     void saveSnapshotToFileClicked();
     void loadSnapshotFromFileClicked();
+    void contentModeChanged();
     void addTargetClicked();
     void targetAllClicked();
     void addOverrideClicked();
@@ -107,6 +108,16 @@ private:
     juce::TextEditor sceneListDisplay;
     juce::TextButton saveSnapshotButton { "Save Snapshot To File..." };
     juce::TextButton loadSnapshotButton { "Load Snapshot From File..." };
+
+    // Global content-mode switch (2026-08-23, user's own request - see
+    // composer/ComposerCore.h's ContentMode doc comment): Generative (the
+    // long-standing default) vs Absolute, which lets a section with captured
+    // content (ui/BlueprintSectionsContent's "Capture Current") play back
+    // verbatim and frozen instead. Placed here, next to Load Snapshot, since
+    // "load a file and get exactly what's in it" is the whole point of
+    // Absolute mode.
+    juce::Label contentModeLabel { {}, "Content Mode" };
+    juce::ComboBox contentModeCombo;
 
     std::vector<std::string> pendingTargets;
     std::vector<SceneInstanceOverride> pendingOverrides;

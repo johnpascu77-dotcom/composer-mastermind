@@ -259,6 +259,15 @@ encoded to CC 30 value 57, and MPL's own debug panel confirmed receiving exactly
   testing surfaced two real bugs (a preset tag-collision letting an old test preset shadow the real composition's
   presets; a Length-window interaction leaving a shrunk pattern's audible window silent) and one real gap in the
   engine itself: it could only ever *nudge* existing content, never author it.
+- **Bridge grew 10 more actions, closing the Presets/Generate/Modulators gap (2026-08-23):**
+  `createRolePreset`/`createRhythmicRelationshipPreset`/`createArcPreset`, `applyRolePreset`/
+  `applyRhythmicRelationshipPreset`/`applyArcPreset`, `createModulatorTarget`/`getModulatorTargets`,
+  `getPresets`, `generateBlueprint` (preview-then-commit, matching `ui/GenerateView`'s own flow exactly) — added
+  after a computer-use attempt to drive Bitwig's own window directly hit an unresolved screen-capture wall.
+  Reusing existing UI-layer logic (`PresetLibraryContent.cpp`'s apply handlers, `GenerateView.cpp`'s commit
+  sequence) made this a same-session fix rather than a new subsystem. Still missing: any bridge action for direct
+  pattern-step writes (Score View's core capability has zero bridge coverage), and `getArc` (no read-back for
+  arc curves at all, a gap flagged since 2026-08-20 and still open).
 - **"Preparatory phase" — `MotifEngine::stampMotifForSection` (2026-08-21, user's own framing):** a section's
   real seed content is now authored once at section entry (including "presentation," previously a total no-op),
   rather than the engine forever nudging whatever sparse steps happened to survive from manual programming.
@@ -280,6 +289,18 @@ encoded to CC 30 value 57, and MPL's own debug panel confirmed receiving exactly
   cycle an instance through three related, seeded patterns (base/rotated/inverted) every 8 bars instead of
   nudging one pattern forever — real phrase structure. User's verdict: "I really think this was a missing link."
   Full detail in `docs/technical_spec_checklist.md`'s "v0.6.1" section.
+- **Grid-mode-blind content placement, found and fixed (2026-08-23):** both content-authoring functions
+  (`stampOnePattern`, and the per-pass nudge function) hardcoded their note-placement window and
+  duration-clamping boundary to `CCMapping::kPatternSteps` (16), with no reference to the target instance's
+  actual grid mode — for a Ternary instance, MPL only ever plays back the first 12 raw steps, so content authored
+  against a 16-step assumption either landed proportionally wrong or was silently dropped past index 11. Fixed via
+  a new `effectiveStepCount(gridMode)` helper (`MotifEngine.cpp`) reading `InstanceStateTracker`'s already-tracked
+  `gridMode` (it just wasn't being consulted here), mirrored as `CCMapping::kTernaryGridSteps = 12`. Confirmed live
+  via the Awareness channel. Found while building `docs/advanced_workflow_example.md`, chasing a "ternary sounds
+  binary" report that turned out to have two false alarms and one real cause outside either plugin entirely (a
+  Bitwig-native Arp/Chord downstream of MPL) — the distilled user-facing lesson ("same note count at different
+  grid resolutions isn't a polyrhythm"; "check your whole signal chain") made it into that doc's troubleshooting
+  section; the full debugging narrative lives only here, not in the user-facing doc itself.
 
 ### v1.0 — Narrative Blueprint Composer (full loop + apex exclusivity confirmed working live in Bitwig 2026-08-17; layerRole consumption built same day, not yet Bitwig-verified)
 - Full loop: JSON blueprint library, Save/Recall presets, mature UI exposing arcs/roles/budgets directly
@@ -491,6 +512,74 @@ blueprint's "intended shape" as an editable curve when some pieces have no `ArcS
 own design conversation before any UI work — the data-model question (derive a curve from section/archetype
 sequence, vs. making arc authorship mandatory going forward) isn't resolved. Coherence-as-target is flagged as a
 bigger lift than the other 4 dimensions and deliberately left unmapped this pass.
+
+### v1.3 — Absolute/Generative Section Content + Factory Reset (built 2026-08-23, confirmed live in Standalone; full Bitwig round-trip not yet verified)
+
+Direct answer to a real gap found while clarifying JSON persistence with the user: a saved Blueprint/Scene never
+carried literal note content, only CC-encodable parameters - `MotifEngine`'s stamping is generative, deriving
+notes from a relative `MotifPreset` shape plus whatever's live on the instrument at stamp time, never stored
+verbatim. "Load this JSON, get exactly this piece every time" (the user's own demo-song/mechanical-piano-roll
+framing) genuinely wasn't possible before this. Rather than replace the generative engine, kept both: a
+`BlueprintSection` can now optionally carry `capturedContent` (literal `StepSnapshot` data, captured from live MPL
+state via a new "Capture Current" button on the Sections tab), and a global `ComposerCore::ContentMode`
+(Generative/Absolute, Scenes tab combo) decides whether a section with captured content plays it back verbatim
+instead of stamping generatively. Confirmed with the user: once an Absolute section with real content starts, it
+stays **frozen for the whole section** - `enterSection` and `advanceBlueprintIfNeeded`'s per-bar continuation both
+gate on the same condition, so motif passes/phrase-chaining/continuous melodic-curve/continuous-swing all skip
+entirely for such a section, not just the initial stamp. A section with no captured content always behaves
+generatively regardless of the global mode.
+
+Also built the same pass: a real factory-reset action (`ComposerCore::resetToFactoryDefaults`, "New Project"
+button on Instances tab) - every library had a `clear()` method already except `InstanceRegistry`/
+`ModulatorTargetLibrary` (added), but none were ever wired to anything before this.
+
+**A real bug found via live testing on the Standalone build (computer-use), not assumed away**:
+`juce::NativeMessageBox::showAsync`'s callback button index is 0-based in the order passed to
+`makeOptionsOkCancel`, not 1-based - the reset confirmation's "Reset" button is index 0. First cut checked
+`result != 1`, so clicking Reset silently did nothing. Confirmed by reading the actual JUCE source
+(`juce_NativeMessageBox_windows.cpp`'s `buttonIndex` construction) rather than guessing, fixed, rebuilt,
+reconfirmed live.
+
+**Confirmed live (Standalone/computer-use)**: reset button + dialog + real clearing across tabs; Content Mode
+combo; the Captured Content row's "won't write blind" refusal when no confirmed pattern content exists yet
+(matches `stampOnePattern`'s own established restraint). **Not yet verified**: a real Absolute-mode section
+actually playing frozen content against a live MPL instance end-to-end - needs Bitwig (or a Standalone session
+with a real MPL instance loaded), not testable in a bare Standalone session with no real instrument attached.
+
+### v1.3 follow-up — cold-start controls mirrored into the Score View header (built + confirmed live 2026-08-23)
+
+User's own framing of the real first-run flow: open Composer Mastermind, see the Score View (the actual first
+thing anyone sees) empty, press Resync, choose Absolute or Generative, load a Blueprint - and have that whole loop
+work without detouring into the Expert tab. Added one new header row to `ui/PrimaryView` (both Live and Setup
+mode) mirroring four existing Expert-UI actions with zero new backend logic: **Resync All** (ports
+`PatternAwarenessView::resyncAllClicked`), **Content Mode** combo (same `ComposerCore::ContentMode` the Scenes tab
+already exposes), **Blueprint** combo + **Load**/**Remove** (ports `BlueprintSectionsContent`'s equivalents), and
+**Prime for Playback**. One deliberate behavior addition beyond a straight port: **Load** here also calls
+`primeForPlayback()` immediately - "load a Blueprint... the window gets populated" happens in one action rather
+than requiring a second click, matching the user's own description of the flow. A new `refreshHeaderControls()`
+keeps the row's combos live (constructor, the 60ms Live-mode timer via `refreshFromCore()`, and
+`visibilityChanged()`/`updateLiveSetupVisibility()` for the outer-shell-switch staleness class already fixed once
+this session for Setup mode's instance list).
+
+**A real two-way-sync bug found via live verification, not assumed away**: `SceneListComponent`'s own Content Mode
+combo (Scenes tab) only ever read `ComposerCore::getContentMode()` once, at construction - changing the mode from
+the new Score View header (or from anywhere else, after the fact) never propagated back into that already-built
+combo, despite `EditorView`'s 300ms timer calling `SceneListComponent::refreshAll()` unconditionally the whole
+time. Fixed by re-syncing `contentModeCombo`'s selection inside `refreshAll()` itself - the natural place, since
+that timer already runs regardless of which Expert tab is showing. Confirmed live: toggling Content Mode from the
+Score View header updates the Scenes tab's combo within one refresh tick, and vice versa.
+
+**Confirmed live end-to-end (Standalone/computer-use, via the MCP bridge to author a real scene+blueprint)**:
+Resync All's live status count; Content Mode two-way sync (both directions); Blueprint combo populating from
+`BlueprintLibrary`; Load correctly loading *and* priming in one click (status: "Loaded and primed..."); Remove
+correctly clearing the library and the combo. One environment-only false alarm along the way, not a code bug:
+launching the Standalone build (however it's launched - even without `&`-backgrounding) can spawn two real OS
+processes, and only one binds the fixed MCP bridge port (47824) - `computer-use`'s `open_application` isn't
+guaranteed to front the port-owning one, so a blueprint authored via the bridge can appear to "not exist" in the
+window being screenshotted when it's actually sitting in a second, invisible process's library. Resolved by
+checking `Get-NetTCPConnection -LocalPort 47824` for the true owning PID and killing the other one - worth
+checking that every time this class of "the UI isn't seeing what the bridge just wrote" symptom shows up again,
+before assuming a real desync bug.
 
 ## New Ideas (beyond the source roadmap)
 

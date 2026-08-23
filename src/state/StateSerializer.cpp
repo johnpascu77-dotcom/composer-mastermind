@@ -275,6 +275,52 @@ namespace StateSerializer
         return modulatorValue;
     }
 
+    juce::var stepSnapshotToVar(const StepSnapshot& step)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("enabled", step.enabled);
+        obj->setProperty("note", step.note);
+        obj->setProperty("velocity", step.velocity);
+        obj->setProperty("duration", step.duration);
+        return juce::var(obj);
+    }
+
+    StepSnapshot varToStepSnapshot(const juce::var& value)
+    {
+        StepSnapshot step;
+        step.enabled = JsonHelpers::getBool(value, "enabled", false);
+        step.note = JsonHelpers::getInt(value, "note", 0);
+        step.velocity = JsonHelpers::getInt(value, "velocity", 0);
+        step.duration = JsonHelpers::getInt(value, "duration", 0);
+        return step;
+    }
+
+    juce::var sectionCapturedContentToVar(const SectionCapturedContent& capturedContent)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("targetInstance", juce::String(capturedContent.targetInstance));
+        obj->setProperty("patternIndex", capturedContent.patternIndex);
+
+        juce::Array<juce::var> steps;
+        for (const auto& step : capturedContent.steps)
+            steps.add(stepSnapshotToVar(step));
+        obj->setProperty("steps", steps);
+
+        return juce::var(obj);
+    }
+
+    SectionCapturedContent varToSectionCapturedContent(const juce::var& value)
+    {
+        SectionCapturedContent capturedContent;
+        capturedContent.targetInstance = JsonHelpers::getString(value, "targetInstance");
+        capturedContent.patternIndex = JsonHelpers::getInt(value, "patternIndex", 0);
+
+        for (const auto& item : JsonHelpers::getArray(value, "steps"))
+            capturedContent.steps.push_back(varToStepSnapshot(item));
+
+        return capturedContent;
+    }
+
     juce::var blueprintSectionToVar(const BlueprintSection& section)
     {
         auto* obj = new juce::DynamicObject();
@@ -305,6 +351,11 @@ namespace StateSerializer
             modulatorValues.add(sectionModulatorValueToVar(modulatorValue));
         obj->setProperty("modulatorValues", modulatorValues);
 
+        juce::Array<juce::var> capturedContent;
+        for (const auto& entry : section.capturedContent)
+            capturedContent.add(sectionCapturedContentToVar(entry));
+        obj->setProperty("capturedContent", capturedContent);
+
         return juce::var(obj);
     }
 
@@ -329,6 +380,9 @@ namespace StateSerializer
 
         for (const auto& item : JsonHelpers::getArray(value, "modulatorValues"))
             section.modulatorValues.push_back(varToSectionModulatorValue(item));
+
+        for (const auto& item : JsonHelpers::getArray(value, "capturedContent"))
+            section.capturedContent.push_back(varToSectionCapturedContent(item));
 
         return section;
     }

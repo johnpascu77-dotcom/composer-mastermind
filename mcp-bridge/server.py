@@ -192,6 +192,22 @@ def resync_instance(instance_id: str, pattern_index: int = 0) -> dict:
 
 
 @server.tool()
+def write_pattern(instance_id: str, pattern_index: int, steps: list) -> dict:
+    """Writes a full 16-step pattern directly into one instance's real
+    storage over IPC - the same write Setup mode's piano roll uses when you
+    click Commit there (dragging notes by hand produces exactly this shape
+    of call). Bypasses MIDI/CC entirely; instant, no parameter polling.
+    steps is a list of up to 16 {"enabled": bool, "note": int (0-127),
+    "velocity": int (0-127), "duration": int (0-16, in grid steps)} objects,
+    index = step position; any positions past the end of the list, or past
+    16, stay disabled. Requires the instance to already have a live IPC
+    connection (it must be open in MPL) - fails with a clear error
+    otherwise, never writes blind. Call get_awareness a moment after this
+    to confirm the write actually landed."""
+    return _call_bridge("writePattern", instanceId=instance_id, patternIndex=pattern_index, steps=steps)
+
+
+@server.tool()
 def set_motif_application_mode(mode: str) -> dict:
     """Sets the global motif engine write mode: "Nudge" (adjusts existing
     enabled steps relative to their current values) or "Phrase" (writes
@@ -327,6 +343,141 @@ def set_arc(dimension: str, breakpoints: list) -> dict:
     scoped to one blueprint; it's the live ArcSet, so set it before or
     right after commit_blueprint, not per-section."""
     return _call_bridge("setArc", dimension=dimension, breakpoints=breakpoints)
+
+
+@server.tool()
+def create_role_preset(preset: dict) -> dict:
+    """Authors (or replaces) a RolePreset - a default behavior for a
+    musical function (anchor/motif/counterpoint/...), applied to every
+    currently-registered instance holding that role. Shape:
+    {
+      "id": str, "name": str, "targetRole": str, "tags": [str, ...],
+      "activePattern": int (-1 = inherit), "gridMode": int (-1 = inherit, 0=binary, 1=ternary),
+      "swing": float (-1.0 = inherit, 0-75)
+    }
+    Doesn't apply itself to anything - call apply_role_preset against a
+    saved scene afterward."""
+    return _call_bridge("createRolePreset", preset=preset)
+
+
+@server.tool()
+def create_rhythmic_relationship_preset(preset: dict) -> dict:
+    """Authors (or replaces) a RhythmicRelationshipPreset - a joint,
+    deliberately-correlated choice across 2+ roles applied together in one
+    call (e.g. role "motif" Binary while role "counterpoint" Ternary,
+    chosen together on purpose for a specific groove). Shape:
+    {
+      "id": str, "name": str, "tags": [str, ...],
+      "roleSlots": [{"targetRole": str, "activePattern": int, "gridMode": int, "swing": float}, ...]
+    }
+    (same -1/-1.0 inherit sentinel as create_role_preset). Needs at least 2
+    role slots. Doesn't apply itself - call
+    apply_rhythmic_relationship_preset against a saved scene afterward."""
+    return _call_bridge("createRhythmicRelationshipPreset", preset=preset)
+
+
+@server.tool()
+def create_arc_preset(preset: dict) -> dict:
+    """Authors (or replaces) an ArcPreset - a reusable *normalized* shape
+    ("swell"/"plateau"/"arch") stampable onto any bar range, decoupled from
+    which ArcSet dimension it targets (chosen at apply-time). Shape:
+    {
+      "id": str, "name": str, "tags": [str, ...],
+      "breakpoints": [{"position": float (0-1), "value": float (0-1)}, ...]
+    }
+    Doesn't apply itself - call apply_arc_preset afterward."""
+    return _call_bridge("createArcPreset", preset=preset)
+
+
+@server.tool()
+def get_presets() -> dict:
+    """Every saved RolePreset/RhythmicRelationshipPreset/ArcPreset (id,
+    name, and category-specific summary fields - not the full body, use
+    this to find a valid preset_id before calling one of the apply_*
+    tools). Motif presets aren't included here - see get_motif_presets."""
+    return _call_bridge("getPresets")
+
+
+@server.tool()
+def apply_role_preset(preset_id: str, scene_id: str) -> dict:
+    """Applies a saved RolePreset onto a saved Scene, in place - merges the
+    preset's activePattern/gridMode/swing into every currently-registered
+    instance holding that preset's targetRole, then saves the scene back to
+    the library (same effect as the Presets tab's "apply to scene" button).
+    A one-shot authoring-time stamp, not a live reference - re-apply if the
+    preset or the scene's instances change later."""
+    return _call_bridge("applyRolePreset", presetId=preset_id, sceneId=scene_id)
+
+
+@server.tool()
+def apply_rhythmic_relationship_preset(preset_id: str, scene_id: str) -> dict:
+    """Applies a saved RhythmicRelationshipPreset onto a saved Scene, in
+    place - resolves every role slot together in one call, then saves the
+    scene back to the library. Same one-shot-stamp semantics as
+    apply_role_preset."""
+    return _call_bridge("applyRhythmicRelationshipPreset", presetId=preset_id, sceneId=scene_id)
+
+
+@server.tool()
+def apply_arc_preset(preset_id: str, target_arc_name: str, start_bar: int, end_bar: int) -> dict:
+    """Stamps a saved ArcPreset's normalized shape onto the LIVE ArcSet's
+    target_arc_name curve within [start_bar, end_bar] - any existing
+    breakpoints strictly inside that range are replaced. target_arc_name is
+    one of energy/tension/density/complexity/coherence. This is the same
+    live ArcSet set_arc writes to, not a blueprint-scoped copy."""
+    return _call_bridge(
+        "applyArcPreset", presetId=preset_id, targetArcName=target_arc_name, startBar=start_bar, endBar=end_bar
+    )
+
+
+@server.tool()
+def create_modulator_target(target: dict) -> dict:
+    """Registers (or replaces) a ModulatorTarget - a CC number/channel
+    Composer Mastermind will drive on its own, meant to be paired to a
+    Bitwig modulator's parameter. Shape:
+    {
+      "id": str, "ccNumber": int (default 70, deliberately outside MPL's 20-64 range),
+      "midiChannel": int, "mode": "arc" | "section", "arcDimension": str (required if mode="arc")
+    }
+    "arc" mode continuously sends that ArcSet dimension's current value
+    every bar; "section" mode sends a fixed value once per section boundary,
+    authored per-section via a blueprint section's modulatorValues. This
+    only registers Composer Mastermind's own side - actually pairing the
+    CC/channel to a real Bitwig modulator parameter still needs a one-time
+    manual "Learn CC" gesture in Bitwig itself (Learn CC, not Bitwig's
+    generic "Map to Controller or Key", which ignores plugin-generated CC)."""
+    return _call_bridge("createModulatorTarget", target=target)
+
+
+@server.tool()
+def get_modulator_targets() -> dict:
+    """Every registered ModulatorTarget: id, ccNumber, midiChannel, mode,
+    arcDimension. Doesn't reveal anything about whether it's actually
+    paired to a Bitwig modulator - that pairing lives entirely inside the
+    Bitwig project, invisible to Composer Mastermind."""
+    return _call_bridge("getModulatorTargets")
+
+
+@server.tool()
+def generate_blueprint(blueprint_id: str, driving_arc_name: str, base_scene_id: str, commit: bool = False) -> dict:
+    """The Generate tab's auto-assembly, as a tool: one arc's consecutive
+    breakpoints become section boundaries, each section is classified into
+    presentation/build/peak/release purely from its breakpoint values, and
+    role/rhythmic-relationship presets tagged with that archetype get
+    applied automatically. driving_arc_name must already have >=2
+    breakpoints (call set_arc first). With commit=False (default), this is
+    pure preview - nothing is saved, same as the UI's Generate button
+    before you click Commit; the response's "sections"/"newSceneCount"
+    tells you what *would* be created. With commit=True, it also saves the
+    generated scenes and blueprint to their libraries and makes the
+    blueprint active (same as clicking Commit) - real playback effect."""
+    return _call_bridge(
+        "generateBlueprint",
+        blueprintId=blueprint_id,
+        drivingArcName=driving_arc_name,
+        baseSceneId=base_scene_id,
+        commit=commit,
+    )
 
 
 if __name__ == "__main__":

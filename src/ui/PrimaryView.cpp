@@ -13,8 +13,34 @@ namespace
     // cost - refreshFromCore only touches in-memory caches, no IO.
     constexpr int kTimerIntervalMs = 60;
     constexpr int kHeaderHeight = 30;
+    constexpr int kColdStartRowHeight = 26;
     constexpr int kLegendHeight = 22;
     constexpr int kMargin = 8;
+
+    // Repopulates a combo from a list of ids, preserving the current
+    // selection by text if it's still present - same pattern every other
+    // list-backed view in this codebase already uses (see e.g.
+    // SceneListComponent.cpp's own copy).
+    void repopulate(juce::ComboBox& combo, const std::vector<std::string>& ids, bool autoSelectFirst)
+    {
+        const auto previousSelection = combo.getText();
+        combo.clear(juce::dontSendNotification);
+
+        int itemId = 1;
+        int selectId = 0;
+        for (const auto& id : ids)
+        {
+            combo.addItem(id, itemId);
+            if (id == previousSelection.toStdString())
+                selectId = itemId;
+            ++itemId;
+        }
+
+        if (selectId == 0 && autoSelectFirst && !ids.empty())
+            selectId = 1;
+
+        combo.setSelectedId(selectId, juce::dontSendNotification);
+    }
 
     // A bar is always 4 quarter-notes here, matching MPL's own hardcoded
     // assumption (Source/PluginProcessor.cpp's gridStepLengthInPpq) - not a
@@ -103,10 +129,36 @@ PrimaryView::PrimaryView(ComposerMastermindAudioProcessor& processor)
     exportVariantButton.setButtonText("Export: As Performed");
     exportVariantButton.onClick = [this] { exportVariantToggleClicked(); };
 
+    addAndMakeVisible(resyncAllButton);
+    resyncAllButton.onClick = [this] { resyncAllClicked(); };
+
+    addAndMakeVisible(contentModeLabel);
+    addAndMakeVisible(contentModeCombo);
+    contentModeCombo.addItem("Generative", 1);
+    contentModeCombo.addItem("Absolute", 2);
+    contentModeCombo.onChange = [this] { contentModeChanged(); };
+
+    addAndMakeVisible(blueprintCombo);
+    blueprintCombo.setTextWhenNothingSelected("(pick blueprint)");
+
+    addAndMakeVisible(loadBlueprintButton);
+    loadBlueprintButton.onClick = [this] { loadBlueprintClicked(); };
+
+    addAndMakeVisible(removeBlueprintButton);
+    removeBlueprintButton.onClick = [this] { removeBlueprintClicked(); };
+
+    addAndMakeVisible(primeButton);
+    primeButton.onClick = [this] { primeForPlaybackClicked(); };
+
+    addAndMakeVisible(headerStatusLabel);
+    headerStatusLabel.setFont(juce::Font(juce::FontOptions().withHeight(12.0f).withStyle("Italic")));
+    headerStatusLabel.setMinimumHorizontalScale(1.0f);
+
     addAndMakeVisible(pianoRoll);
     pianoRoll.onRequestExportFile = [this] { return requestExportFile(); };
     addChildComponent(patternSetupView); // starts hidden - Live is the default mode
 
+    refreshHeaderControls();
     refreshFromCore();
     startTimer(kTimerIntervalMs);
 }
@@ -134,11 +186,48 @@ void PrimaryView::resized()
     headerRow.removeFromRight(6);
     exportVariantButton.setBounds(headerRow.removeFromRight(150));
 
+    area.removeFromTop(4);
+    auto coldStartRow = area.removeFromTop(kColdStartRowHeight);
+    resyncAllButton.setBounds(coldStartRow.removeFromLeft(90));
+    coldStartRow.removeFromLeft(6);
+    contentModeLabel.setBounds(coldStartRow.removeFromLeft(50));
+    contentModeCombo.setBounds(coldStartRow.removeFromLeft(110));
+    coldStartRow.removeFromLeft(6);
+    blueprintCombo.setBounds(coldStartRow.removeFromLeft(160));
+    coldStartRow.removeFromLeft(6);
+    loadBlueprintButton.setBounds(coldStartRow.removeFromLeft(60));
+    coldStartRow.removeFromLeft(6);
+    removeBlueprintButton.setBounds(coldStartRow.removeFromLeft(70));
+    coldStartRow.removeFromLeft(6);
+    primeButton.setBounds(coldStartRow.removeFromLeft(140));
+    coldStartRow.removeFromLeft(6);
+    headerStatusLabel.setBounds(coldStartRow);
+
+    area.removeFromTop(4);
     legendArea = area.removeFromTop(kLegendHeight);
     area.removeFromTop(4);
 
     pianoRoll.setBounds(area);
     patternSetupView.setBounds(area);
+}
+
+void PrimaryView::visibilityChanged()
+{
+    // Closes a real staleness gap (found live, 2026-08-23): refreshInstanceList()
+    // used to only ever fire from liveSetupToggleClicked()'s own Live<->Setup
+    // button, so switching away to the Expert tab (registering/removing
+    // instances there) and back to Score View - while Score View happened to
+    // already be showing Setup from an earlier click - left Setup mode's
+    // instance list silently stale, with no re-trigger short of toggling
+    // Live->Setup->Live again. MainShellView's Expert<->Score-View switch
+    // calls setVisible() on this component directly, which reliably fires
+    // this override - covers the gap without touching the inner toggle path
+    // or the paused-while-hidden Live-mode timer at all.
+    if (isVisible() && showingSetup)
+        patternSetupView.refreshInstanceList();
+
+    if (isVisible())
+        refreshHeaderControls();
 }
 
 void PrimaryView::timerCallback()
@@ -173,6 +262,7 @@ void PrimaryView::updateLiveSetupVisibility()
     else
         refreshFromCore();
 
+    refreshHeaderControls();
     repaint();
 }
 
@@ -242,6 +332,7 @@ void PrimaryView::refreshFromCore()
         const bool haveState = stateTracker.getState(instance.id, state);
         if (haveState)
             lane.activePatternNumber = state.activePattern;
+        lane.gridMode = state.gridMode; // 0 (binary) default is the right fallback if untracked yet
 
         CachedPattern cachedPattern;
         bool haveCachedPattern = false;
@@ -361,6 +452,7 @@ void PrimaryView::refreshFromCore()
     }
 
     pianoRoll.setLanes(std::move(newLanes));
+    refreshHeaderControls();
     repaint(legendArea);
 }
 
@@ -467,6 +559,133 @@ juce::File PrimaryView::requestExportFile()
     stream.flush();
 
     return file;
+}
+
+// Cold-start header row (2026-08-23) - each handler below is a direct port
+// of an existing Expert-UI equivalent (see PrimaryView.h's own comment on
+// the row), surfaced here so the whole "open plugin -> Resync -> choose
+// Content Mode -> Load a Blueprint" flow never needs to leave the Score View.
+void PrimaryView::resyncAllClicked()
+{
+    auto& composerCore = processorRef.getComposerCore();
+    const auto instances = composerCore.getInstanceRegistry().getAllInstances();
+
+    if (instances.empty())
+    {
+        headerStatusLabel.setText("Resync All skipped: no instances registered", juce::dontSendNotification);
+        return;
+    }
+
+    auto& server = composerCore.getPatternSyncServer();
+
+    int requested = 0;
+    int skippedNotConnected = 0;
+
+    for (const auto& instance : instances)
+    {
+        const bool connected = server.isChannelConnected(instance.midiChannel);
+
+        for (int patternIndex = 0; patternIndex < CCMapping::kMaxPatterns; ++patternIndex)
+        {
+            if (!connected)
+            {
+                ++skippedNotConnected;
+                continue;
+            }
+
+            server.requestSync(instance.midiChannel, patternIndex);
+            ++requested;
+        }
+    }
+
+    juce::String message = "Resync All: requested " + juce::String(requested) + " pattern(s) across "
+                            + juce::String((int) instances.size()) + " instance(s)";
+    if (skippedNotConnected > 0)
+        message << " (" << skippedNotConnected << " skipped - not connected yet)";
+
+    headerStatusLabel.setText(message, juce::dontSendNotification);
+}
+
+void PrimaryView::contentModeChanged()
+{
+    const auto mode = contentModeCombo.getSelectedId() == 2 ? ContentMode::Absolute : ContentMode::Generative;
+    processorRef.getComposerCore().setContentMode(mode);
+    headerStatusLabel.setText(mode == ContentMode::Absolute
+                                   ? "Content Mode: Absolute - captured sections play back verbatim and frozen"
+                                   : "Content Mode: Generative - sections stamp from motif presets as usual",
+                               juce::dontSendNotification);
+}
+
+void PrimaryView::loadBlueprintClicked()
+{
+    if (blueprintCombo.getSelectedId() <= 0)
+    {
+        headerStatusLabel.setText("Load blueprint skipped: no blueprint selected", juce::dontSendNotification);
+        return;
+    }
+
+    const auto blueprintId = blueprintCombo.getText().toStdString();
+
+    Blueprint blueprint;
+    auto& composerCore = processorRef.getComposerCore();
+    if (!composerCore.getBlueprintLibrary().getBlueprintById(blueprintId, blueprint))
+    {
+        headerStatusLabel.setText("Load blueprint failed: '" + juce::String(blueprintId) + "' not found",
+                                   juce::dontSendNotification);
+        return;
+    }
+
+    composerCore.setCurrentBlueprint(blueprint);
+
+    // Populate immediately rather than requiring a second click - matches
+    // the user's own description of the flow ("load a Blueprint... the
+    // window gets populated"). Safe for the same reason the standalone
+    // Prime button already is (ComposerCore.h's own comment: these CC/IPC
+    // writes land instantly regardless of transport state); a Generative
+    // section with no confirmed cached content yet simply stamps nothing,
+    // which is the honest invitation to go draw it in Setup mode.
+    composerCore.primeForPlayback();
+
+    headerStatusLabel.setText("Loaded and primed '" + juce::String(blueprintId) + "' ("
+                                   + juce::String((int) blueprint.sections.size()) + " section(s))",
+                               juce::dontSendNotification);
+    refreshFromCore();
+}
+
+void PrimaryView::removeBlueprintClicked()
+{
+    if (blueprintCombo.getSelectedId() <= 0)
+    {
+        headerStatusLabel.setText("Remove blueprint skipped: no blueprint selected", juce::dontSendNotification);
+        return;
+    }
+
+    const auto blueprintId = blueprintCombo.getText().toStdString();
+    processorRef.getComposerCore().getBlueprintLibrary().removeBlueprint(blueprintId);
+    headerStatusLabel.setText("Removed blueprint '" + juce::String(blueprintId) + "' from library",
+                               juce::dontSendNotification);
+    refreshHeaderControls();
+}
+
+void PrimaryView::primeForPlaybackClicked()
+{
+    processorRef.getComposerCore().primeForPlayback();
+    headerStatusLabel.setText("Primed first section for playback - patterns should already reflect it in MPL now",
+                               juce::dontSendNotification);
+    refreshFromCore();
+}
+
+void PrimaryView::refreshHeaderControls()
+{
+    auto& composerCore = processorRef.getComposerCore();
+
+    contentModeCombo.setSelectedId(
+        composerCore.getContentMode() == ContentMode::Absolute ? 2 : 1, juce::dontSendNotification);
+
+    std::vector<std::string> blueprintIds;
+    for (const auto& blueprint : composerCore.getBlueprintLibrary().getAllBlueprints())
+        blueprintIds.push_back(blueprint.id);
+    repopulate(blueprintCombo, blueprintIds, false);
 }
 
 void PrimaryView::paintLegend(juce::Graphics& g, juce::Rectangle<int> area) const

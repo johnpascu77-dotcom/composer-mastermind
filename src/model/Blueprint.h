@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "PatternSnapshot.h"
 
 // Foreground/support/background prominence for one instance during one
 // section. Consumed by ComposerCore::advanceBlueprintIfNeeded (2026-08-17):
@@ -65,6 +66,27 @@ struct ReservedValue
     int value = 0;
 };
 
+// Literal, verbatim step content for one instance/pattern, captured directly
+// from what's actually on the instrument at capture time (see
+// ui/BlueprintSectionsContent's "Capture Current" button) - the "Absolute"
+// alternative to the motif engine's generative stamp for this section (see
+// composer/ComposerCore.h's ContentMode). Always CCMapping::kPatternSteps
+// (16) entries, matching StepSnapshot's own storage convention everywhere
+// else in this codebase. Consumed by ComposerCore::enterSection: written
+// verbatim via PatternSyncServer::sendWriteFullPattern, bypassing MotifEngine
+// entirely for this instance/pattern, and the whole section is then exempt
+// from every subsequent per-bar automatic modification (motif passes,
+// phrase-chain, continuous melodic curve, continuous swing, rhythm
+// mutations) for as long as it plays - deliberately frozen, matching a
+// mechanical-piano-roll/demo-song reading of "load this file, hear exactly
+// this every time," not just a seeded-then-left-to-drift starting point.
+struct SectionCapturedContent
+{
+    std::string targetInstance;
+    int patternIndex = 0;
+    std::vector<StepSnapshot> steps;
+};
+
 // One formal section of a piece (e.g. "intro", "buildup", "climax"): a bar
 // range, which Scene from state/SceneLibrary plays during it, and the
 // layering/budget/reservation intentions authored for that stretch.
@@ -95,6 +117,7 @@ struct BlueprintSection
     std::vector<SectionBudgetOverride> budgetOverrides;
     std::vector<ReservedValue> reservedValues;
     std::vector<SectionModulatorValue> modulatorValues;
+    std::vector<SectionCapturedContent> capturedContent;
 };
 
 // One breakpoint of an explicitly-saved arc dimension curve for a blueprint:

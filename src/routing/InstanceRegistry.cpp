@@ -80,3 +80,9 @@ std::vector<Instance> InstanceRegistry::getAllInstances() const
     std::lock_guard<std::mutex> lock(instancesMutex);
     return instances;
 }
+
+void InstanceRegistry::clear()
+{
+    std::lock_guard<std::mutex> lock(instancesMutex);
+    instances.clear();
+}

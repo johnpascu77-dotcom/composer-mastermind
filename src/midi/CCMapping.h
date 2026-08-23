@@ -27,6 +27,7 @@ namespace CCMapping
     constexpr int kMaxPatterns = 3;          // MPL numPatterns
     constexpr int kPatternSteps = 16;        // MPL patternLength
     constexpr int kMinPatternLoopLength = 1; // MPL minPatternLoopLength
+    constexpr int kTernaryGridSteps = 12;    // MPL getGridStepCount()'s ternary branch - see PluginProcessor.cpp
     constexpr int kMaxTranspose = 48;
     constexpr float kMaxSwing = 75.0f;
 
@@ -77,6 +78,19 @@ namespace CCMapping
     inline int encodeGridMode(int mode) // 0 = binary, 1 = ternary
     {
         return encodeInt(mode, 0, 1);
+    }
+
+    // Mirrors MPL's own getGridStepCount() (PluginProcessor.cpp): in Ternary
+    // grid mode, playback only ever reads the first 12 raw steps regardless
+    // of Length/pattern-loop settings - content authored or rendered past
+    // that boundary is either silently dropped (writes) or genuinely
+    // unplayable (UI). Every write path AND every UI rendering/edit-boundary
+    // path must bound itself to this, not to kPatternSteps blindly - shared
+    // here (rather than duplicated per call site) so policy/MotifEngine.cpp
+    // and ui/PianoRollView.cpp can't drift out of agreement with each other.
+    inline int effectiveStepCount(int gridMode)
+    {
+        return gridMode == 1 ? kTernaryGridSteps : kPatternSteps;
     }
 
     inline int encodeSwing(float swingPercent)

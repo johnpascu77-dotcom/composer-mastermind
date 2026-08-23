@@ -146,6 +146,14 @@ Scroll to "Blueprint Library" at the bottom of the Sections page:
 
 This also makes it the *active* blueprint — playback will follow it as soon as the transport moves past bar 0.
 
+**One setting you didn't have to touch, but should know exists**: the Scenes tab (and, as of this piece, the Score
+View's own header too) has a **Content Mode** combo, Generative or Absolute. Everything you just built used the
+default, Generative — every section stamps its notes from motif presets and whatever's live on the instrument,
+same as always. Absolute is a different, optional thing: a section can instead carry literal, hand-captured note
+content that plays back exactly the same way every time, frozen for as long as that section lasts. Nothing above
+needed it, and leaving Content Mode on Generative is the right choice for a first piece — it's covered properly in
+`docs/advanced_workflow_example.md` once you're ready for it.
+
 ## Step 5 — Make it play
 
 Two ways to hear it:
@@ -169,6 +177,19 @@ Two ways to hear it:
   channel-mismatch prerequisite from the top of this guide, not a bug in the blueprint you just built.
 
 That's a complete, working piece. Everything past this point is optional.
+
+## Reloading it later — the Score View's own shortcut
+
+Everything above went through the Expert UI. Next time you open the plugin fresh (a new session, or after
+switching projects), you don't need to go back into Expert just to get this piece playing again — the **Score
+View** (click **Score View**, top right, from Expert; it's also the plugin's default screen) has its own small
+header row with the same essentials: **Resync All**, the **Content Mode** combo, and a **Blueprint** dropdown with
+**Load**, **Remove**, and **Prime for Playback** right next to it.
+
+The everyday loop from a cold start: click **Resync All** first (so Composer Mastermind actually knows what's on
+each instance right now), pick your saved blueprint (`my_first_piece`) from the dropdown, click **Load**. That one
+click both makes it the active blueprint *and* primes the first section immediately — no separate Prime step
+needed, and no detour through the Sections tab at all. Press play in your DAW same as before.
 
 ## What's next (all optional, in roughly the order you'd want them)
 
@@ -197,3 +218,7 @@ That's a complete, working piece. Everything past this point is optional.
 - **Notes sound cut off or garbled on one instrument** → MPL instances are monophonic; overlapping note durations
   get automatically trimmed to the next note's start as of 2026-08-22, so this shouldn't happen anymore. If it
   still does, that's a bug — flag it.
+- **Want to wipe everything and start a genuinely new piece** → the Instances tab has a **New Project (Reset
+  All)** button. It clears every instance, scene, blueprint, preset, and modulator target you've saved — asks for
+  confirmation first, since it can't be undone. It deliberately leaves session-local things alone (the Activity
+  Log, Milestones), since those aren't authored content to lose.

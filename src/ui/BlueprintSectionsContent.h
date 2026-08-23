@@ -45,6 +45,7 @@ private:
     void addBudgetOverrideClicked();
     void addReservedValueClicked();
     void addModulatorValueClicked();
+    void captureContentClicked();
     void addSectionClicked();
     void clearPendingClicked();
     void loadSectionClicked();
@@ -115,6 +116,17 @@ private:
     juce::TextButton addModulatorValueButton { "Add Modulator Value" };
     juce::Label pendingModulatorValuesLabel;
 
+    // "Absolute" content mode's authoring side (model/Blueprint.h's
+    // SectionCapturedContent, composer/ComposerCore.h's ContentMode) - reads
+    // whatever's actually confirmed-real on the chosen instance/pattern right
+    // now (PatternSyncServer's InstancePatternCache, the same ground truth
+    // ui/PatternAwarenessView shows) and captures it verbatim into this
+    // section. Not a value to type in, hence a button instead of a slider.
+    juce::ComboBox capturedContentInstanceCombo;
+    juce::ComboBox capturedContentPatternCombo;
+    juce::TextButton captureContentButton { "Capture Current" };
+    juce::Label pendingCapturedContentLabel;
+
     juce::TextButton addSectionButton { "Add Section" };
     juce::TextButton clearPendingButton { "Clear Pending" };
 
@@ -136,6 +148,7 @@ private:
     std::vector<SectionBudgetOverride> pendingBudgetOverrides;
     std::vector<ReservedValue> pendingReservedValues;
     std::vector<SectionModulatorValue> pendingModulatorValues;
+    std::vector<SectionCapturedContent> pendingCapturedContent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BlueprintSectionsContent)
 };

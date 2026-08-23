@@ -27,6 +27,18 @@ struct PianoRollLane
     int activePatternNumber = 0; // 0 = stopped (CC 20 convention), else 1..3
     std::vector<StepSnapshot> steps;
 
+    // 0 = binary, 1 = ternary - this instance's actual tracked grid mode
+    // (routing/InstanceStateTracker), NOT read by this component itself (it
+    // stays deliberately dumb, no ComposerCore reference - see the class
+    // comment above). Populated by whoever builds the lane
+    // (ui/PatternSetupView, ui/PrimaryView). Determines how many of this
+    // lane's 16 raw steps are actually reachable/playable right now
+    // (CCMapping::effectiveStepCount) and how the grid renders them - a
+    // ternary lane's real 12 steps span the same physical bar-width a binary
+    // lane's 16 do, they're just wider individually. See docs/
+    // composer_mastermind_design.md's "Piano roll grid-mode mismatch fix".
+    int gridMode = 0;
+
     // Step indices protected from automated engine writes (Setup mode's
     // Locked Notes, v1.2 Phase 2 - see state/LockedStepLibrary.h). Purely
     // for rendering here; PianoRollView never mutates lock state itself,
@@ -134,6 +146,13 @@ private:
 
     bool canEditNow() const;
     bool hitTest(juce::Point<float> position, const PitchRange& range, int& outStepIndex, int& outNote) const;
+
+    // CCMapping::effectiveStepCount for the sole editable lane (canEditNow()
+    // already requires exactly one) - the shared bound every edit gesture's
+    // hit-testing/duration-clamping/overlap-refusal uses, so a note can
+    // never be placed, dragged, or resized past what the instrument will
+    // actually play in its current grid mode.
+    int editableLaneSteps() const;
 
     // True if stepIndex is in the (sole, editable) lane's lockedStepIndices -
     // Locked Notes must be unlocked (Ctrl+click) before any gesture can

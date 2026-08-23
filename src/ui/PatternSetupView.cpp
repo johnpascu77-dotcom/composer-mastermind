@@ -44,6 +44,13 @@ PatternSetupView::PatternSetupView(ComposerMastermindAudioProcessor& processor)
     patternCombo.setSelectedId(1, juce::dontSendNotification);
     patternCombo.onChange = [this] { selectionChanged(); };
 
+    addAndMakeVisible(gridModeLabel);
+    addAndMakeVisible(gridModeCombo);
+    gridModeCombo.addItem("Binary", 1);
+    gridModeCombo.addItem("Ternary", 2);
+    gridModeCombo.setSelectedId(1, juce::dontSendNotification);
+    gridModeCombo.onChange = [this] { gridModeChanged(); };
+
     addAndMakeVisible(commitButton);
     commitButton.onClick = [this] { commitClicked(); };
 
@@ -71,6 +78,9 @@ void PatternSetupView::resized()
     instanceCombo.setBounds(pickerRow.removeFromLeft(180));
     pickerRow.removeFromLeft(kGap);
     patternCombo.setBounds(pickerRow.removeFromLeft(70));
+    pickerRow.removeFromLeft(kGap);
+    gridModeLabel.setBounds(pickerRow.removeFromLeft(32));
+    gridModeCombo.setBounds(pickerRow.removeFromLeft(90));
 
     area.removeFromTop(kGap);
 
@@ -129,6 +139,15 @@ void PatternSetupView::loadCurrentSelection()
     lane.hasData = true;      // editing a never-dumped pattern is a valid blank starting point, not an error state
     lane.activePatternNumber = patternIndex + 1; // just so PianoRollView doesn't render the "stopped" placeholder
 
+    // Grid mode: default the toggle to whatever's currently tracked for this
+    // instance (a sensible starting point - probably what you'd want anyway)
+    // but the toggle, not this tracked value, is what actually governs the
+    // lane from here on - see gridModeCombo's own doc comment in the header.
+    InstanceParameterState trackedState;
+    processorRef.getComposerCore().getInstanceStateTracker().getState(instance.id, trackedState);
+    gridModeCombo.setSelectedId(trackedState.gridMode == 1 ? 2 : 1, juce::dontSendNotification);
+    lane.gridMode = trackedState.gridMode;
+
     CachedPattern cached;
     if (processorRef.getComposerCore().getPatternSyncServer().getCache().get(instance.id, patternIndex, cached))
         lane.steps = cached.snapshot.steps;
@@ -141,6 +160,23 @@ void PatternSetupView::loadCurrentSelection()
 
     pianoRoll.setLanes({ lane });
     setDirty(false);
+}
+
+void PatternSetupView::gridModeChanged()
+{
+    if (pianoRoll.getLanes().empty())
+        return;
+
+    // Re-renders the existing in-memory lane at the new resolution without
+    // touching a single note already drawn - notes at raw indices past the
+    // new grid mode's real step count just become temporarily hidden/
+    // unreachable (PianoRollView's own behavior, see its class comment),
+    // not discarded; switching back reveals them again. This is a pending
+    // change like any other - it isn't real until Commit pushes it to MPL.
+    auto lane = pianoRoll.getLanes()[0];
+    lane.gridMode = gridModeCombo.getSelectedId() == 2 ? 1 : 0;
+    pianoRoll.setLanes({ lane });
+    setDirty(true);
 }
 
 void PatternSetupView::lockToggleRequested(int stepIndex)
@@ -185,9 +221,12 @@ void PatternSetupView::commitClicked()
     const auto& instance = instances[(size_t) instanceIndex];
     const juce::String instanceLabel = instance.name.empty() ? juce::String(instance.id) : juce::String(instance.name);
     const int patternIndex = juce::jlimit(0, 2, patternCombo.getSelectedItemIndex());
-    const auto& steps = pianoRoll.getLanes()[0].steps;
+    const auto& lane = pianoRoll.getLanes()[0];
+    const auto& steps = lane.steps;
+    const int gridMode = lane.gridMode;
 
-    auto& patternSync = processorRef.getComposerCore().getPatternSyncServer();
+    auto& composerCore = processorRef.getComposerCore();
+    auto& patternSync = composerCore.getPatternSyncServer();
 
     if (!patternSync.isChannelConnected(instance.midiChannel))
     {
@@ -196,12 +235,30 @@ void PatternSetupView::commitClicked()
         return;
     }
 
+    // The grid mode chosen in Setup mode (gridModeCombo) is authoritative
+    // for what was just drawn - push it to MPL as a real CC alongside the
+    // step content, rather than only ever reflecting whatever MPL happened
+    // to already be in (user's own design, 2026-08-23: "MPL should obey
+    // this from whatever state it is at that moment"). Sent unconditionally,
+    // even if unchanged - idempotent on MPL's side, and simpler/more
+    // reliable than tracking whether it actually differs. InstanceStateTracker
+    // updated to match immediately after, same as every other CC send path
+    // in this plugin (Router::routeScene, etc.) - preserves the instance's
+    // other tracked fields (activePattern/swing) rather than clobbering them.
+    auto& stateTracker = composerCore.getInstanceStateTracker();
+    InstanceParameterState trackedState;
+    stateTracker.getState(instance.id, trackedState);
+    composerCore.getCCDispatcher().sendCC(instance.midiChannel, CCMapping::kGridMode,
+                                           CCMapping::encodeGridMode(gridMode));
+    stateTracker.recordGlobal(instance.id, trackedState.activePattern, gridMode, trackedState.swing);
+
     patternSync.sendWriteFullPattern(instance.midiChannel, patternIndex, steps);
     patternSync.requestSync(instance.midiChannel, patternIndex);
 
     setDirty(false);
-    statusLabel.setText("Committed to '" + instanceLabel + "' P" + juce::String(patternIndex + 1)
-                             + " - resyncing to confirm",
+    statusLabel.setText("Committed to '" + instanceLabel + "' P" + juce::String(patternIndex + 1) + " ("
+                             + (gridMode == 1 ? juce::String("Ternary") : juce::String("Binary"))
+                             + ") - resyncing to confirm",
                          juce::dontSendNotification);
 }
 

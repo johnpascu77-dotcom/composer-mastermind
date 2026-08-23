@@ -27,6 +27,8 @@ public:
 
     std::vector<Instance> getAllInstances() const;
 
+    void clear();
+
 private:
     std::vector<Instance> instances;
     mutable std::mutex instancesMutex;

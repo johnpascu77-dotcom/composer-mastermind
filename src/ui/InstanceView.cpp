@@ -47,6 +47,9 @@ InstanceView::InstanceView(ComposerMastermindAudioProcessor& processor, std::fun
     addAndMakeVisible(loadSelectedButton);
     loadSelectedButton.onClick = [this] { loadSelectedClicked(); };
 
+    addAndMakeVisible(resetButton);
+    resetButton.onClick = [this] { resetClicked(); };
+
     addAndMakeVisible(instanceListDisplay);
     instanceListDisplay.setMultiLine(true);
     instanceListDisplay.setReadOnly(true);
@@ -82,6 +85,8 @@ void InstanceView::resized()
     loadSelectedButton.setBounds(existingRow.removeFromLeft(70));
     existingRow.removeFromLeft(kMargin);
     removeInstanceButton.setBounds(existingRow.removeFromLeft(70));
+    existingRow.removeFromLeft(kMargin);
+    resetButton.setBounds(existingRow.removeFromLeft(160));
 
     area.removeFromTop(kRowGap);
     instanceListDisplay.setBounds(area);
@@ -167,6 +172,27 @@ void InstanceView::loadSelectedClicked()
     instanceRoleCombo.setSelectedId(roleItemId, juce::dontSendNotification);
 
     setStatus("Loaded instance '" + juce::String(id) + "' - edit above and Add Instance to update it");
+}
+
+void InstanceView::resetClicked()
+{
+    auto options = juce::MessageBoxOptions::makeOptionsOkCancel(
+        juce::MessageBoxIconType::WarningIcon,
+        "New Project",
+        "This clears every instance, scene, blueprint, preset, and modulator target in this project. "
+        "It cannot be undone within this session. Continue?",
+        "Reset",
+        "Cancel");
+
+    juce::NativeMessageBox::showAsync(options, [this](int result)
+    {
+        if (result != 0) // button index, 0-based in the order passed to makeOptionsOkCancel - 0 = "Reset"
+            return;
+
+        processorRef.getComposerCore().resetToFactoryDefaults();
+        setStatus("New Project - every library cleared");
+        refreshInstanceList();
+    });
 }
 
 void InstanceView::refreshInstanceList()

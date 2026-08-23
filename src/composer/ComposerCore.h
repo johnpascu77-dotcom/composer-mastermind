@@ -40,6 +40,27 @@ struct ActivityLogEntry
     std::string message;
 };
 
+// Global, session-level switch (2026-08-23, user's own request) for how a
+// section's real note content gets onto an instrument at section entry.
+// "Generative" is the existing, only-ever behavior: MotifEngine derives
+// content from a tagged MotifPreset's relative shape plus whatever's
+// currently cached from the live instrument - never stored verbatim,
+// different every time depending on what was already there. "Absolute" is
+// the new alternative: if a section carries BlueprintSection::capturedContent
+// (literal step data, captured once via the Sections tab's "Capture Current"
+// button), that gets written verbatim instead, and the whole section is then
+// exempt from every subsequent per-bar automatic modification for as long as
+// it plays - a true "load this file, hear exactly this every time" piece, the
+// mechanical-piano-roll/demo-song reading the user asked for. A section with
+// no captured content behaves generatively regardless of this switch - the
+// mode only ever governs sections that actually have something to be
+// absolute about.
+enum class ContentMode
+{
+    Generative,
+    Absolute
+};
+
 class ComposerCore
 {
 public:
@@ -84,6 +105,11 @@ public:
     // per-section.
     MotifEngine::ApplicationMode getMotifApplicationMode() const;
     void setMotifApplicationMode(MotifEngine::ApplicationMode mode);
+
+    // See ContentMode's own doc comment above.
+    ContentMode getContentMode() const;
+    void setContentMode(ContentMode mode);
+
     PolicyEngine& getPolicyEngine();
     InstanceStateTracker& getInstanceStateTracker();
     ArcSet& getArcSet();
@@ -157,6 +183,18 @@ public:
     // has no sections.
     void primeForPlayback();
 
+    // Factory reset (2026-08-23, user's own request): clears every library
+    // (instances, scenes, blueprints, all four preset categories, modulator
+    // targets) and every "current scene/blueprint" tracking member back to a
+    // freshly-constructed ComposerCore's own starting state. Destructive and
+    // immediate - the UI's own reset button is responsible for confirming
+    // with the user first; this method itself never asks. Session-local
+    // state (locked steps, milestones, activity log) is deliberately left
+    // alone - those aren't part of "the piece," they're this session's own
+    // bookkeeping, and clearing the activity log would erase the very record
+    // of the reset having happened.
+    void resetToFactoryDefaults();
+
 private:
     InstanceRegistry instanceRegistry;
     CCDispatcher ccDispatcher;
@@ -181,6 +219,7 @@ private:
     void captureMilestone(const std::string& label, int currentBar);
 
     std::atomic<MotifEngine::ApplicationMode> motifApplicationMode { MotifEngine::ApplicationMode::Nudge };
+    std::atomic<ContentMode> contentMode { ContentMode::Generative };
 
     std::atomic<int> currentBarValue { 0 };
 

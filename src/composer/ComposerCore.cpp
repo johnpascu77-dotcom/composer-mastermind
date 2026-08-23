@@ -2,6 +2,7 @@
 #include "../policy/SceneAdvancePolicy.h"
 #include "../policy/CoherenceEvaluator.h"
 #include "../policy/BlueprintGenerator.h"
+#include "../policy/PresetResolver.h"
 #include "../midi/CCMapping.h"
 #include "../util/Validation.h"
 #include "../state/StateSerializer.h"
@@ -217,6 +218,16 @@ MotifEngine::ApplicationMode ComposerCore::getMotifApplicationMode() const
 void ComposerCore::setMotifApplicationMode(MotifEngine::ApplicationMode mode)
 {
     motifApplicationMode.store(mode);
+}
+
+ContentMode ComposerCore::getContentMode() const
+{
+    return contentMode.load();
+}
+
+void ComposerCore::setContentMode(ContentMode mode)
+{
+    contentMode.store(mode);
 }
 
 void ComposerCore::setCurrentBlueprint(const Blueprint& blueprint)
@@ -495,10 +506,20 @@ void ComposerCore::advanceBlueprintIfNeeded(int currentBar)
         // phrase-chain advance (see firePhraseChainIfDue).
         if (activeSection != nullptr)
         {
-            firePhraseChainIfDue(*activeSection, currentBar);
-            fireMotifPassIfDue(*activeSection, currentBar);
-            applyContinuousMelodicCurve(*activeSection, currentBar);
-            applyContinuousSwing(*activeSection, currentBar);
+            // A section played back from captured (Absolute) content is
+            // frozen for its whole duration - see enterSection's matching
+            // branch. Same condition, recomputed fresh each bar rather than
+            // cached, since ContentMode can change live mid-section.
+            const bool isFrozen =
+                getContentMode() == ContentMode::Absolute && !activeSection->capturedContent.empty();
+
+            if (!isFrozen)
+            {
+                firePhraseChainIfDue(*activeSection, currentBar);
+                fireMotifPassIfDue(*activeSection, currentBar);
+                applyContinuousMelodicCurve(*activeSection, currentBar);
+                applyContinuousSwing(*activeSection, currentBar);
+            }
         }
         return;
     }
@@ -559,11 +580,36 @@ void ComposerCore::enterSection(const BlueprintSection& section, int currentBar)
     }
 
     resetRhythmBaselineForSection(section);
-    stampMotifForSection(section);
-    seedPhraseChainPatterns(section);
-    applyRhythmForSection(section, 0);
-    applyContinuousMelodicCurve(section, currentBar);
-    applyContinuousSwing(section, currentBar);
+
+    // Absolute content mode (2026-08-23, user's own request - see
+    // ComposerCore.h's ContentMode doc comment): a section with real captured
+    // content, played back verbatim instead of generatively stamped, and
+    // exempt from every ongoing per-bar modification for as long as it plays
+    // (see the matching branch in advanceBlueprintIfNeeded). A section with
+    // no captured content always behaves generatively, regardless of the
+    // global mode - there's nothing "absolute" to prefer over the generative
+    // path unless this specific section actually has something captured.
+    if (getContentMode() == ContentMode::Absolute && !section.capturedContent.empty())
+    {
+        for (const auto& entry : section.capturedContent)
+        {
+            Instance instance;
+            if (!instanceRegistry.getInstanceById(entry.targetInstance, instance))
+                continue;
+
+            patternSyncServer.sendWriteFullPattern(instance.midiChannel, entry.patternIndex, entry.steps);
+        }
+
+        logActivity(currentBar, "Wrote captured (Absolute) content for section '" + section.name + "' - frozen for its duration");
+    }
+    else
+    {
+        stampMotifForSection(section);
+        seedPhraseChainPatterns(section);
+        applyRhythmForSection(section, 0);
+        applyContinuousMelodicCurve(section, currentBar);
+        applyContinuousSwing(section, currentBar);
+    }
 
     // Milestone capture (Phase 3, 2026-08-22) - after everything above has
     // run, so this reflects what the section actually starts out sounding
@@ -591,6 +637,37 @@ void ComposerCore::primeForPlayback()
 
     logActivity(firstSection->startBar, "Prime for Playback pressed (transport stopped)");
     enterSection(*firstSection, firstSection->startBar);
+}
+
+void ComposerCore::resetToFactoryDefaults()
+{
+    instanceRegistry.clear();
+    sceneLibrary.clear();
+    blueprintLibrary.clear();
+    presetLibrary.clear();
+    modulatorTargetLibrary.clear();
+
+    {
+        std::lock_guard<std::mutex> lock(sceneMutex);
+        currentSceneData = Scene{};
+        hasCurrentScene = false;
+        sceneStartPending = false;
+        currentSceneStartBar = -1;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        currentBlueprintData = Blueprint{};
+        hasCurrentBlueprint = false;
+        currentActiveSectionId.clear();
+        motifPassCountForSection = 0;
+        lastMotifPassBar = -1;
+        avoidMotifPresetIdForSection.clear();
+        currentSectionMotifPresetId.clear();
+        motifHomePatternForSection.clear();
+    }
+
+    logActivity(getCurrentBar(), "Factory reset - every library cleared");
 }
 
 void ComposerCore::fireMotifPassIfDue(const BlueprintSection& section, int currentBar)
@@ -1233,6 +1310,52 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
         return mcpOk(result);
     }
 
+    if (action == "writePattern")
+    {
+        const auto instanceId = request["instanceId"].toString().toStdString();
+        const int patternIndex = static_cast<int>(request["patternIndex"]);
+
+        Instance instance;
+        if (!instanceRegistry.getInstanceById(instanceId, instance))
+            return mcpError("writePattern: unknown instance '" + juce::String(instanceId) + "'");
+
+        if (patternIndex < 0 || patternIndex >= CCMapping::kMaxPatterns)
+            return mcpError("writePattern: patternIndex must be 0-2");
+
+        // Mirrors ui/PatternSetupView::commitClicked's own Setup-mode write
+        // exactly - direct IPC into MPL's real pattern storage, same as a
+        // human dragging notes in the piano roll and clicking Commit. Fixed
+        // 16-slot array, matching MPL's own patternLength - any array
+        // shorter than that just leaves the remaining steps disabled.
+        std::vector<StepSnapshot> steps(static_cast<size_t>(CCMapping::kPatternSteps));
+        if (auto* stepsArray = request["steps"].getArray())
+        {
+            for (int i = 0; i < stepsArray->size() && i < CCMapping::kPatternSteps; ++i)
+            {
+                const auto& stepVar = (*stepsArray)[i];
+                StepSnapshot step;
+                step.enabled = static_cast<bool>(stepVar["enabled"]);
+                step.note = juce::jlimit(0, 127, static_cast<int>(stepVar["note"]));
+                step.velocity = juce::jlimit(0, 127, static_cast<int>(stepVar["velocity"]));
+                step.duration = juce::jlimit(0, CCMapping::kPatternSteps, static_cast<int>(stepVar["duration"]));
+                steps[static_cast<size_t>(i)] = step;
+            }
+        }
+
+        if (!patternSyncServer.isChannelConnected(instance.midiChannel))
+            return mcpError("writePattern: '" + juce::String(instanceId)
+                + "' has no IPC channel connected yet - open it in MPL first");
+
+        patternSyncServer.sendWriteFullPattern(instance.midiChannel, patternIndex, steps);
+        patternSyncServer.requestSync(instance.midiChannel, patternIndex);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("sent", true);
+        result->setProperty("stepCount", static_cast<int>(steps.size()));
+        result->setProperty("note", "resync requested - call get_awareness in a moment to confirm it landed");
+        return mcpOk(result);
+    }
+
     if (action == "setMotifApplicationMode")
     {
         const auto mode = request["mode"].toString();
@@ -1349,6 +1472,258 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
         auto* result = new juce::DynamicObject();
         result->setProperty("presetId", juce::String(preset.id));
         result->setProperty("noteCount", static_cast<int>(preset.notes.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "createRolePreset")
+    {
+        const RolePreset preset = StateSerializer::varToRolePreset(request["preset"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidRolePreset(preset, errorMessage))
+            return mcpError("createRolePreset: " + juce::String(errorMessage));
+
+        presetLibrary.addOrReplaceRolePreset(preset);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("presetId", juce::String(preset.id));
+        return mcpOk(result);
+    }
+
+    if (action == "createRhythmicRelationshipPreset")
+    {
+        const RhythmicRelationshipPreset preset =
+            StateSerializer::varToRhythmicRelationshipPreset(request["preset"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidRhythmicRelationshipPreset(preset, errorMessage))
+            return mcpError("createRhythmicRelationshipPreset: " + juce::String(errorMessage));
+
+        presetLibrary.addOrReplaceRhythmicRelationshipPreset(preset);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("presetId", juce::String(preset.id));
+        result->setProperty("roleSlotCount", static_cast<int>(preset.roleSlots.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "createArcPreset")
+    {
+        const ArcPreset preset = StateSerializer::varToArcPreset(request["preset"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidArcPreset(preset, errorMessage))
+            return mcpError("createArcPreset: " + juce::String(errorMessage));
+
+        presetLibrary.addOrReplaceArcPreset(preset);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("presetId", juce::String(preset.id));
+        result->setProperty("breakpointCount", static_cast<int>(preset.breakpoints.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "getPresets")
+    {
+        auto* result = new juce::DynamicObject();
+
+        juce::Array<juce::var> roleArray;
+        for (const auto& preset : presetLibrary.getAllRolePresets())
+        {
+            auto* obj = new juce::DynamicObject();
+            obj->setProperty("id", juce::String(preset.id));
+            obj->setProperty("name", juce::String(preset.name));
+            obj->setProperty("targetRole", juce::String(preset.targetRole));
+            roleArray.add(juce::var(obj));
+        }
+        result->setProperty("rolePresets", roleArray);
+
+        juce::Array<juce::var> rhythmicArray;
+        for (const auto& preset : presetLibrary.getAllRhythmicRelationshipPresets())
+        {
+            auto* obj = new juce::DynamicObject();
+            obj->setProperty("id", juce::String(preset.id));
+            obj->setProperty("name", juce::String(preset.name));
+            obj->setProperty("roleSlotCount", static_cast<int>(preset.roleSlots.size()));
+            rhythmicArray.add(juce::var(obj));
+        }
+        result->setProperty("rhythmicRelationshipPresets", rhythmicArray);
+
+        juce::Array<juce::var> arcArray;
+        for (const auto& preset : presetLibrary.getAllArcPresets())
+        {
+            auto* obj = new juce::DynamicObject();
+            obj->setProperty("id", juce::String(preset.id));
+            obj->setProperty("name", juce::String(preset.name));
+            obj->setProperty("breakpointCount", static_cast<int>(preset.breakpoints.size()));
+            arcArray.add(juce::var(obj));
+        }
+        result->setProperty("arcPresets", arcArray);
+
+        return mcpOk(result);
+    }
+
+    if (action == "applyRolePreset")
+    {
+        const auto presetId = request["presetId"].toString().toStdString();
+        const auto sceneId = request["sceneId"].toString().toStdString();
+
+        RolePreset preset;
+        if (!presetLibrary.getRolePresetById(presetId, preset))
+            return mcpError("applyRolePreset: unknown preset '" + juce::String(presetId) + "'");
+
+        Scene scene;
+        if (!sceneLibrary.getSceneById(sceneId, scene))
+            return mcpError("applyRolePreset: unknown scene '" + juce::String(sceneId) + "'");
+
+        const int affected =
+            PresetResolver::applyRolePreset(preset, instanceRegistry.getAllInstances(), scene);
+        sceneLibrary.addOrReplaceScene(scene);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("sceneId", juce::String(sceneId));
+        result->setProperty("affectedInstances", affected);
+        return mcpOk(result);
+    }
+
+    if (action == "applyRhythmicRelationshipPreset")
+    {
+        const auto presetId = request["presetId"].toString().toStdString();
+        const auto sceneId = request["sceneId"].toString().toStdString();
+
+        RhythmicRelationshipPreset preset;
+        if (!presetLibrary.getRhythmicRelationshipPresetById(presetId, preset))
+            return mcpError("applyRhythmicRelationshipPreset: unknown preset '" + juce::String(presetId) + "'");
+
+        Scene scene;
+        if (!sceneLibrary.getSceneById(sceneId, scene))
+            return mcpError("applyRhythmicRelationshipPreset: unknown scene '" + juce::String(sceneId) + "'");
+
+        const int affected =
+            PresetResolver::applyRhythmicRelationshipPreset(preset, instanceRegistry.getAllInstances(), scene);
+        sceneLibrary.addOrReplaceScene(scene);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("sceneId", juce::String(sceneId));
+        result->setProperty("affectedInstances", affected);
+        return mcpOk(result);
+    }
+
+    if (action == "applyArcPreset")
+    {
+        const auto presetId = request["presetId"].toString().toStdString();
+        const auto targetArcName = request["targetArcName"].toString().toStdString();
+        const int startBar = static_cast<int>(request["startBar"]);
+        const int endBar = static_cast<int>(request["endBar"]);
+
+        ArcPreset preset;
+        if (!presetLibrary.getArcPresetById(presetId, preset))
+            return mcpError("applyArcPreset: unknown preset '" + juce::String(presetId) + "'");
+
+        const int stamped = PresetResolver::applyArcPreset(preset, targetArcName, startBar, endBar, arcSet);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("targetArcName", juce::String(targetArcName));
+        result->setProperty("breakpointsStamped", stamped);
+        if (stamped == 0)
+            result->setProperty("note", "check the preset has breakpoints, startBar < endBar, and targetArcName is a real dimension");
+        return mcpOk(result);
+    }
+
+    if (action == "createModulatorTarget")
+    {
+        const ModulatorTarget target = StateSerializer::varToModulatorTarget(request["target"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidModulatorTarget(target, errorMessage))
+            return mcpError("createModulatorTarget: " + juce::String(errorMessage));
+
+        modulatorTargetLibrary.addOrReplaceTarget(target);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("targetId", juce::String(target.id));
+        result->setProperty("note",
+            "registered on Composer Mastermind's side only - pairing this CC/channel to an actual Bitwig "
+            "modulator still needs a one-time 'Learn CC' gesture in Bitwig itself, done by a human");
+        return mcpOk(result);
+    }
+
+    if (action == "getModulatorTargets")
+    {
+        auto* result = new juce::DynamicObject();
+        juce::Array<juce::var> targetsArray;
+        for (const auto& target : modulatorTargetLibrary.getAllTargets())
+        {
+            auto* obj = new juce::DynamicObject();
+            obj->setProperty("id", juce::String(target.id));
+            obj->setProperty("ccNumber", target.ccNumber);
+            obj->setProperty("midiChannel", target.midiChannel);
+            obj->setProperty("mode", juce::String(target.mode));
+            obj->setProperty("arcDimension", juce::String(target.arcDimension));
+            targetsArray.add(juce::var(obj));
+        }
+        result->setProperty("targets", targetsArray);
+        return mcpOk(result);
+    }
+
+    if (action == "generateBlueprint")
+    {
+        const auto blueprintId = request["blueprintId"].toString().toStdString();
+        const auto drivingArcName = request["drivingArcName"].toString().toStdString();
+        const auto baseSceneId = request["baseSceneId"].toString().toStdString();
+        const bool commit = request.hasProperty("commit") && static_cast<bool>(request["commit"]);
+
+        Scene baseScene;
+        if (!sceneLibrary.getSceneById(baseSceneId, baseScene))
+            return mcpError("generateBlueprint: unknown base scene '" + juce::String(baseSceneId) + "'");
+
+        auto proposal = BlueprintGenerator::generate(blueprintId, drivingArcName, arcSet, baseScene,
+            instanceRegistry.getAllInstances(), presetLibrary.getAllRolePresets(),
+            presetLibrary.getAllRhythmicRelationshipPresets());
+
+        if (proposal.blueprint.id.empty())
+            return mcpError("generateBlueprint: '" + juce::String(drivingArcName)
+                + "' needs at least 2 breakpoints to derive sections from - call setArc first");
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("blueprintId", juce::String(proposal.blueprint.id));
+        result->setProperty("committed", commit);
+
+        juce::Array<juce::var> sectionsArray;
+        for (const auto& section : proposal.blueprint.sections)
+        {
+            auto* obj = new juce::DynamicObject();
+            obj->setProperty("id", juce::String(section.id));
+            obj->setProperty("sceneId", juce::String(section.sceneId));
+            obj->setProperty("startBar", section.startBar);
+            obj->setProperty("durationBars", section.durationBars);
+            obj->setProperty("archetype", juce::String(section.archetype));
+            sectionsArray.add(juce::var(obj));
+        }
+        result->setProperty("sections", sectionsArray);
+        result->setProperty("newSceneCount", static_cast<int>(proposal.newScenes.size()));
+
+        if (commit)
+        {
+            for (const auto& scene : proposal.newScenes)
+                sceneLibrary.addOrReplaceScene(scene);
+
+            proposal.blueprint.arcCurves.clear();
+            for (const auto& dimensionName : proposal.candidateArcSet.getArcNames())
+            {
+                const Arc arc = proposal.candidateArcSet.getArc(dimensionName);
+
+                BlueprintArcCurve curve;
+                curve.dimension = dimensionName;
+                for (const auto& breakpoint : arc.getBreakpoints())
+                    curve.points.push_back({ breakpoint.bar, breakpoint.value });
+                proposal.blueprint.arcCurves.push_back(curve);
+            }
+
+            blueprintLibrary.addOrReplaceBlueprint(proposal.blueprint);
+            setCurrentBlueprint(proposal.blueprint);
+        }
+
         return mcpOk(result);
     }
 

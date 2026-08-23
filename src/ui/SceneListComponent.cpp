@@ -199,6 +199,15 @@ SceneListComponent::SceneListComponent(ComposerMastermindAudioProcessor& process
     addAndMakeVisible(loadSnapshotButton);
     loadSnapshotButton.onClick = [this] { loadSnapshotFromFileClicked(); };
 
+    addAndMakeVisible(contentModeLabel);
+    addAndMakeVisible(contentModeCombo);
+    contentModeCombo.addItem("Generative", 1);
+    contentModeCombo.addItem("Absolute", 2);
+    contentModeCombo.setSelectedId(
+        processorRef.getComposerCore().getContentMode() == ContentMode::Absolute ? 2 : 1,
+        juce::dontSendNotification);
+    contentModeCombo.onChange = [this] { contentModeChanged(); };
+
     // Seed pendingTargets once with every currently-registered instance -
     // matches the old default behaviour (always targeted everyone) for
     // anyone who doesn't customize the target list themselves.
@@ -301,6 +310,9 @@ void SceneListComponent::resized()
     saveSnapshotButton.setBounds(snapshotRow.removeFromLeft(200));
     snapshotRow.removeFromLeft(kMargin);
     loadSnapshotButton.setBounds(snapshotRow.removeFromLeft(200));
+    snapshotRow.removeFromLeft(kMargin);
+    contentModeLabel.setBounds(snapshotRow.removeFromLeft(85));
+    contentModeCombo.setBounds(snapshotRow.removeFromLeft(120));
 }
 
 Scene SceneListComponent::buildSceneFromPanel(const std::string& id) const
@@ -562,8 +574,26 @@ void SceneListComponent::loadSnapshotFromFileClicked()
     });
 }
 
+void SceneListComponent::contentModeChanged()
+{
+    const auto mode = contentModeCombo.getSelectedId() == 2 ? ContentMode::Absolute : ContentMode::Generative;
+    processorRef.getComposerCore().setContentMode(mode);
+    setStatus(mode == ContentMode::Absolute
+                   ? "Content Mode: Absolute - sections with captured content now play back verbatim and frozen"
+                   : "Content Mode: Generative - sections stamp from motif presets as usual");
+}
+
 void SceneListComponent::refreshAll()
 {
+    // Re-synced here (2026-08-23) rather than only at construction - Content
+    // Mode is now also changeable from the Score View's own mirrored header
+    // control (PrimaryView), and EditorView's 300ms refresh timer already
+    // calls this unconditionally, so this is the natural place to pick up a
+    // change made from the other side without adding a second polling path.
+    contentModeCombo.setSelectedId(
+        processorRef.getComposerCore().getContentMode() == ContentMode::Absolute ? 2 : 1,
+        juce::dontSendNotification);
+
     std::vector<std::string> instanceIds;
     for (const auto& instance : processorRef.getComposerCore().getInstanceRegistry().getAllInstances())
         instanceIds.push_back(instance.id);

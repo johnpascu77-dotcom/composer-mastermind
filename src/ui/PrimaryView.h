@@ -41,6 +41,7 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
+    void visibilityChanged() override;
 
 private:
     enum class ExportVariant { AsPerformed, ForNotation };
@@ -54,11 +55,36 @@ private:
     juce::File requestExportFile();
     void paintLegend(juce::Graphics& g, juce::Rectangle<int> area) const;
 
+    // Cold-start header row (2026-08-23): the user's own framing of the
+    // first-run flow - open the plugin, see this view empty, Resync, choose
+    // Absolute/Generative, load a Blueprint - so that whole loop is reachable
+    // without ever detouring into the Expert tab. Each handler is a direct
+    // port of an existing Expert-UI equivalent (PatternAwarenessView::
+    // resyncAllClicked, SceneListComponent::contentModeChanged,
+    // BlueprintSectionsContent::loadBlueprintClicked/removeBlueprintClicked/
+    // primeForPlaybackClicked) - no new backend logic, just surfaced here too.
+    void resyncAllClicked();
+    void contentModeChanged();
+    void loadBlueprintClicked();
+    void removeBlueprintClicked();
+    void primeForPlaybackClicked();
+    void refreshHeaderControls();
+
     ComposerMastermindAudioProcessor& processorRef;
 
     juce::TextButton liveSetupToggleButton { "Setup" };
     juce::TextButton modeToggleButton;
     juce::TextButton exportVariantButton;
+
+    juce::TextButton resyncAllButton { "Resync All" };
+    juce::Label contentModeLabel { {}, "Content" };
+    juce::ComboBox contentModeCombo;
+    juce::ComboBox blueprintCombo;
+    juce::TextButton loadBlueprintButton { "Load" };
+    juce::TextButton removeBlueprintButton { "Remove" };
+    juce::TextButton primeButton { "Prime for Playback" };
+    juce::Label headerStatusLabel;
+
     PianoRollView pianoRoll;
     PatternSetupView patternSetupView;
 

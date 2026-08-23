@@ -50,6 +50,12 @@ namespace StateSerializer
     juce::var sectionModulatorValueToVar(const SectionModulatorValue& modulatorValue);
     SectionModulatorValue varToSectionModulatorValue(const juce::var& value);
 
+    juce::var stepSnapshotToVar(const StepSnapshot& step);
+    StepSnapshot varToStepSnapshot(const juce::var& value);
+
+    juce::var sectionCapturedContentToVar(const SectionCapturedContent& capturedContent);
+    SectionCapturedContent varToSectionCapturedContent(const juce::var& value);
+
     juce::var blueprintSectionToVar(const BlueprintSection& section);
     BlueprintSection varToBlueprintSection(const juce::var& value);
 

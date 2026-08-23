@@ -11,8 +11,9 @@ namespace
     constexpr int kSmallGap = 5;
 
     // Sum of every row/gap laid out in resized(), kept in sync with it by
-    // hand - see BlueprintSectionsContent::getPreferredHeight().
-    constexpr int kPreferredHeight = 660;
+    // hand - see BlueprintSectionsContent::getPreferredHeight(). +50 for the
+    // Captured Content row + preview label added 2026-08-23.
+    constexpr int kPreferredHeight = 710;
 
     void styleSlider(juce::Slider& slider, double minValue, double maxValue, double step, double initial)
     {
@@ -189,6 +190,22 @@ BlueprintSectionsContent::BlueprintSectionsContent(ComposerMastermindAudioProces
     pendingModulatorValuesLabel.setFont(juce::Font(12.0f, juce::Font::italic));
     pendingModulatorValuesLabel.setMinimumHorizontalScale(1.0f);
 
+    addAndMakeVisible(capturedContentInstanceCombo);
+    capturedContentInstanceCombo.setTextWhenNothingSelected("(pick instance)");
+
+    addAndMakeVisible(capturedContentPatternCombo);
+    capturedContentPatternCombo.addItem("Pattern 1", 1);
+    capturedContentPatternCombo.addItem("Pattern 2", 2);
+    capturedContentPatternCombo.addItem("Pattern 3", 3);
+    capturedContentPatternCombo.setSelectedId(1, juce::dontSendNotification);
+
+    addAndMakeVisible(captureContentButton);
+    captureContentButton.onClick = [this] { captureContentClicked(); };
+
+    addAndMakeVisible(pendingCapturedContentLabel);
+    pendingCapturedContentLabel.setFont(juce::Font(12.0f, juce::Font::italic));
+    pendingCapturedContentLabel.setMinimumHorizontalScale(1.0f);
+
     addAndMakeVisible(addSectionButton);
     addSectionButton.onClick = [this] { addSectionClicked(); };
 
@@ -326,6 +343,15 @@ void BlueprintSectionsContent::resized()
     addModulatorValueButton.setBounds(modulatorValueRow.removeFromLeft(140));
 
     pendingModulatorValuesLabel.setBounds(nextRow(18));
+
+    auto capturedContentRow = nextRow(kRowHeight);
+    capturedContentInstanceCombo.setBounds(capturedContentRow.removeFromLeft(150));
+    capturedContentRow.removeFromLeft(kSmallGap);
+    capturedContentPatternCombo.setBounds(capturedContentRow.removeFromLeft(100));
+    capturedContentRow.removeFromLeft(kSmallGap);
+    captureContentButton.setBounds(capturedContentRow.removeFromLeft(140));
+
+    pendingCapturedContentLabel.setBounds(nextRow(18));
 
     auto addSectionRow = nextRow(kRowHeight);
     addSectionButton.setBounds(addSectionRow.removeFromLeft(120));
@@ -466,6 +492,47 @@ void BlueprintSectionsContent::addModulatorValueClicked()
     refreshPendingPreview();
 }
 
+void BlueprintSectionsContent::captureContentClicked()
+{
+    if (capturedContentInstanceCombo.getSelectedId() <= 0)
+    {
+        setStatus("Capture skipped: pick an instance first");
+        return;
+    }
+
+    const auto instanceId = capturedContentInstanceCombo.getText().toStdString();
+    const int patternIndex = capturedContentPatternCombo.getSelectedId() - 1;
+
+    CachedPattern cached;
+    if (!processorRef.getComposerCore().getPatternSyncServer().getCache().get(instanceId, patternIndex, cached))
+    {
+        setStatus("Capture failed: no confirmed content for '" + juce::String(instanceId) + "' P"
+                      + juce::String(patternIndex + 1) + " yet - resync it first (Awareness tab)");
+        return;
+    }
+
+    SectionCapturedContent capturedContent;
+    capturedContent.targetInstance = instanceId;
+    capturedContent.patternIndex = patternIndex;
+    capturedContent.steps = cached.snapshot.steps;
+
+    for (auto& existing : pendingCapturedContent)
+    {
+        if (existing.targetInstance == capturedContent.targetInstance
+            && existing.patternIndex == capturedContent.patternIndex)
+        {
+            existing = capturedContent;
+            refreshPendingPreview();
+            setStatus("Re-captured '" + juce::String(instanceId) + "' P" + juce::String(patternIndex + 1));
+            return;
+        }
+    }
+
+    pendingCapturedContent.push_back(capturedContent);
+    refreshPendingPreview();
+    setStatus("Captured '" + juce::String(instanceId) + "' P" + juce::String(patternIndex + 1));
+}
+
 void BlueprintSectionsContent::addSectionClicked()
 {
     const auto id = sectionIdInput.getText().trim().toStdString();
@@ -486,6 +553,7 @@ void BlueprintSectionsContent::addSectionClicked()
     section.budgetOverrides = pendingBudgetOverrides;
     section.reservedValues = pendingReservedValues;
     section.modulatorValues = pendingModulatorValues;
+    section.capturedContent = pendingCapturedContent;
 
     bool replaced = false;
     for (auto& existing : workingSections)
@@ -508,6 +576,7 @@ void BlueprintSectionsContent::addSectionClicked()
     pendingBudgetOverrides.clear();
     pendingReservedValues.clear();
     pendingModulatorValues.clear();
+    pendingCapturedContent.clear();
     sectionIdInput.clear();
 
     refreshPendingPreview();
@@ -527,8 +596,9 @@ void BlueprintSectionsContent::clearPendingClicked()
     pendingBudgetOverrides.clear();
     pendingReservedValues.clear();
     pendingModulatorValues.clear();
+    pendingCapturedContent.clear();
     refreshPendingPreview();
-    setStatus("Cleared pending layer roles, budget overrides, reserved values, and modulator values");
+    setStatus("Cleared pending layer roles, budget overrides, reserved values, modulator values, and captured content");
 }
 
 void BlueprintSectionsContent::loadSectionClicked()
@@ -564,6 +634,7 @@ void BlueprintSectionsContent::loadSectionClicked()
         pendingBudgetOverrides = existing.budgetOverrides;
         pendingReservedValues = existing.reservedValues;
         pendingModulatorValues = existing.modulatorValues;
+        pendingCapturedContent = existing.capturedContent;
 
         refreshPendingPreview();
         setStatus("Loaded section '" + juce::String(id) + "' for editing - change fields, then Add Section to update it");
@@ -661,6 +732,7 @@ void BlueprintSectionsContent::loadBlueprintClicked()
     pendingBudgetOverrides.clear();
     pendingReservedValues.clear();
     pendingModulatorValues.clear();
+    pendingCapturedContent.clear();
     blueprintNameInput.setText(blueprint.name, juce::dontSendNotification);
 
     processorRef.getComposerCore().setCurrentBlueprint(blueprint);
@@ -767,6 +839,28 @@ void BlueprintSectionsContent::refreshPendingPreview()
         }
     }
     pendingModulatorValuesLabel.setText(modulatorText, juce::dontSendNotification);
+
+    juce::String capturedText = "Pending captured content: ";
+    if (pendingCapturedContent.empty())
+    {
+        capturedText << "(none)";
+    }
+    else
+    {
+        for (size_t i = 0; i < pendingCapturedContent.size(); ++i)
+        {
+            if (i > 0)
+                capturedText << ", ";
+            const auto& entry = pendingCapturedContent[i];
+            int enabledSteps = 0;
+            for (const auto& step : entry.steps)
+                if (step.enabled)
+                    ++enabledSteps;
+            capturedText << entry.targetInstance << "/p" << (entry.patternIndex + 1)
+                         << " (" << enabledSteps << " step(s))";
+        }
+    }
+    pendingCapturedContentLabel.setText(capturedText, juce::dontSendNotification);
 }
 
 void BlueprintSectionsContent::refreshSectionsDisplay()
@@ -780,7 +874,8 @@ void BlueprintSectionsContent::refreshSectionsDisplay()
              << "  layerRoles=" << (int) section.layerRoles.size()
              << "  budgetOverrides=" << (int) section.budgetOverrides.size()
              << "  reservedValues=" << (int) section.reservedValues.size()
-             << "  modulatorValues=" << (int) section.modulatorValues.size() << "\n";
+             << "  modulatorValues=" << (int) section.modulatorValues.size()
+             << "  capturedContent=" << (int) section.capturedContent.size() << "\n";
     }
 
     if (text.isEmpty())
@@ -822,6 +917,7 @@ void BlueprintSectionsContent::refreshAll()
         instanceIds.push_back(instance.id);
     repopulate(layerRoleInstanceCombo, instanceIds, false);
     repopulate(reservedValueInstanceCombo, instanceIds, false);
+    repopulate(capturedContentInstanceCombo, instanceIds, false);
 
     std::vector<std::string> modulatorTargetIds;
     for (const auto& target : processorRef.getComposerCore().getModulatorTargetLibrary().getAllTargets())

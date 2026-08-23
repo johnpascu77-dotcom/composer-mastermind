@@ -10,8 +10,11 @@ instrument plugin, MIDI Pattern Launcher (MPL), via MIDI CC, following a narrati
 means the plugin itself is the autonomous composer — not a live-performance tool for a human to play.**
 
 **Using the Expert UI to actually build a piece?** Start with [docs/user_guide.md](docs/user_guide.md) instead —
-a real walkthrough, real values, zero to a playing piece. The list below is for continuing development on the
-plugin itself, not for operating it.
+a real walkthrough, real values, zero to a playing piece. Already comfortable with that core loop and want every
+tab and pending-list field to earn its keep in one real piece, plus the same piece built a second way starting
+from the Score View?
+[docs/advanced_workflow_example.md](docs/advanced_workflow_example.md) is the deeper companion, same voice, same
+method. The list below is for continuing development on the plugin itself, not for operating it.
 
 Start here, in order:
 1. [docs/composer_mastermind_design.md](docs/composer_mastermind_design.md) — vision, architecture, phased

@@ -1,5 +1,6 @@
 #include "PianoRollView.h"
 #include "../policy/MonophonicOverlap.h"
+#include "../midi/CCMapping.h"
 #include <algorithm>
 
 PianoRollView::PianoRollView()
@@ -42,6 +43,11 @@ bool PianoRollView::isStepLocked(int stepIndex) const
     return std::find(locked.begin(), locked.end(), stepIndex) != locked.end();
 }
 
+int PianoRollView::editableLaneSteps() const
+{
+    return CCMapping::effectiveStepCount(lanes.empty() ? 0 : lanes[0].gridMode);
+}
+
 bool PianoRollView::hitTest(juce::Point<float> position, const PitchRange& range, int& outStepIndex,
                              int& outNote) const
 {
@@ -51,11 +57,12 @@ bool PianoRollView::hitTest(juce::Point<float> position, const PitchRange& range
     if (!gridArea.contains(position))
         return false;
 
+    const int steps = editableLaneSteps();
     const int rowCount = juce::jmax(1, range.maxNote - range.minNote + 1);
     const float rowHeight = gridArea.getHeight() / static_cast<float>(rowCount);
-    const float colWidth = gridArea.getWidth() / static_cast<float>(kSteps);
+    const float colWidth = gridArea.getWidth() / static_cast<float>(steps);
 
-    outStepIndex = juce::jlimit(0, kSteps - 1,
+    outStepIndex = juce::jlimit(0, steps - 1,
                                  static_cast<int>((position.x - gridArea.getX()) / colWidth));
     const int row = juce::jlimit(0, rowCount - 1,
                                   static_cast<int>((position.y - gridArea.getY()) / rowHeight));
@@ -91,7 +98,8 @@ int PianoRollView::maxNonOverlappingDuration(const std::vector<StepSnapshot>& st
 
 void PianoRollView::applyNoteEditSafely(int stepIndex, int note, int velocity, int duration, int ignoredStep)
 {
-    if (lanes.size() != 1 || stepIndex < 0 || stepIndex >= kSteps)
+    const int effectiveSteps = editableLaneSteps();
+    if (lanes.size() != 1 || stepIndex < 0 || stepIndex >= effectiveSteps)
         return;
 
     auto& steps = lanes[0].steps;
@@ -100,10 +108,11 @@ void PianoRollView::applyNoteEditSafely(int stepIndex, int note, int velocity, i
 
     const int clampedNote = juce::jlimit(0, 127, note);
     const int clampedVelocity = juce::jlimit(1, 127, velocity);
-    const int requestedDuration = juce::jlimit(1, kSteps - stepIndex, duration);
-    const int safeDuration = maxNonOverlappingDuration(steps, stepIndex, requestedDuration, ignoredStep, kSteps);
+    const int requestedDuration = juce::jlimit(1, effectiveSteps - stepIndex, duration);
+    const int safeDuration =
+        maxNonOverlappingDuration(steps, stepIndex, requestedDuration, ignoredStep, effectiveSteps);
 
-    if (stepRangeOverlapsExisting(steps, stepIndex, safeDuration, ignoredStep, kSteps))
+    if (stepRangeOverlapsExisting(steps, stepIndex, safeDuration, ignoredStep, effectiveSteps))
         return; // still conflicts even at the smallest duration - refuse rather than overwrite
 
     steps[(size_t) stepIndex] = { true, clampedNote, clampedVelocity, safeDuration };
@@ -201,7 +210,7 @@ void PianoRollView::mouseDown(const juce::MouseEvent& event)
     }
     else
     {
-        if (stepRangeOverlapsExisting(steps, stepIndex, 1, -1, kSteps))
+        if (stepRangeOverlapsExisting(steps, stepIndex, 1, -1, editableLaneSteps()))
             return; // another note (any pitch) already sustains through this cell - refuse
 
         gestureStep = stepIndex;
@@ -241,13 +250,15 @@ void PianoRollView::mouseDrag(const juce::MouseEvent& event)
     if (!hitTest(event.position, range, stepIndex, note))
         return;
 
+    const int effectiveSteps = editableLaneSteps();
+
     switch (gestureMode)
     {
         case GestureMode::CreateOrResize:
         case GestureMode::MovePitchAndDuration:
         {
-            const int endStep = juce::jlimit(gestureStep, kSteps - 1, stepIndex);
-            const int requestedDuration = juce::jlimit(1, kSteps - gestureStep, endStep - gestureStep + 1);
+            const int endStep = juce::jlimit(gestureStep, effectiveSteps - 1, stepIndex);
+            const int requestedDuration = juce::jlimit(1, effectiveSteps - gestureStep, endStep - gestureStep + 1);
             const int pitchToUse = gestureMode == GestureMode::MovePitchAndDuration ? note : gestureNote;
             applyNoteEditSafely(gestureStep, pitchToUse, gestureVelocity, requestedDuration, gestureStep);
             break;
@@ -261,13 +272,13 @@ void PianoRollView::mouseDrag(const juce::MouseEvent& event)
 
         case GestureMode::MoveTime:
         {
-            const int maxStartStep = juce::jmax(0, kSteps - gestureDuration);
+            const int maxStartStep = juce::jmax(0, effectiveSteps - gestureDuration);
             const int requestedStartStep = juce::jlimit(0, maxStartStep, stepIndex - gestureClickOffsetSteps);
             if (requestedStartStep == gestureStep)
                 break;
 
             auto& steps = lanes[0].steps;
-            if (stepRangeOverlapsExisting(steps, requestedStartStep, gestureDuration, gestureStep, kSteps))
+            if (stepRangeOverlapsExisting(steps, requestedStartStep, gestureDuration, gestureStep, effectiveSteps))
                 break; // would collide with another note - refuse, note stays put
 
             steps[(size_t) gestureStep].enabled = false;
@@ -388,7 +399,6 @@ void PianoRollView::paintLane(juce::Graphics& g, juce::Rectangle<float> laneArea
 
     const int rowCount = juce::jmax(1, range.maxNote - range.minNote + 1);
     const float rowHeight = gridArea.getHeight() / static_cast<float>(rowCount);
-    const float colWidth = gridArea.getWidth() / static_cast<float>(kSteps);
 
     g.setFont(juce::Font(juce::FontOptions().withHeight(10.0f)));
     for (int row = 0; row <= rowCount; ++row)
@@ -409,11 +419,44 @@ void PianoRollView::paintLane(juce::Graphics& g, juce::Rectangle<float> laneArea
         }
     }
 
-    for (int step = 0; step <= kSteps; ++step)
+    // Vertical reference lines: a single lane draws its own real grid
+    // (12 or 16 steps, whichever this lane's actual grid mode plays back -
+    // see CCMapping::effectiveStepCount) since there's no ambiguity about
+    // whose resolution to show. Multiple lanes sharing one grid (Overlay
+    // mode) draw only the 4 quarter-bar boundaries instead - grid-mode-
+    // agnostic (a bar is 4 beats regardless of subdivision), since one
+    // shared fine grid can't honestly represent two different resolutions
+    // at once. Note rectangles below are always positioned per-lane at their
+    // own real resolution regardless of what's drawn here.
+    if (lanesToDraw.size() == 1)
     {
-        const float x = gridArea.getX() + colWidth * static_cast<float>(step);
-        g.setColour(backgroundColour.contrasting(step % 4 == 0 ? 0.35f : 0.12f));
-        g.drawVerticalLine(juce::roundToInt(x), gridArea.getY(), gridArea.getBottom());
+        const int steps = CCMapping::effectiveStepCount(lanesToDraw.front()->gridMode);
+        const float colWidth = gridArea.getWidth() / static_cast<float>(steps);
+
+        // Beat boundaries, not a flat "every 4th step" - a bar is always 4
+        // beats in this codebase's convention (matches ui/PrimaryView.cpp's
+        // kBarLengthInPpq), so how many raw steps make up one beat depends
+        // on the grid: 16/4=4 steps/beat in Binary, 12/4=3 in Ternary. A
+        // hardcoded "%4" bolded the wrong lines for Ternary (grouping into
+        // 3 sets of 4 steps - i.e. 3 beats - instead of 4 sets of 3), found
+        // live by the user as genuinely confusing to read against.
+        const int stepsPerBeat = juce::jmax(1, steps / 4);
+
+        for (int step = 0; step <= steps; ++step)
+        {
+            const float x = gridArea.getX() + colWidth * static_cast<float>(step);
+            g.setColour(backgroundColour.contrasting(step % stepsPerBeat == 0 ? 0.35f : 0.12f));
+            g.drawVerticalLine(juce::roundToInt(x), gridArea.getY(), gridArea.getBottom());
+        }
+    }
+    else
+    {
+        for (int quarter = 0; quarter <= 4; ++quarter)
+        {
+            const float x = gridArea.getX() + gridArea.getWidth() * (static_cast<float>(quarter) / 4.0f);
+            g.setColour(backgroundColour.contrasting(0.35f));
+            g.drawVerticalLine(juce::roundToInt(x), gridArea.getY(), gridArea.getBottom());
+        }
     }
 
     for (const auto* lane : lanesToDraw)
@@ -421,7 +464,15 @@ void PianoRollView::paintLane(juce::Graphics& g, juce::Rectangle<float> laneArea
         if (lane->activePatternNumber <= 0 || !lane->hasData)
             continue;
 
-        for (int stepIndex = 0; stepIndex < (int) lane->steps.size() && stepIndex < kSteps; ++stepIndex)
+        const int laneSteps = CCMapping::effectiveStepCount(lane->gridMode);
+        const float laneColWidth = gridArea.getWidth() / static_cast<float>(laneSteps);
+
+        // Steps at or past laneSteps (e.g. raw indices 12-15 on a Ternary
+        // lane) are real, storable data MPL will never actually play back in
+        // this grid mode - not drawn, matching the same "don't act on what
+        // isn't real" restraint stampOnePattern already applies on the write
+        // side (see policy/MotifEngine.cpp).
+        for (int stepIndex = 0; stepIndex < (int) lane->steps.size() && stepIndex < laneSteps; ++stepIndex)
         {
             const auto& step = lane->steps[(size_t) stepIndex];
             if (!step.enabled)
@@ -432,9 +483,9 @@ void PianoRollView::paintLane(juce::Graphics& g, juce::Rectangle<float> laneArea
                 continue; // outside the current display range - shouldn't happen, computePitchRange spans all notes
 
             const int durationSteps = juce::jmax(1, step.duration);
-            const float x = gridArea.getX() + colWidth * static_cast<float>(stepIndex);
+            const float x = gridArea.getX() + laneColWidth * static_cast<float>(stepIndex);
             const float y = gridArea.getY() + rowHeight * static_cast<float>(row);
-            const float w = juce::jmax(1.0f, colWidth * static_cast<float>(durationSteps) - 1.0f);
+            const float w = juce::jmax(1.0f, laneColWidth * static_cast<float>(durationSteps) - 1.0f);
             const float h = juce::jmax(2.0f, rowHeight - 2.0f);
 
             g.setColour(lane->colour.withAlpha(0.85f));

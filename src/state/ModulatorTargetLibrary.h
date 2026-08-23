@@ -18,6 +18,8 @@ public:
     bool getTargetById(const std::string& targetId, ModulatorTarget& outTarget) const;
     std::vector<ModulatorTarget> getAllTargets() const;
 
+    void clear();
+
 private:
     std::vector<ModulatorTarget> targets;
     mutable std::mutex targetsMutex;

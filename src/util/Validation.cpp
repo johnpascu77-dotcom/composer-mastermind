@@ -1,4 +1,5 @@
 #include "Validation.h"
+#include "../midi/CCMapping.h"
 
 namespace Validation
 {
@@ -197,6 +198,45 @@ namespace Validation
                 {
                     errorMessage = "Section '" + section.id + "' has a modulator value outside 0..127";
                     return false;
+                }
+            }
+
+            for (const auto& capturedContent : section.capturedContent)
+            {
+                if (capturedContent.targetInstance.empty())
+                {
+                    errorMessage = "Section '" + section.id + "' has captured content with an empty target instance";
+                    return false;
+                }
+
+                if (!isValidPatternIndex(capturedContent.patternIndex))
+                {
+                    errorMessage = "Section '" + section.id + "' has captured content with an invalid pattern index";
+                    return false;
+                }
+
+                if ((int) capturedContent.steps.size() != CCMapping::kPatternSteps)
+                {
+                    errorMessage = "Section '" + section.id + "' has captured content that isn't exactly "
+                                    + std::to_string(CCMapping::kPatternSteps) + " steps";
+                    return false;
+                }
+
+                for (const auto& step : capturedContent.steps)
+                {
+                    if (!isValidCCNumber(step.note) || !isValidCCNumber(step.velocity))
+                    {
+                        errorMessage = "Section '" + section.id + "' has captured content with a note/velocity "
+                                        "outside 0..127";
+                        return false;
+                    }
+
+                    if (step.duration < 0 || step.duration > CCMapping::kPatternSteps)
+                    {
+                        errorMessage = "Section '" + section.id + "' has captured content with a duration outside "
+                                        "0.." + std::to_string(CCMapping::kPatternSteps);
+                        return false;
+                    }
                 }
             }
         }

@@ -57,3 +57,9 @@ std::vector<ModulatorTarget> ModulatorTargetLibrary::getAllTargets() const
     std::lock_guard<std::mutex> lock(targetsMutex);
     return targets;
 }
+
+void ModulatorTargetLibrary::clear()
+{
+    std::lock_guard<std::mutex> lock(targetsMutex);
+    targets.clear();
+}

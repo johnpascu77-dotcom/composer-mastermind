@@ -397,7 +397,8 @@ namespace
         InstanceParameterState trackedState;
         stateTracker.getState(instance.id, trackedState);
         const int trackedLength = trackedState.patterns[static_cast<size_t>(patternIndex)].length;
-        const size_t windowLimit = static_cast<size_t>(std::clamp(trackedLength, 1, CCMapping::kPatternSteps));
+        const int effectiveSteps = CCMapping::effectiveStepCount(trackedState.gridMode);
+        const size_t windowLimit = static_cast<size_t>(std::clamp(trackedLength, 1, effectiveSteps));
 
         std::vector<int> existingEnabled;
         for (size_t i = 0; i < cached.snapshot.steps.size(); ++i)
@@ -448,7 +449,7 @@ namespace
             const int targetStepIndex = static_cast<int>(targetIndices[i]);
             const int requestedDuration = clampDuration(static_cast<int>(std::lround(1.0 * motifNote.relativeDuration)));
             freshSteps[(size_t) targetStepIndex].duration = MonophonicOverlap::maxNonOverlappingDuration(
-                freshSteps, targetStepIndex, requestedDuration, targetStepIndex, CCMapping::kPatternSteps);
+                freshSteps, targetStepIndex, requestedDuration, targetStepIndex, effectiveSteps);
         }
 
         // Locked steps (Setup mode) keep whatever the cache already had at
@@ -563,7 +564,8 @@ namespace MotifEngine
             // so every pass keeps nudging that inaudible step in place and
             // the recovery branch below never sees an empty window to repair).
             const int trackedLength = trackedState.patterns[static_cast<size_t>(patternIndex)].length;
-            const size_t windowLimit = static_cast<size_t>(std::clamp(trackedLength, 1, CCMapping::kPatternSteps));
+            const int effectiveSteps = CCMapping::effectiveStepCount(trackedState.gridMode);
+            const size_t windowLimit = static_cast<size_t>(std::clamp(trackedLength, 1, effectiveSteps));
 
             std::vector<int> enabledStepIndices;
             for (size_t i = 0; i < windowLimit && i < cached.snapshot.steps.size(); ++i)
@@ -642,7 +644,7 @@ namespace MotifEngine
                 // enforce, see MonophonicOverlap.h.
                 const int newDuration = MonophonicOverlap::maxNonOverlappingDuration(
                     cached.snapshot.steps, targetStepIndex, requestedDuration, targetStepIndex,
-                    CCMapping::kPatternSteps);
+                    effectiveSteps);
 
                 if (!convergent)
                 {
