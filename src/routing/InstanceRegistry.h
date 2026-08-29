@@ -16,7 +16,12 @@ public:
     // (e.g. to change its role/channel) rather than rejecting the call,
     // matching every other library's addOrReplace* convention in this
     // codebase (SceneLibrary, PresetLibrary, BlueprintLibrary,
-    // ModulatorTargetLibrary). Always returns true.
+    // ModulatorTargetLibrary). Also enforces MIDI channel uniqueness
+    // (2026-08-27): any other registered instance already on this
+    // instance's midiChannel is evicted first - a channel can only ever
+    // reach one real physical MPL instance, so a collision is always a
+    // stale leftover, never a legitimate second occupant. Always returns
+    // true.
     bool addInstance(const Instance& instance);
     bool removeInstance(const std::string& instanceId);
 

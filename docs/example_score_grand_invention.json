@@ -1,0 +1,4058 @@
+{
+  "schema": "ComposerMastermindComposition.v3",
+  "blueprint": {
+    "id": "grand_invention",
+    "name": "Grand Invention",
+    "sections": [
+      {
+        "id": "exposition",
+        "name": "Exposition - subject over pedal",
+        "sceneId": "exposition_scene",
+        "startBar": 1,
+        "durationBars": 4,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 38,
+                "velocity": 80,
+                "duration": 16
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "answer_entry",
+        "name": "Answer entry (dominant) + countersubject",
+        "sceneId": "answer_entry_scene",
+        "startBar": 5,
+        "durationBars": 4,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 66,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 72,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 68,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 43,
+                "velocity": 75,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 74,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 78,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "inversion_entry",
+        "name": "Inversion entry (mirror bass)",
+        "sceneId": "inversion_entry_scene",
+        "startBar": 9,
+        "durationBars": 3,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 66,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 72,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 68,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 43,
+                "velocity": 75,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 74,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 78,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "episode",
+        "name": "Episode - fragment sequenced a step apart",
+        "sceneId": "episode_scene",
+        "startBar": 12,
+        "durationBars": 3,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 88,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 96,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 92,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 88,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 96,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 92,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "retrograde_passage",
+        "name": "Retrograde passage",
+        "sceneId": "retrograde_passage_scene",
+        "startBar": 15,
+        "durationBars": 2,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 66,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 72,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 68,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 43,
+                "velocity": 75,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 74,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 78,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "m7_climax",
+        "name": "Climax - M7 row + Retrograde-Inversion",
+        "sceneId": "m7_climax_scene",
+        "startBar": 17,
+        "durationBars": 2,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 66,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 72,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 68,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 43,
+                "velocity": 75,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 74,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 78,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "recap_subdominant",
+        "name": "Recapitulation (subdominant)",
+        "sceneId": "recap_subdominant_scene",
+        "startBar": 19,
+        "durationBars": 4,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 66,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 72,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 68,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 43,
+                "velocity": 75,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 70,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 74,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 78,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "final_cadence",
+        "name": "Final cadence - thinning, home key",
+        "sceneId": "final_cadence_scene",
+        "startBar": 23,
+        "durationBars": 4,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 85,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 95,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 64,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 108,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 105,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 112,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 67,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "v4",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "exposition_scene",
+      "name": "Exposition - subject over pedal",
+      "durationBars": 4,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v4",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "answer_entry_scene",
+      "name": "Answer entry (dominant) + countersubject",
+      "durationBars": 4,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v2",
+          "patternIndex": 0,
+          "transpose": 7,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v4",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "inversion_entry_scene",
+      "name": "Inversion entry (mirror bass)",
+      "durationBars": 3,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v2",
+          "patternIndex": 0,
+          "transpose": 7,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v3",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": true,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v4",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "episode_scene",
+      "name": "Episode - fragment sequenced a step apart",
+      "durationBars": 3,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v2",
+          "patternIndex": 0,
+          "transpose": 2,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "retrograde_passage_scene",
+      "name": "Retrograde passage",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": true,
+          "m7": false
+        },
+        {
+          "targetInstance": "v2",
+          "patternIndex": 0,
+          "transpose": 7,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v3",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": true,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v4",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "m7_climax_scene",
+      "name": "Climax - M7 row + Retrograde-Inversion",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": true
+        },
+        {
+          "targetInstance": "v2",
+          "patternIndex": 0,
+          "transpose": 7,
+          "rotation": 0,
+          "length": 16,
+          "inversion": true,
+          "retrograde": true,
+          "m7": false
+        },
+        {
+          "targetInstance": "v3",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": true,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v4",
+          "patternIndex": 0,
+          "transpose": 12,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "recap_subdominant_scene",
+      "name": "Recapitulation (subdominant)",
+      "durationBars": 4,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 5,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v2",
+          "patternIndex": 0,
+          "transpose": 12,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v3",
+          "patternIndex": 0,
+          "transpose": 5,
+          "rotation": 0,
+          "length": 16,
+          "inversion": true,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v4",
+          "patternIndex": 0,
+          "transpose": 5,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "final_cadence_scene",
+      "name": "Final cadence - thinning, home key",
+      "durationBars": 4,
+      "quantize": "bar",
+      "targets": [
+        "v1",
+        "v2",
+        "v3",
+        "v4"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "v1",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v2",
+          "activePattern": 1,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v3",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0
+        },
+        {
+          "targetInstance": "v4",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "v1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "v2",
+          "patternIndex": 0,
+          "transpose": 7,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [
+    {
+      "id": "v1",
+      "midiChannel": 1,
+      "role": "anchor",
+      "enabled": true
+    },
+    {
+      "id": "v2",
+      "midiChannel": 2,
+      "role": "motif",
+      "enabled": true
+    },
+    {
+      "id": "v3",
+      "midiChannel": 3,
+      "role": "counterpoint",
+      "enabled": true
+    },
+    {
+      "id": "v4",
+      "midiChannel": 4,
+      "role": "counterpoint",
+      "enabled": true
+    }
+  ],
+  "motifPresets": [],
+  "modulatorTargets": [],
+  "modulationRoutes": []
+}

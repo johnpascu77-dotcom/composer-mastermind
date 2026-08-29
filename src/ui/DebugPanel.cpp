@@ -39,6 +39,8 @@ DebugPanel::DebugPanel(ComposerMastermindAudioProcessor& processor, std::functio
     mutationTypeCombo.addItem("Rotation", 2);
     mutationTypeCombo.addItem("Length", 3);
     mutationTypeCombo.addItem("Inversion", 4);
+    mutationTypeCombo.addItem("Retrograde", 5);
+    mutationTypeCombo.addItem("M7", 6);
     mutationTypeCombo.setSelectedId(1, juce::dontSendNotification);
     addAndMakeVisible(mutationTypeLabel);
 
@@ -86,7 +88,7 @@ juce::String DebugPanel::describeMutationPreview() const
 
     const auto targetId = mutationTargetCombo.getText().toStdString();
     const int patternIndex = juce::jlimit(0, 2, mutationPatternCombo.getSelectedId() - 1);
-    const int typeIndex = juce::jlimit(0, 3, mutationTypeCombo.getSelectedItemIndex());
+    const int typeIndex = juce::jlimit(0, 5, mutationTypeCombo.getSelectedItemIndex());
     const int amount = static_cast<int>(mutationAmountSlider.getValue());
 
     InstanceParameterState state; // defaults if this instance has never been tracked yet
@@ -117,10 +119,24 @@ juce::String DebugPanel::describeMutationPreview() const
             text << "current: " << pattern.length << " steps  ->  new: " << newValue << " steps";
             break;
         }
-        default: // Inversion - absolute toggle, not a delta (a boolean has no sensible "nudge")
+        case 3: // Inversion - absolute toggle, not a delta (a boolean has no sensible "nudge")
         {
             const bool newValue = amount != 0;
             text << "current: " << (pattern.inversion ? "on" : "off")
+                 << "  ->  new: " << (newValue ? "on" : "off") << "  (any non-zero amount = on)";
+            break;
+        }
+        case 4: // Retrograde - same absolute-toggle treatment as Inversion
+        {
+            const bool newValue = amount != 0;
+            text << "current: " << (pattern.retrograde ? "on" : "off")
+                 << "  ->  new: " << (newValue ? "on" : "off") << "  (any non-zero amount = on)";
+            break;
+        }
+        default: // M7 - same absolute-toggle treatment as Inversion
+        {
+            const bool newValue = amount != 0;
+            text << "current: " << (pattern.m7 ? "on" : "off")
                  << "  ->  new: " << (newValue ? "on" : "off") << "  (any non-zero amount = on)";
             break;
         }
@@ -196,8 +212,8 @@ void DebugPanel::sendMutationClicked()
         return;
     }
 
-    static const char* typeNames[] = { "transpose", "rotation", "length", "inversion" };
-    const int typeIndex = juce::jlimit(0, 3, mutationTypeCombo.getSelectedItemIndex());
+    static const char* typeNames[] = { "transpose", "rotation", "length", "inversion", "retrograde", "m7" };
+    const int typeIndex = juce::jlimit(0, 5, mutationTypeCombo.getSelectedItemIndex());
 
     Mutation mutation;
     mutation.type = typeNames[typeIndex];

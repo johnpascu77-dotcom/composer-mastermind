@@ -1,11 +1,12 @@
 # Arc Dimension → Parameter Mapping — Design Concept
 
-**Status (2026-08-22): Track B underway.** Branched off [score_timeline_ui_concept.md](score_timeline_ui_concept.md)'s
+**Status (2026-08-25): all 5 dimensions now have a real consumer.** Branched off [score_timeline_ui_concept.md](score_timeline_ui_concept.md)'s
 open item 1 (curve-based blueprint/preset authoring) once it became clear the real prerequisite isn't the
 authoring UI — it's that most of the 5 arc dimensions don't drive anything yet. This doc is that design pass:
 giving each dimension a real, audible consumer. Now part of the phased roadmap's v1.2 Track B
-([composer_mastermind_design.md](composer_mastermind_design.md)) — the continuous-automation dispatch path plus
-the Energy/Tension consumers are built (below); Complexity, Density, and Coherence are not yet.
+([composer_mastermind_design.md](composer_mastermind_design.md)) — Energy/Tension/Density/Complexity built
+2026-08-22, Coherence built 2026-08-25 (see its own section below — a simpler mapping than the one originally
+sketched here, not yet live-tested).
 
 ## Where this started
 
@@ -33,7 +34,7 @@ of a flat interval like today's `kPassIntervalBars`/`kPhraseChainIntervalBars`.
 | **Tension** | **Built 2026-08-22.** Melodic average curve's *register center* — instead of a pure sine wobble around a fixed point, rising tension (build's baseline already climbs 0.5→0.9 toward peak) now pulls the shared tonal center upward, 0..`kMaxTensionRegisterPullSemitones` (12, one octave). | — |
 | **Density** | **Built 2026-08-22.** Swing amount (CC 24), via new `Router::routeContinuousSwing` — `ComposerCore::applyContinuousSwing` maps Density's 0..1 value linearly onto Swing's full 0..`CCMapping::kMaxSwing` (75%) range every bar, for every archetype-eligible instance regardless of whether it's currently resting (Swing is a global groove setting, not tied to any one pattern, so it should already be right the moment an instance resumes). Replaces "100% static-per-scene, never touched again." See the resolved notation caveat below. | — |
 | **Complexity** | **Built 2026-08-22.** Mutation budget *ceiling* scaling — `ComposerCore::resolveSectionBudgetOverride` now always scales whatever base budget applies (explicit section override, else `MutationPolicy::budgetForRole`'s static table) by `1.0 + complexityValue` (1x..2x, ceil'd so a small budget visibly grows), rather than only ever returning the unscaled static table when no section explicitly overrides a role. Unlimited (-1) budgets stay unlimited. Doubles up Complexity's role alongside phrase-chain banding rather than inventing a 6th dimension. | **Built 2026-08-22.** Phrase-chain target banding (P1/P2/P3), **threshold-crossing**: `firePhraseChainIfDue` now runs every bar, sampling the complexity arc and banding it into three even thirds → P1/P2/P3 (matching `seedPhraseChainPatterns`' own base/rotated/inverted assignment), changing an instance's home pattern only when the band itself differs from last time (`lastPhraseChainBand`) — replaced the old flat `kPhraseChainIntervalBars`=8 metronome entirely, which is now removed. |
-| **Coherence** | — | Deliberately not mapped this pass — see below. |
+| **Coherence** | — | **Built 2026-08-25**, see "Coherence" section below — threshold-crossing onto MPL's Retrograde/M7 toggles (own CC each, added the same session), not the harder mapping originally sketched here. **Second consumer added 2026-08-27**: authored-curve Rate divergence via `ModulationRoute`, no new engine code — see "Coherence's second consumer" below. |
 
 **Richer role vocabulary for the phrase-chain target — built 2026-08-22, inspired by a commercial JUCE plugin,
 Stellarizer's Pattern Playground.** Stellarizer generates 8 named roles from one source (Anchor, Sparse Signal,
@@ -80,45 +81,117 @@ from the continuous curve, which runs for every archetype including Presentation
 mechanism). Not logged to the Activity Log — every-bar-per-instance would spam a log meant to stay "deliberately
 coarse"; the effect is audible/observable via a live transpose readout instead (e.g. the Awareness tab).
 
-## Coherence — deliberately deferred
+**Content-aware taper (2026-08-27):** the register-center math above is purely time/arc-driven and was originally
+applied identically to every touched instance regardless of where that instance's pattern already sat pitch-wise
+— found live to push an already high-voiced pattern another +10 semitones up via Transpose. Before dispatch, the
+raw `curveTargetTranspose` is now passed through `MotifEngine::taperTransposeForPatternContent`, which bounds the
+*combined* result (the pattern's own current cached-content center plus the raw Transpose) to the same
+`boundedHomeCenter` clamp `stampOnePattern`/`applyForSection` already use for generative writes, and back-solves
+the actually-safe Transpose from that. Only affects this built-in curve, not user-authored `ModulationRoute`s.
 
-Everything above is "sample a curve, set a parameter." Coherence today is a live *diagnostic* (how much instances
-already agree, `policy/CoherenceEvaluator`), not a single knob to set — turning it into a real target needs an
-active clamping/nudge mechanism pulling instances toward agreement, which `composer_mastermind_design.md`'s v0.5
-section already flagged as unfinished ("coherence-as-target still isn't built, only coherence-as-diagnostic").
-Left out of this pass rather than forcing a shallow mapping onto it.
+## Coherence — the harder mapping is still deferred; a simpler one is built
 
-## Swing vs. notation: the exact problem, and the fix — built 2026-08-22
+Everything above is "sample a curve, set a parameter." Coherence-as-*diagnostic* (`policy/CoherenceEvaluator`, how
+much instances already agree right now) is a different thing from the `ArcSet` "coherence" *dimension* (an
+authored/baked curve, same shape as energy/tension/density/complexity) — this section is about the latter.
+Turning the diagnostic into a real target needs an active clamping/nudge mechanism pulling instances toward
+measured agreement, which `composer_mastermind_design.md`'s v0.5 section already flagged as unfinished
+("coherence-as-target still isn't built, only coherence-as-diagnostic") — **that direction is still deferred**,
+deliberately, as originally written here.
 
-Continuous, curve-driven Swing is expressive for live audition but genuinely dangerous for the notation-export
-path, because most swing values don't correspond to any clean notated rhythm. Worked out exactly from MPL's own
-formula (`Source/PluginProcessor.cpp:2160` in the sibling project — only alternating/odd-indexed steps get
-delayed, by `gridStepLength × 0.5 × swing%/100`):
+A different, much simpler mapping was built instead (2026-08-25), once MPL gained two new toggles that are
+naturally *about* divergence: **Retrograde** and **M7** (CC 34/35, 44/45, 54/55 — see
+[routing_policy_v0_1.md](routing_policy_v0_1.md)). `ComposerCore::applyCoherenceDivergenceIfDue` samples the
+Coherence arc every bar a section is active and threshold-crosses it exactly the way Complexity drives
+phrase-chain banding above (`firePhraseChainIfDue`) — not a continuous glide (these are categorical CC
+parameters, same "impulse target" reasoning as Inversion always had), and not an active nudge toward the
+diagnostic's measured agreement either. Two thresholds stage the divergence: below 0.35, Retrograde turns on;
+below 0.15, M7 also turns on. Both sit below every archetype's baseline coherence value (Presentation 0.6, Build
+0.5, Peak 0.8, Release 0.45 — `BlueprintGenerator.cpp`'s `coherenceBaseline`), so picking an archetype alone never
+triggers this; it only fires when a section's coherence curve is deliberately authored/hand-curved down past
+either point — the "intentional CC curve, not incidental side effect" framing the user specifically wanted
+(confirmed by hand first, via two independent Bitwig modulators driving these same toggles directly on two MPL
+instances, described as producing exactly the kind of development-section motion this mapping now automates from
+an authored curve instead of manual modulator setup).
+
+### Coherence's second consumer — authored-curve Rate divergence, built 2026-08-27, no new engine code
+
+The "harder mapping" above (an active nudge toward `CoherenceEvaluator`'s *measured* agreement) is still exactly
+as deferred as when this section was first written - genuinely different, harder problem, not reopened here. But
+once [[project_mpl_rate_status]]'s Rate landed with full `ModulationRoute` citizenship, a second, much simpler
+Coherence idea became available for free: the *authored* Coherence curve (same shape Energy/Tension/Density
+already sample) driving Rate divergence, exactly the way `tension → rate` already does for the cadence device -
+just a second `ModulationRoute`, zero new `ComposerCore` code.
+
+Demonstrated on "Slack Tide" (`docs/example_score_slack_tide.json`): MPL1 (anchor) and MPL3 (counterpoint)
+already have Rate spoken for by Tension - MPL1 capped to Normal/Augmented, MPL3 free to reach Diminished at
+Tension's peak (the orchestration fix from earlier the same day - see `docs/advanced_workflow_example.md`'s
+troubleshooting entry). MPL2 (motif) had no Rate automation at all, so it's a clean target: `coherence_to_rate_MPL2`
+(`outputMin: 0, outputMax: 1, invert: false`) pulls MPL2 toward **Augmented** as Coherence falls - the *opposite*
+pole from MPL3's Tension-driven **Diminished** at the same moment (Surge, where Coherence bottoms out and the
+existing Retrograde/M7 divergence consumer above already fires). The result: at the piece's point of maximum
+disagreement, the voices don't just diverge in pitch-transform (Retrograde/M7) - they pull apart rhythmically in
+opposite directions too, then reconverge together as Coherence recovers into Slack. Confirms the general pattern:
+**a new arc-dimension "consumer" doesn't need a new hardcoded `ComposerCore` function once the target parameter
+already has generic `ModulationRoute` support - it can just be authored**, the same realization `BarCycle`'s dual
+macro/micro use already demonstrated for Rate itself.
+
+## Swing vs. notation: the exact problem, and the fix — built 2026-08-22, superseded 2026-08-25, refined 2026-08-26
+
+Continuous, curve-driven Swing (Density's original 2026-08-22 consumer) turned out to be expressive for live
+audition but genuinely dangerous for the notation-export path, because most swing values don't correspond to any
+clean notated rhythm. Worked out exactly from MPL's own formula (`Source/PluginProcessor.cpp:2160` in the sibling
+project — only alternating/odd-indexed steps get delayed, by `gridStepLength × 0.5 × swing%/100`):
 
 - **0% → 1:1 (straight)** — clean.
 - **66.67% → exactly 2:1 (true triplet feel)** — clean, notates as genuine eighth-note triplets or swung eighths.
-- **75% (MPL's actual maximum)** → **2.2:1**, not the 3:1 a "dotted shuffle" would need. A true dotted-eighth+
-  sixteenth ratio requires swing = 100%, outside MPL's 0-75% range entirely — MPL cannot produce an exact dotted
-  shuffle at all. Its ceiling is an in-between value in disguise, not a third clean state.
+- **100% → exactly 3:1** — the true dotted-eighth-plus-sixteenth shuffle ratio. This is the delay formula's actual
+  mathematical ceiling: at 100%, the swung note lands precisely at the midpoint between its neighbours, and going
+  any higher would overtake the following step's timing and invert step order. Not an arbitrary round number —
+  the genuine boundary.
 
-So MPL's real swing range contains exactly **two** notation-legal anchor points, not three. Resolution, layered on
-top of the existing as-performed/quantized-for-notation export split from
-[score_timeline_ui_concept.md](score_timeline_ui_concept.md):
+**2026-08-25: this stopped being a notation-export-only quirk once the user actually listened to it.** Live
+testing found that the *performed* audio was sloppy, not just its notation - a moderate swing value like 20%
+never sounded like a deliberate groove, only 0% (straight) and something near the clean ratios ever read as
+musical. Rather than keep working around this at export time, MPL's own Swing knob (CC 24) was narrowed at the
+source from a continuous slider to a genuine **3-state choice: Off (0%) / Triplet (66.67%) / Shuffle** - see
+`Source/PluginProcessor.cpp`'s `globalSwingParam`. It is no longer possible to land on an ambiguous in-between
+value at all, live or in notation.
 
-- **As-performed / live audition**: Density drives Swing continuously across the full 0-75% range, unrestricted —
-  it never touches notation. `PrimaryView`'s recorder buffer captures this as `RecordedNote::performedOnsetPpq`,
-  the real swing delay in effect at that step, unchanged.
-- **Quantized-for-notation export**: at each note, snap the swing value in effect to whichever of the two clean
-  anchors is nearer — **0% below a ~33% crossover (roughly the midpoint to 66.67%), else 66.67%**. MPL's own
-  ceiling (75%) folds into the triplet bucket rather than being treated as its own state, since it was never a
-  clean ratio to begin with. Same value-banding technique as the phrase-chain/archetype classification above,
-  captured as `RecordedNote::quantizedOnsetPpq`
-  (`ui/PrimaryView.cpp`'s `kSwingNotationCrossoverPercent`/`kSwingNotationTripletPercent`), computed at the same
-  moment as the performed onset so the drag-out export's variant toggle needs no separate quantization pass.
-  (This replaced an interim simplification from the drag-out export's own build, 2026-08-22 same day: with Swing
-  still static at that point, "just drop the swing offset entirely" was correct and sufficient; once Density made
-  Swing genuinely continuous immediately after, that simplification would have silently flattened real swung
-  passages to straight, so it was replaced with the actual banding rule described here.)
+**2026-08-26: Shuffle's own percent moved from 75% to 100%.** The first build set Shuffle to MPL's old historical
+maximum (75%, a 2.2:1 ratio) without questioning whether that number still meant anything now that Swing was a
+named state rather than a slider ceiling - live testing immediately found Triplet and Shuffle indistinguishable
+by ear, since 2.2:1 is barely different from 2:1. Raising Shuffle to 100% (the true 3:1 ratio worked out above)
+fixed this: `CCMapping::kShuffleSwingPercent` is now `100.0f`, and `kMaxSwing` is simply an alias for it rather
+than a separately-tracked ceiling - the two were only ever different by historical accident, not by design.
+
+Composer Mastermind mirrors this everywhere Swing is touched, while keeping its own model's `swing` field a plain
+percent (not an index) for minimal ripple - `CCMapping::swingStateForPercent`/`swingPercentForState` are the
+shared conversion, used by:
+
+- **`CCMapping::encodeSwing`** - snaps any percent to the nearest of the 3 legal states before encoding the CC,
+  robust to old scenes/presets that might still carry an arbitrary value.
+- **`ComposerCore::applyContinuousSwing`** (Density's consumer) - no longer glides linearly across the full range;
+  bands Density's 0..1 value into one of the 3 states directly (`CCMapping::swingStateForNormalized`, even
+  thirds), the same threshold-crossing shape as Complexity's phrase-chain banding and the Coherence divergence
+  consumer above, so `InstanceStateTracker`'s recorded value is always exactly legal, not silently disagreeing
+  with what was actually sent.
+- **UI**: `ui/SceneListComponent`'s scene-builder and `ui/PresetLibraryContent`'s role/rhythmic-relationship
+  preset builders all replaced their Swing slider with a 3-item combo (Off/Triplet/Shuffle), matching MPL's own
+  UI change - a scene/preset author can no longer author an illegal swing value by hand either.
+- **`policy/CoherenceEvaluator`** and **`util/Validation::isValidSwing`** both read `CCMapping::kMaxSwing` instead
+  of a locally-duplicated 75.0f literal, so raising Shuffle's percent moved their ceilings automatically.
+
+**Quantized-for-notation export still exists** (`ui/PrimaryView.cpp`'s recorder), now snapping to whichever of
+all 3 states (not just straight/triplet) the tracked swing value is nearest -
+`CCMapping::swingPercentForState(CCMapping::swingStateForPercent(...))`, the same shared helpers used everywhere
+else. Shuffle now gets its own true 3:1 onset position here too, rather than folding into Triplet's 2:1 - closed
+2026-08-26, same day as the 100% correction, once the whole point of a 3:1 ratio was that it's genuinely
+notatable. Worth being precise about what this actually does: a Standard MIDI File carries no tuplet/dotted-
+rhythm markup at all, only onset ticks and durations - Composer Mastermind's job ends at placing each note at the
+mathematically exact position its target rhythm implies (already true for Triplet, now true for Shuffle too);
+whether Dorico/Sibelius render that as a literal dotted-eighth-plus-sixteenth figure depends on the notation
+software's own MIDI-import quantization/rhythm-detection, the same as it already did for Triplet.
 
 ## Still open: the graph ↔ preset-library round-trip
 

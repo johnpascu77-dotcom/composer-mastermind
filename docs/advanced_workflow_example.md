@@ -223,6 +223,67 @@ One limitation worth knowing: the pairing itself lives entirely in the Bitwig pr
 Composer Mastermind saves — a new Bitwig project needs this re-paired by hand, there's no way to export or replay
 the pairing itself.
 
+### Step 9 — Instance Modulation Routes: driving a real MPL parameter directly
+
+Step 8's target was for something *outside* MPL entirely — a Bitwig modulator's own knob, needing that whole
+Learn CC dance to mean anything. This is the other thing living on the same **Modulators** tab, in the panel
+below it ("Instance Modulation Routes"), and it's simpler in exactly the way you'd hope: it drives one of MPL's
+own real parameters directly, plugin-to-plugin, no Bitwig pairing step at all — the CC lands on the same channel
+your instance already listens on, decoded by the exact same rules a hand-authored Mutation uses.
+
+Nine parameters are wirable. Six are pattern-scoped (`Pattern` selects which of the instance's 3 patterns):
+`Transpose`, `Rotation`, `Length`, `Inversion`, `Retrograde`, `M7`. Three are instance-global (`Pattern` is
+disabled and ignored): `Swing`, `Active Pattern`, `Grid Mode`. They split into two different live behaviors, and
+the form itself shows you which one you're looking at:
+
+- **Continuous** (`Transpose`/`Rotation`/`Length`/`Swing`) — re-evaluated and re-sent every single bar. The arc's
+  current 0–1 value is linearly mapped into whatever you set `Min`/`Max` to (leave both at `0` to get that
+  parameter's own full natural range — `-48..48` for Transpose, `0..15` for Rotation, and so on — the form
+  re-ranges the sliders to sane bounds the moment you pick the parameter).
+- **Threshold** (`Inversion`/`Retrograde`/`M7`/`Grid Mode`) — a plain on/off flip, only actually sent the moment
+  the arc's value crosses your `Threshold` (default `0.5`), not every bar. `Active Pattern` is a special case of
+  this family: no `Threshold` to set, it bands the arc's value into 4 zones on its own — the bottom quarter stops
+  the instance, the other three select Pattern 1/2/3.
+
+**A concrete route on this piece**: `mpl2` is your Counterpoint instance from Step 1, and Step 7 gave you a
+Build → Peak → Release shape. Wire Complexity to visibly develop `mpl2`'s groove through that arc, not just its
+motif content:
+
+- Route id: `mpl2_complexity_rotation`
+- Arc Dimension: `complexity`
+- Instance: `mpl2`
+- Pattern: `Pattern 1`
+- Parameter: `Rotation`
+- Min / Max: leave at `0` / `0` (full 0–15 range)
+- Invert: off, Enabled: checked
+- **Add / Update**
+
+Press play. As Complexity climbs through Build into Peak, `mpl2`'s Pattern 1 rotation continuously walks the full
+16-step range instead of sitting still for the section's whole duration — check the Activity Log or just listen;
+nothing else you built needed to change.
+
+**Broadcasting**: pick `* (All Instances)` instead of a specific instance and the same wiring goes to every
+currently-registered instance at once — each one still computes and sends its own CC independently (from its own
+tracked starting state), so they won't necessarily move in lockstep unless they started identically. This is the
+fast way to get many independently-moving parts without authoring one route per instance — the direct answer to
+"this plugin's output is thin next to a real automation-lane-covered arrangement": route enough dimensions to
+enough parameters and the density comes from the same arc curves already driving everything else, not from
+anything new to author by hand.
+
+**Taking over a parameter a built-in curve already drives, on purpose**: Energy and Tension already drive
+Transpose continuously (the amplitude/register-center curve from `docs/arc_dimension_mapping_concept.md`), and
+Density already drives Swing, on *every* instance a section touches. Point a route at the exact same
+instance/pattern and parameter — say, Energy → Transpose on `mpl1` specifically — and your route wins outright
+for `mpl1`: the built-in curve simply skips it there from that point on, no fighting, no CC sent twice. Every
+*other* instance you didn't name keeps following the built-in curve exactly as before. This is the right way to
+hand-tune one specific part while leaving the rest of the piece on the built-in autopilot, and it's also exactly
+what a broadcast route targeting Transpose or Swing does at full scale — takes over that parameter everywhere,
+on purpose.
+
+Routes save with the project like everything else here, and travel with a piece exported via **Save Score...** or
+the Sections tab's Export — see `modulationRoutes[]` in
+[composition_bundle_format.md](composition_bundle_format.md).
+
 ## Part 2 — Building the same kind of piece from the Score View instead
 
 Everything above went through the Expert UI's tabs and forms. The Score View is a genuinely different way in —
@@ -313,3 +374,19 @@ notation-quantized timing.
   target (Step 6).
 - **A motif preset you just made doesn't seem to be the one playing** → check whether another preset already
   shares its tag; the earliest-saved one with a matching tag always wins (Step 6).
+- **An Instance Modulation Route seems to do nothing** → check, in order: `Enabled` is ticked; `Instance` matches
+  a registered instance id exactly (or is `*`) — a typo there silently matches nothing, not an error; the current
+  section isn't frozen (Absolute content mode with captured content exempts a section from *every* per-bar
+  automation, routes included, for as long as it plays); and for a `Threshold` parameter, that the arc actually
+  crosses `Threshold` at some point during the section rather than sitting on one side of it the whole time (Step 9).
+- **A Rate-driven peak turns into an unintelligible blur** → don't reach for tempo. Dropping the whole project's
+  tempo to tame one loud section drags every other section along with it (a global knob can't locally fix a
+  momentary problem) — and Bitwig's 20bpm floor gives you almost no room to do it that way regardless. Instead,
+  treat it as three separate authoring choices: (1) don't let every voice's `tension → rate` route reach
+  Diminished together — cap one voice's `outputMax` at `1` (Step 9) so it stays Normal/Augmented and holds a
+  steady pulse while another voice is allowed the full `0..2` range at the peak; (2) don't stack Rate-Diminished
+  and a short-Length fragment-sequencer route (`dispatchMode: "sequence"`) on the *same* voice at the *same*
+  climax — two density-increasing devices compound rather than add, and that's usually the actual cause, not
+  Rate alone; (3) give peak-archetype motif content longer `relativeDuration`s than you'd otherwise reach for
+  (Step 6) — Diminished halves whatever it's handed, so starting from a longer note leaves it somewhere that
+  still reads as a note once it's been halved.

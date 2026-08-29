@@ -191,6 +191,21 @@ each instance right now), pick your saved blueprint (`my_first_piece`) from the 
 click both makes it the active blueprint *and* primes the first section immediately — no separate Prime step
 needed, and no detour through the Sections tab at all. Press play in your DAW same as before.
 
+## Loading a score from a file, not the library
+
+The Blueprint dropdown above only lists pieces already saved in *this session's* library. If someone sent you a
+piece as a single JSON file (or you saved one yourself — see below), the same row has **Load Score...** and
+**Save Score...** buttons for exactly that: **Load Score...** opens a file picker, imports the piece (blueprint,
+scenes, instances, and motif presets, all in one file — see
+[composition_bundle_format.md](composition_bundle_format.md)), makes it current, and primes it — one click, same
+as picking from the dropdown and clicking Load. **Save Score...** does the reverse: writes whatever piece is
+currently loaded out to a `.json` file you can hand to someone else, or re-import later, or eventually edit by
+hand once you're comfortable with the format.
+
+Don't confuse this with the Scenes tab's **Save/Load Snapshot To/From File** buttons, which look similar but do
+something different — a snapshot round-trips your *entire session* (every instance, scene, blueprint, and preset
+at once), while Load/Save Score here is scoped to one piece.
+
 ## What's next (all optional, in roughly the order you'd want them)
 
 - **Presets tab** — once you're tired of hand-typing the same scene settings for every section, save reusable
@@ -202,8 +217,22 @@ needed, and no detour through the Sections tab at all. Press play in your DAW sa
 - **Compose view** (the "Compose" button, top right, outside the Expert UI entirely) — pick a saved blueprint and
   see/edit its 5 arc dimensions as actual curves instead of numbers, sized to that blueprint's real length. Save
   edits as a new blueprint version.
-- **Modulators tab** — if you want a section or arc to also drive one of your DAW's own modulators (not just
-  MPL), register a target here.
+- **Modulators tab** — two separate things live here, both optional, neither required for the piece you just
+  built:
+  - **External Modulator Targets** (the top panel) — if you want an arc to also drive one of your DAW's own
+    modulators (a Bitwig Random/Curve modulator's Rate or Depth, say), not anything MPL itself plays, register a
+    target here. Needs a one-time pairing step in Bitwig itself — see `docs/advanced_workflow_example.md`'s Step 8
+    for the exact procedure.
+  - **Instance Modulation Routes** (the panel below it) — this one drives a real MPL parameter directly, no
+    Bitwig pairing needed at all. Try it on the piece you just built: Arc Dimension `complexity`, Instance `*` (All
+    Instances), Pattern `1`, Parameter `Rotation`, leave Min/Max at `0`/`0`, click **Add / Update**. Now every
+    instance's Pattern 1 rotation continuously drifts as `build`'s Complexity rises, instead of sitting still for
+    all 16 bars — audible, with zero Mutations authored by hand. Broadcasting to `*` sends the same wiring to
+    every registered instance at once, each computing and sending its own CC independently. If you point a route
+    at a parameter a built-in curve already drives (Energy/Tension already drive Transpose; Density already
+    drives Swing), your route simply takes over for whichever instance/pattern it targets — the built-in curve
+    keeps driving every other instance untouched by it, no fighting between the two. `docs/advanced_workflow_example.md`'s
+    Step 9 covers all 9 drivable parameters and the continuous-vs-threshold distinction in full.
 - **Awareness / Activity Log / Milestones tabs** — all read-only diagnostics: what MPL actually has right now,
   what's happened and when, and session checkpoints you can jump back to. Nothing to author here, just to watch.
 

@@ -77,7 +77,7 @@ private:
     juce::ComboBox gridModeCombo;
     juce::ComboBox activePatternCombo;
     juce::ToggleButton overrideSwingToggle { "Override Swing" };
-    juce::Slider swingSlider;
+    juce::ComboBox swingCombo;
 
     juce::TextButton savePresetButton { "Save Preset" };
 
@@ -103,7 +103,7 @@ private:
     juce::TextButton addRoleSlotButton { "Add Role Slot" };
 
     juce::ToggleButton slotOverrideSwingToggle { "Override Swing" };
-    juce::Slider slotSwingSlider;
+    juce::ComboBox slotSwingCombo;
 
     juce::Label pendingRoleSlotsLabel;
     juce::TextButton saveRhythmicPresetButton { "Save Preset" };

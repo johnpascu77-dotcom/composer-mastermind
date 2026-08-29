@@ -12,17 +12,19 @@ InstanceStateTracker::Entry& InstanceStateTracker::findOrCreate(const std::strin
     return entries.back();
 }
 
-void InstanceStateTracker::recordGlobal(const std::string& instanceId, int activePattern, int gridMode, float swing)
+void InstanceStateTracker::recordGlobal(const std::string& instanceId, int activePattern, int gridMode, float swing, int rate)
 {
     std::lock_guard<std::mutex> lock(stateMutex);
     auto& entry = findOrCreate(instanceId);
     entry.state.activePattern = activePattern;
     entry.state.gridMode = gridMode;
     entry.state.swing = swing;
+    entry.state.rate = rate;
 }
 
 void InstanceStateTracker::recordPattern(const std::string& instanceId, int patternIndex,
-                                          int transpose, int rotation, int length, bool inversion)
+                                          int transpose, int rotation, int length, bool inversion,
+                                          bool retrograde, bool m7)
 {
     if (patternIndex < 0 || patternIndex > 2)
         return;
@@ -33,6 +35,8 @@ void InstanceStateTracker::recordPattern(const std::string& instanceId, int patt
     pattern.rotation = rotation;
     pattern.length = length;
     pattern.inversion = inversion;
+    pattern.retrograde = retrograde;
+    pattern.m7 = m7;
 }
 
 bool InstanceStateTracker::getState(const std::string& instanceId, InstanceParameterState& outState) const

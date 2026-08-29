@@ -15,10 +15,10 @@
 // v0.1 scope: this is the first of the design doc's three preset
 // categories ("role presets, arc presets, and rhythmic-relationship
 // presets... different JSON object types"). Only role presets are built so
-// far. Fields are instance-level only (activePattern/gridMode/swing,
+// far. Fields are instance-level only (activePattern/gridMode/swing/rate,
 // matching SceneInstanceOverride's -1/-1.0f "inherit" sentinel exactly) -
-// per-pattern fields (transpose/rotation/length/inversion) aren't included
-// yet, since ScenePattern has no established "leave this field untouched"
+// per-pattern fields (transpose/rotation/length/inversion/retrograde/m7)
+// aren't included yet, since ScenePattern has no established "leave this field untouched"
 // convention to reuse the way SceneInstanceOverride already does.
 struct RolePreset
 {
@@ -30,6 +30,7 @@ struct RolePreset
     int activePattern = -1;
     int gridMode = -1;
     float swing = -1.0f;
+    int rate = -1;  // -1 = inherit, same convention as activePattern/gridMode
 };
 
 // One role's slot within a RhythmicRelationshipPreset - same field shape as
@@ -42,6 +43,7 @@ struct RhythmicRelationshipRoleSlot
     int activePattern = -1;
     int gridMode = -1;
     float swing = -1.0f;
+    int rate = -1;  // -1 = inherit, same convention as activePattern/gridMode
 };
 
 // The second of the design doc's three preset categories: a *joint*,

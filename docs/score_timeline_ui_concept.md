@@ -268,6 +268,26 @@ Compiled clean for both `ComposerMastermind_VST3` and `ComposerMastermind_Standa
    curves from its very first build**, with the first two bugs only changing how that emptiness manifested.
    Fixed by naming the `Arc` as a real local before reading its breakpoints in both places.
 
+**"New Blueprint" - start from a blank curve, built 2026-08-27.** The cockpit could only ever *reshape* an
+existing blueprint's curves (pick one, edit, "Save as new blueprint" clones its same sections) - there was no way
+to start from nothing, choose a length, and draw a whole piece here. Meanwhile `policy/BlueprintGenerator::generate`
+(the actual curve-shape→sections engine: one Peak at the driving arc's global maximum, Presentation/Build before
+it, Release after, real `startBar`/`durationBars` taken straight from the breakpoints) already existed and worked
+- just reachable only from the separate Expert → Generate tab, reading its driving curve from yet a *third*,
+independent live-ArcSet editor (`BlueprintView`'s "Arcs" inner tab). Three disconnected curve surfaces; the one
+meant to be primary couldn't reach the one that actually turns a curve into a piece.
+
+Fixed by wiring `BlueprintArcCurveView` directly to `BlueprintGenerator::generate`: a "New Blueprint" button resets
+to a blank scratch `ArcSet` sized to a chosen bar-length slider (a flat curve per dimension at the requested length,
+not `ArcSet{}`'s hardcoded 1..64 default, which would otherwise put the second point off-axis for any other
+length); draw one curve, name it, "Generate Blueprint" (the same button, relabeled - one control doing two jobs
+depending on mode, not a second competing button). Unlike `GenerateView`'s explicit preview/Commit/Discard, this
+commits in one motion - the curve just drawn already served as the preview, matching the user's own "draw here,
+then commit" framing. Base scene handling was the one open design question, resolved by the user when asked: auto-
+create a minimal default scene (every registered instance, Pattern 1/Binary/Swing Off) rather than requiring one
+picked first, so a genuinely empty session can go straight to a playable piece. Compiled clean. **Not yet live-
+tested.**
+
 **Monophonic duration-overlap fix, built 2026-08-22.** Turned out not to need the curve-authoring UI as a
 precondition after all — the actual place step content gets directly edited is `ui/PatternSetupView`'s Setup mode
 (v1.2 Phase 2), which already enforced this exact invariant for hand edits (`ui/PianoRollView`'s

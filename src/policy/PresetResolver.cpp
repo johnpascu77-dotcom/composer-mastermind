@@ -4,13 +4,13 @@
 
 namespace
 {
-    // Shared merge step: applies activePattern/gridMode/swing (each -1/-1.0f
-    // = "leave untouched") onto scene's SceneInstanceOverride entry for
-    // targetInstanceId, creating one if it doesn't exist yet, and ensures
-    // the instance is actually in scene.targets (an override is inert
-    // otherwise - see Router::routeScene).
+    // Shared merge step: applies activePattern/gridMode/swing/rate (each
+    // -1/-1.0f/-1 = "leave untouched") onto scene's SceneInstanceOverride
+    // entry for targetInstanceId, creating one if it doesn't exist yet, and
+    // ensures the instance is actually in scene.targets (an override is
+    // inert otherwise - see Router::routeScene).
     void applyFieldsToInstance(const std::string& targetInstanceId, int activePattern, int gridMode, float swing,
-                                Scene& scene)
+                                int rate, Scene& scene)
     {
         if (std::find(scene.targets.begin(), scene.targets.end(), targetInstanceId) == scene.targets.end())
             scene.targets.push_back(targetInstanceId);
@@ -26,6 +26,8 @@ namespace
                 override.gridMode = gridMode;
             if (swing >= 0.0f)
                 override.swing = swing;
+            if (rate >= 0)
+                override.rate = rate;
             return;
         }
 
@@ -34,6 +36,7 @@ namespace
         newOverride.activePattern = activePattern;
         newOverride.gridMode = gridMode;
         newOverride.swing = swing;
+        newOverride.rate = rate;
         scene.instanceOverrides.push_back(newOverride);
     }
 }
@@ -49,7 +52,7 @@ namespace PresetResolver
             if (instance.role != preset.targetRole)
                 continue;
 
-            applyFieldsToInstance(instance.id, preset.activePattern, preset.gridMode, preset.swing, scene);
+            applyFieldsToInstance(instance.id, preset.activePattern, preset.gridMode, preset.swing, preset.rate, scene);
             ++affectedCount;
         }
 
@@ -68,7 +71,7 @@ namespace PresetResolver
                 if (instance.role != slot.targetRole)
                     continue;
 
-                applyFieldsToInstance(instance.id, slot.activePattern, slot.gridMode, slot.swing, scene);
+                applyFieldsToInstance(instance.id, slot.activePattern, slot.gridMode, slot.swing, slot.rate, scene);
                 ++affectedCount;
             }
         }

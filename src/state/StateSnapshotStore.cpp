@@ -18,6 +18,8 @@ namespace StateSnapshotStore
         obj->setProperty("motifPresetLibrary", StateSerializer::motifPresetsToVar(core.getPresetLibrary().getAllMotifPresets()));
         obj->setProperty("modulatorTargetLibrary",
                           StateSerializer::modulatorTargetsToVar(core.getModulatorTargetLibrary().getAllTargets()));
+        obj->setProperty("modulationRouteLibrary",
+                          StateSerializer::modulationRoutesToVar(core.getModulationRouteLibrary().getAllRoutes()));
 
         Scene currentScene;
         if (core.getCurrentScene(currentScene))
@@ -118,6 +120,14 @@ namespace StateSnapshotStore
             std::string targetError;
             if (Validation::isValidModulatorTarget(target, targetError))
                 modulatorTargetLibrary.addOrReplaceTarget(target);
+        }
+
+        auto& modulationRouteLibrary = core.getModulationRouteLibrary();
+        for (const auto& route : StateSerializer::varToModulationRoutes(parsed["modulationRouteLibrary"]))
+        {
+            std::string routeError;
+            if (Validation::isValidModulationRoute(route, routeError))
+                modulationRouteLibrary.addOrReplaceRoute(route);
         }
 
         return true;

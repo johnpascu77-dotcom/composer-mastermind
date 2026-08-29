@@ -21,15 +21,20 @@ Start here, in order:
    roadmap (v0.1 through v1.1). Updated every session; read this before assuming anything about scope or status.
 2. [docs/technical_spec_checklist.md](docs/technical_spec_checklist.md) — granular done/not-done by file, faster
    than diffing `src/`.
-3. [docs/routing_policy_v0_1.md](docs/routing_policy_v0_1.md), [docs/scene_format_v0_1.md](docs/scene_format_v0_1.md),
+3. [docs/routing_policy_v0_1.md](docs/routing_policy_v0_1.md),
    [docs/mutation_policy_v0_1.md](docs/mutation_policy_v0_1.md), [docs/scheduling_policy_v0_1.md](docs/scheduling_policy_v0_1.md)
-   — subsystem detail, as needed.
-4. [docs/atonal_phrase_engine_concepts.md](docs/atonal_phrase_engine_concepts.md) — mined concepts for future
+   — subsystem detail, as needed. [docs/scene_format_v0_1.md](docs/scene_format_v0_1.md) is superseded/stale — see
+   the format doc below instead.
+4. [docs/composition_bundle_format.md](docs/composition_bundle_format.md) — the "composing by numbers" JSON file
+   format: one file (Blueprint + Scenes + Instances + Motif Presets + Modulator Targets) that fully reconfigures
+   the plugin on import. Built and live; ships with a ready-to-import template.
+5. [docs/atonal_phrase_engine_concepts.md](docs/atonal_phrase_engine_concepts.md) — mined concepts for future
    arc/governor work, not yet implemented.
-5. [docs/score_timeline_ui_concept.md](docs/score_timeline_ui_concept.md) — condensed-score piano roll, live sync,
-   MIDI drag-out; design conversation only, not yet implemented or in the phased roadmap.
-6. [docs/arc_dimension_mapping_concept.md](docs/arc_dimension_mapping_concept.md) — giving the 5 arc dimensions
-   real playback-time consumers (phrase-chaining, melodic curve, swing, mutation budget); design only, not built.
+6. [docs/score_timeline_ui_concept.md](docs/score_timeline_ui_concept.md) — condensed-score piano roll, live sync,
+   MIDI drag-out; built and live (Track A) — see the doc for exactly what's confirmed vs. still open.
+7. [docs/arc_dimension_mapping_concept.md](docs/arc_dimension_mapping_concept.md) — giving the 5 arc dimensions
+   real playback-time consumers (phrase-chaining, melodic curve, swing, mutation budget, Coherence-driven
+   Retrograde/M7 divergence). Built and live for all 5 dimensions.
 
 ## Related projects outside this repo (easy to lose track of — not discoverable by exploring this folder alone)
 
@@ -41,6 +46,15 @@ Start here, in order:
   Roadmap.md` — the original conceptual vision doc this whole project operationalizes.
 - **atonal_phrase_engine** — `C:\Users\Asus\Documents\atonal_phrase_engine\` — unrelated Python note-generator,
   mined once for transferable arc/governance concepts (see doc link above). Not otherwise connected to this repo.
+- **Orch System** — `C:\AudioDev\Repos\` (own separate git repos per plugin: `OrchNoteMapper`, `OrchGate`,
+  `OrchConductor`; roadmap at `ORCH_SYSTEM_ROADMAP.md` and `OrchConductor\Docs\OrchGate_OrchConductor_Roadmap.md`
+  in that folder). A second, independent modular orchestral MIDI plugin family (per-instrument range/keyswitch
+  mapping + participation gating + orchestration-preset control in Bitwig, real sample rendering eventually
+  external via Vienna Ensemble Pro), predating this project. Research-phase-only thread (as of 2026-08-27) on
+  linking it downstream of Composer Mastermind + MPL, with MC's Blueprint/ArcSet driving `OrchConductor`'s CC
+  control path for form/narrative shape — the thing pure per-track randomization there can't supply on its own.
+  Notation (Dorico) accuracy is the real target of that whole ecosystem, not audio realism. Not otherwise
+  connected to this repo yet.
 
 ## Build
 

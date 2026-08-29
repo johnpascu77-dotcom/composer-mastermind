@@ -3,6 +3,7 @@
 #include "../util/Validation.h"
 #include "../policy/PresetResolver.h"
 #include "../policy/MotifEngine.h"
+#include "../midi/CCMapping.h"
 #include <algorithm>
 #include <cmath>
 
@@ -85,8 +86,11 @@ PresetLibraryContent::PresetLibraryContent(ComposerMastermindAudioProcessor& pro
 
     addAndMakeVisible(overrideSwingToggle);
 
-    addAndMakeVisible(swingSlider);
-    styleSlider(swingSlider, 0.0, 75.0, 1.0, 0.0);
+    addAndMakeVisible(swingCombo);
+    swingCombo.addItem("Off", 1);
+    swingCombo.addItem("Triplet", 2);
+    swingCombo.addItem("Shuffle", 3);
+    swingCombo.setSelectedId(1, juce::dontSendNotification);
 
     addAndMakeVisible(savePresetButton);
     savePresetButton.onClick = [this] { savePresetClicked(); };
@@ -156,8 +160,11 @@ PresetLibraryContent::PresetLibraryContent(ComposerMastermindAudioProcessor& pro
 
     addAndMakeVisible(slotOverrideSwingToggle);
 
-    addAndMakeVisible(slotSwingSlider);
-    styleSlider(slotSwingSlider, 0.0, 75.0, 1.0, 0.0);
+    addAndMakeVisible(slotSwingCombo);
+    slotSwingCombo.addItem("Off", 1);
+    slotSwingCombo.addItem("Triplet", 2);
+    slotSwingCombo.addItem("Shuffle", 3);
+    slotSwingCombo.setSelectedId(1, juce::dontSendNotification);
 
     addAndMakeVisible(pendingRoleSlotsLabel);
     pendingRoleSlotsLabel.setFont(juce::Font(12.0f, juce::Font::italic));
@@ -392,7 +399,7 @@ void PresetLibraryContent::resized()
     auto swingRow = nextRow(kRowHeight);
     overrideSwingToggle.setBounds(swingRow.removeFromLeft(150));
     swingRow.removeFromLeft(kMargin);
-    swingSlider.setBounds(swingRow);
+    swingCombo.setBounds(swingRow.removeFromLeft(150));
 
     savePresetButton.setBounds(nextRow(kRowHeight).removeFromLeft(150));
 
@@ -439,7 +446,7 @@ void PresetLibraryContent::resized()
     auto slotSwingRow = nextRow(kRowHeight);
     slotOverrideSwingToggle.setBounds(slotSwingRow.removeFromLeft(140));
     slotSwingRow.removeFromLeft(kMargin);
-    slotSwingSlider.setBounds(slotSwingRow);
+    slotSwingCombo.setBounds(slotSwingRow.removeFromLeft(150));
 
     pendingRoleSlotsLabel.setBounds(nextRow(18));
 
@@ -593,7 +600,7 @@ RolePreset PresetLibraryContent::buildPresetFromPanel(const std::string& id) con
         preset.activePattern = activePatternCombo.getSelectedId() - 2;
 
     if (overrideSwingToggle.getToggleState())
-        preset.swing = static_cast<float>(swingSlider.getValue());
+        preset.swing = CCMapping::swingPercentForState(swingCombo.getSelectedId() - 1);
 
     return preset;
 }
@@ -622,7 +629,8 @@ void PresetLibraryContent::loadPresetIntoPanel(const RolePreset& preset)
     activePatternCombo.setSelectedId(preset.activePattern >= 0 ? preset.activePattern + 2 : 1, juce::dontSendNotification);
 
     overrideSwingToggle.setToggleState(preset.swing >= 0.0f, juce::dontSendNotification);
-    swingSlider.setValue(preset.swing >= 0.0f ? preset.swing : 0.0, juce::dontSendNotification);
+    swingCombo.setSelectedId(CCMapping::swingStateForPercent(preset.swing >= 0.0f ? preset.swing : 0.0f) + 1,
+                              juce::dontSendNotification);
 }
 
 void PresetLibraryContent::savePresetClicked()
@@ -778,7 +786,7 @@ void PresetLibraryContent::addRoleSlotClicked()
         slot.activePattern = slotActivePatternCombo.getSelectedId() - 2;
 
     if (slotOverrideSwingToggle.getToggleState())
-        slot.swing = static_cast<float>(slotSwingSlider.getValue());
+        slot.swing = CCMapping::swingPercentForState(slotSwingCombo.getSelectedId() - 1);
 
     for (auto& existing : pendingRoleSlots)
     {

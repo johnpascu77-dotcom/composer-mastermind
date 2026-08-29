@@ -1,4 +1,5 @@
 #include "InstanceRegistry.h"
+#include <algorithm>
 
 bool InstanceRegistry::addInstance(const Instance& instance)
 {
@@ -12,6 +13,21 @@ bool InstanceRegistry::addInstance(const Instance& instance)
             return true;
         }
     }
+
+    // 2026-08-27: a MIDI channel can only ever reach one real physical MPL
+    // instance - two registry entries claiming the same channel under
+    // different ids is never a legitimate setup, just an accumulated
+    // leftover (Load Score / a Bitwig preset recall both upsert-by-id
+    // without ever clearing first, so an earlier piece's instances stick
+    // around indefinitely - see docs/composer_mastermind_design.md's
+    // instance-registry entry). The instance actually being registered now
+    // is definitionally what the caller wants on that channel, so evict
+    // whichever stale entry was squatting on it rather than let both
+    // silently receive identical CC traffic.
+    instances.erase(std::remove_if(instances.begin(), instances.end(),
+                                    [&instance](const Instance& existing)
+                                    { return existing.midiChannel == instance.midiChannel; }),
+                     instances.end());
 
     instances.push_back(instance);
     return true;

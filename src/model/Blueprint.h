@@ -54,9 +54,10 @@ struct SectionModulatorValue
 // a genuine peak rather than something an earlier section already spent -
 // the "apex exclusivity" clamping half described in
 // docs/mutation_policy_v0_1.md, deferred since v0.5. `type` mirrors
-// Mutation::type's vocabulary ("transpose"/"rotation"/"length"/"inversion");
-// `value` is the resulting absolute value (not a delta) - for "inversion",
-// 0 = off, nonzero = on, matching how Router::routeMutation already resolves
+// Mutation::type's vocabulary ("transpose"/"rotation"/"length"/"inversion"/
+// "retrograde"/"m7"); `value` is the resulting absolute value (not a delta) -
+// for "inversion"/"retrograde"/"m7" (all booleans), 0 = off, nonzero = on,
+// matching how Router::routeMutation already resolves
 // a mutation's absolute resulting value before encoding it as CC.
 struct ReservedValue
 {

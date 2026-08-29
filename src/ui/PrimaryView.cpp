@@ -1,6 +1,7 @@
 #include "PrimaryView.h"
 #include "../plugin/PluginProcessor.h"
 #include "../midi/CCMapping.h"
+#include "../state/CompositionBundleStore.h"
 #include "InstanceColours.h"
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <cmath>
@@ -53,27 +54,38 @@ namespace
     constexpr int kInversionAxisNote = 60;
 
     // Swing/notation banding (docs/arc_dimension_mapping_concept.md's "Swing
-    // vs. notation" resolution, now real now that Density drives Swing
-    // continuously - v1.2 Track B, 2026-08-22). Worked out exactly from
-    // MPL's own swing formula: only two swing percentages give a clean,
-    // notatable long:short onset ratio in MPL's 0-75% range - 0% (1:1,
-    // straight) and 66.67% (2:1, true triplet feel). MPL's own maximum
-    // (75%) only reaches 2.2:1, not a clean ratio - a true 3:1 dotted
-    // shuffle would need 100%, outside MPL's range entirely. The quantized-
-    // for-notation export onset snaps to whichever of the two is nearer,
-    // crossing over at 33%; the as-performed onset keeps the real,
-    // unquantized value regardless.
-    constexpr float kSwingNotationCrossoverPercent = 33.0f;
-    constexpr float kSwingNotationTripletPercent = 200.0f / 3.0f; // 66.67%, exact 2:1 ratio
+    // vs. notation" resolution). Worked out exactly from MPL's own swing
+    // formula: all 3 of MPL's swing states now give a clean, notatable
+    // long:short onset ratio - 0% (1:1, straight), 66.67% (2:1, true
+    // triplet feel), and 100% (3:1, true dotted-eighth-plus-sixteenth
+    // shuffle feel - v1.28.1: Shuffle was originally 75%, an in-between
+    // 2.2:1 ratio indistinguishable from Triplet by ear or on paper, raised
+    // to 100% once live testing confirmed that). MPL's own Swing knob
+    // narrowed from a continuous slider to this 3-state choice (v1.28.0,
+    // CCMapping::swingStateForPercent/swingPercentForState, shared here
+    // instead of duplicating the crossover logic locally). The quantized-
+    // for-notation export onset snaps to whichever of the 3 notation-legal
+    // states is nearest, so Shuffle now notates as its own genuinely
+    // distinct rhythm rather than folding into Triplet's; the as-performed
+    // onset keeps whatever's actually tracked (normally one of the 3 legal
+    // states already, but not force-validated, so this stays a real snap
+    // for legacy content, not a passthrough).
 
     int gridStepCountFor(bool ternaryGridMode)
     {
         return ternaryGridMode ? 12 : 16;
     }
 
-    double gridStepLengthInPpqFor(bool ternaryGridMode)
+    // v1.29.0: rateState (0=Augmented/1=Normal/2=Diminished, defaults to
+    // Normal) mirrors MPL's own real engine change - Rate divides MPL's
+    // actual ppq-per-step value (PluginProcessor.cpp's
+    // effectiveGridStepLengthInPpq), so every reconstruction here must apply
+    // the same divisor or it silently desyncs the moment an instance's Rate
+    // != Normal - see CCMapping::rateMultiplierForState.
+    double gridStepLengthInPpqFor(bool ternaryGridMode, int rateState = 1)
     {
-        return kBarLengthInPpq / static_cast<double>(gridStepCountFor(ternaryGridMode));
+        return kBarLengthInPpq / static_cast<double>(gridStepCountFor(ternaryGridMode))
+             / CCMapping::rateMultiplierForState(rateState);
     }
 
     // Mirrors MPL's own step clock (Source/PluginProcessor.cpp:
@@ -82,10 +94,11 @@ namespace
     // playing from, not just a plausible guess. Returns a 0..1 fraction
     // across one grid-step-count's worth of columns (12 or 16), matching how
     // PianoRollView renders the grid regardless of loop length.
-    float computeLivePlayheadFraction(bool ternaryGridMode, int trackedLength, double launchPpq, double currentPpq)
+    float computeLivePlayheadFraction(bool ternaryGridMode, int trackedLength, double launchPpq, double currentPpq,
+                                       int rateState = 1)
     {
         const int gridStepCount = gridStepCountFor(ternaryGridMode);
-        const double gridStepLengthInPpq = gridStepLengthInPpqFor(ternaryGridMode);
+        const double gridStepLengthInPpq = gridStepLengthInPpqFor(ternaryGridMode, rateState);
         const int activeLoopLength = juce::jlimit(1, gridStepCount, trackedLength);
 
         const double stepsSinceLaunch = (currentPpq - launchPpq) / gridStepLengthInPpq;
@@ -98,16 +111,29 @@ namespace
 
     // Mirrors MPL's getRotatedSourceStepIndex exactly (Source/PluginProcessor.cpp) -
     // rotation is a lookup-time offset, never rewrites stored step data.
-    int rotatedSourceStepIndex(int playbackStepIndex, int rotation, int loopLength)
+    // 2026-08-25: retrograde reflects the loop-relative playback position
+    // before rotation's offset is subtracted, same as MPL's own function.
+    int rotatedSourceStepIndex(int playbackStepIndex, int rotation, int loopLength, bool retrograde)
     {
         const int effectiveRotation = ((rotation % loopLength) + loopLength) % loopLength;
-        return ((playbackStepIndex - effectiveRotation) % loopLength + loopLength) % loopLength;
+        const int reflectedStepIndex = retrograde ? (loopLength - 1 - playbackStepIndex) : playbackStepIndex;
+        return ((reflectedStepIndex - effectiveRotation) % loopLength + loopLength) % loopLength;
     }
 
-    // Mirrors MPL's applyPatternTransformsToNote exactly.
-    int transformedNote(int storedNote, bool inverted, int transpose)
+    // Mirrors MPL's applyPatternTransformsToNote exactly, including the
+    // 2026-08-25 M7 addition: interval multiplication by 7 mod 12 on the
+    // stored note's pitch class, applied ahead of Inversion.
+    int transformedNote(int storedNote, bool m7, bool inverted, int transpose)
     {
         int result = storedNote;
+
+        if (m7)
+        {
+            const int pitchClass = result % 12;
+            const int m7PitchClass = (pitchClass * 7) % 12;
+            result = result - pitchClass + m7PitchClass;
+        }
+
         if (inverted)
             result = (kInversionAxisNote * 2) - result;
         result += transpose;
@@ -149,6 +175,12 @@ PrimaryView::PrimaryView(ComposerMastermindAudioProcessor& processor)
 
     addAndMakeVisible(primeButton);
     primeButton.onClick = [this] { primeForPlaybackClicked(); };
+
+    addAndMakeVisible(loadScoreButton);
+    loadScoreButton.onClick = [this] { loadScoreClicked(); };
+
+    addAndMakeVisible(saveScoreButton);
+    saveScoreButton.onClick = [this] { saveScoreClicked(); };
 
     addAndMakeVisible(headerStatusLabel);
     headerStatusLabel.setFont(juce::Font(juce::FontOptions().withHeight(12.0f).withStyle("Italic")));
@@ -202,6 +234,12 @@ void PrimaryView::resized()
     primeButton.setBounds(coldStartRow.removeFromLeft(140));
     coldStartRow.removeFromLeft(6);
     headerStatusLabel.setBounds(coldStartRow);
+
+    area.removeFromTop(4);
+    auto scoreFileRow = area.removeFromTop(kColdStartRowHeight);
+    loadScoreButton.setBounds(scoreFileRow.removeFromLeft(110));
+    scoreFileRow.removeFromLeft(6);
+    saveScoreButton.setBounds(scoreFileRow.removeFromLeft(110));
 
     area.removeFromTop(4);
     legendArea = area.removeFromTop(kLegendHeight);
@@ -375,7 +413,7 @@ void PrimaryView::refreshFromCore()
 
                 lane.hasLivePlayhead = true;
                 lane.livePlayheadFraction = computeLivePlayheadFraction(
-                    ternary, patternState.length, launchIt->second, currentPpq);
+                    ternary, patternState.length, launchIt->second, currentPpq, state.rate);
 
                 // Recorder buffer: catch up on every step boundary crossed
                 // since the last tick, not just the current one - a slow
@@ -384,7 +422,7 @@ void PrimaryView::refreshFromCore()
                 if (haveCachedPattern)
                 {
                     const int gridStepCount = gridStepCountFor(ternary);
-                    const double gridStepLengthInPpq = gridStepLengthInPpqFor(ternary);
+                    const double gridStepLengthInPpq = gridStepLengthInPpqFor(ternary, state.rate);
                     const int loopLength = juce::jlimit(1, gridStepCount, patternState.length);
 
                     const double stepsSinceLaunch = (currentPpq - launchIt->second) / gridStepLengthInPpq;
@@ -399,7 +437,8 @@ void PrimaryView::refreshFromCore()
                     {
                         const int playbackStepIndex = ((absStep % loopLength) + loopLength) % loopLength;
                         const int sourceStepIndex = rotatedSourceStepIndex(playbackStepIndex,
-                                                                            patternState.rotation, loopLength);
+                                                                            patternState.rotation, loopLength,
+                                                                            patternState.retrograde);
 
                         if (sourceStepIndex < 0
                             || (size_t) sourceStepIndex >= cachedPattern.snapshot.steps.size())
@@ -417,14 +456,20 @@ void PrimaryView::refreshFromCore()
                                 ? gridStepLengthInPpq * 0.5 * (static_cast<double>(performedSwingPercent) / 100.0)
                                 : 0.0;
 
-                        // Quantized-for-notation: snap to whichever of the two clean
-                        // ratios (straight/triplet) the real swing value is nearer,
-                        // not just "drop swing entirely" - now that Density drives
-                        // Swing continuously, a genuinely swung passage should still
-                        // notate as swung, not silently flatten to straight.
+                        // Quantized-for-notation: snap to whichever of the 3 legal
+                        // states (Off/Triplet/Shuffle) the real swing value is
+                        // nearest - a genuinely swung passage should still notate
+                        // as swung, not silently flatten to straight. v1.28.1:
+                        // Shuffle now gets its own true 3:1 onset position here
+                        // too, rather than folding into the triplet bucket -
+                        // now that Shuffle is 100% (a genuine dotted-eighth-
+                        // plus-sixteenth ratio, not the old in-between 75%),
+                        // there's a real third rhythm worth notating distinctly.
+                        // Only matters for legacy/arbitrary swing values now
+                        // (any current scene/preset already carries an exactly
+                        // legal percent, so this is normally a no-op snap).
                         const float quantizedSwingPercent =
-                            performedSwingPercent >= kSwingNotationCrossoverPercent ? kSwingNotationTripletPercent
-                                                                                     : 0.0f;
+                            CCMapping::swingPercentForState(CCMapping::swingStateForPercent(performedSwingPercent));
                         const double quantizedSwingDelayPpq =
                             isSwingEligibleStep && quantizedSwingPercent > 0.0f
                                 ? gridStepLengthInPpq * 0.5 * (static_cast<double>(quantizedSwingPercent) / 100.0)
@@ -434,8 +479,8 @@ void PrimaryView::refreshFromCore()
 
                         RecordedNote recordedNote;
                         recordedNote.instanceId = instance.id;
-                        recordedNote.note = transformedNote(sourceStep.note, patternState.inversion,
-                                                             patternState.transpose);
+                        recordedNote.note = transformedNote(sourceStep.note, patternState.m7,
+                                                             patternState.inversion, patternState.transpose);
                         recordedNote.velocity = juce::jlimit(1, 127, sourceStep.velocity);
                         recordedNote.quantizedOnsetPpq = stepPpq + quantizedSwingDelayPpq - takeStartPpq;
                         recordedNote.performedOnsetPpq = stepPpq + performedSwingDelayPpq - takeStartPpq;
@@ -473,8 +518,8 @@ void PrimaryView::exportVariantToggleClicked()
 // this needs no polyphonic-merge logic), section/archetype labels as MIDI
 // markers, tempo track. quantizedOnsetPpq is already snapped to a clean
 // straight/triplet ratio at the point each RecordedNote was captured (see
-// kSwingNotationCrossoverPercent above), so "for notation" needs no separate
-// quantization pass here - see PrimaryView.h's RecordedNote comment.
+// CCMapping::swingStateForPercent's use above), so "for notation" needs no
+// separate quantization pass here - see PrimaryView.h's RecordedNote comment.
 juce::File PrimaryView::requestExportFile()
 {
     if (lastKnownIsPlaying || recordedNotes.empty())
@@ -673,6 +718,85 @@ void PrimaryView::primeForPlaybackClicked()
     headerStatusLabel.setText("Primed first section for playback - patterns should already reflect it in MPL now",
                                juce::dontSendNotification);
     refreshFromCore();
+}
+
+void PrimaryView::loadScoreClicked()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Load Score",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.json");
+
+    constexpr auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    fileChooser->launchAsync(chooserFlags, [this](const juce::FileChooser& chooser)
+    {
+        const auto file = chooser.getResult();
+        if (file == juce::File{})
+            return;
+
+        auto& composerCore = processorRef.getComposerCore();
+
+        std::string errorMessage;
+        if (!CompositionBundleStore::importBundle(file.loadFileAsString(), composerCore, errorMessage))
+        {
+            headerStatusLabel.setText("Load Score failed: " + juce::String(errorMessage), juce::dontSendNotification);
+            return;
+        }
+
+        // importBundle already made this the current blueprint - prime
+        // immediately too, same "load = ready to hear" framing as
+        // loadBlueprintClicked above.
+        composerCore.primeForPlayback();
+
+        headerStatusLabel.setText("Loaded and primed score from " + file.getFullPathName(),
+                                   juce::dontSendNotification);
+        refreshHeaderControls();
+        refreshFromCore();
+    });
+}
+
+void PrimaryView::saveScoreClicked()
+{
+    auto& composerCore = processorRef.getComposerCore();
+
+    Blueprint blueprint;
+    if (!composerCore.getCurrentBlueprint(blueprint))
+    {
+        headerStatusLabel.setText("Save Score skipped: no score currently loaded", juce::dontSendNotification);
+        return;
+    }
+
+    std::string errorMessage;
+    const auto json = CompositionBundleStore::createBundle(composerCore, blueprint.id, errorMessage);
+    if (json.isEmpty())
+    {
+        headerStatusLabel.setText("Save Score failed: " + juce::String(errorMessage), juce::dontSendNotification);
+        return;
+    }
+
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Save Score",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+            .getChildFile(juce::String(blueprint.id) + ".json"),
+        "*.json");
+
+    constexpr auto chooserFlags = juce::FileBrowserComponent::saveMode
+                                   | juce::FileBrowserComponent::canSelectFiles
+                                   | juce::FileBrowserComponent::warnAboutOverwriting;
+
+    fileChooser->launchAsync(chooserFlags, [this, json, blueprintId = blueprint.id](const juce::FileChooser& chooser)
+    {
+        const auto file = chooser.getResult();
+        if (file == juce::File{})
+            return;
+
+        if (file.replaceWithText(json))
+            headerStatusLabel.setText("Saved score '" + juce::String(blueprintId) + "' to " + file.getFullPathName(),
+                                       juce::dontSendNotification);
+        else
+            headerStatusLabel.setText("Failed to write " + file.getFullPathName(), juce::dontSendNotification);
+    });
 }
 
 void PrimaryView::refreshHeaderControls()

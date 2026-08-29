@@ -12,6 +12,8 @@ struct ScenePattern
     int rotation = 0;
     int length = 16;
     bool inversion = false;
+    bool retrograde = false;
+    bool m7 = false;
 };
 
 struct SceneGlobal
@@ -19,6 +21,7 @@ struct SceneGlobal
     int activePattern = 1;
     int gridMode = 0;
     float swing = 0.0f;
+    int rate = 1;  // 0=Augmented, 1=Normal (default), 2=Diminished
 };
 
 // Per-instance override of the instance-level parameters (Active Pattern,
@@ -34,6 +37,7 @@ struct SceneInstanceOverride
     int activePattern = -1;
     int gridMode = -1;
     float swing = -1.0f;
+    int rate = -1;  // -1 = inherit SceneGlobal, same convention as activePattern/gridMode
 };
 
 struct Scene

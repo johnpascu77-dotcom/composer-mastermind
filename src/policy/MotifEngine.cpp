@@ -207,11 +207,11 @@ namespace
 
     // How far a single note is allowed to land from its pattern's own
     // current pitch center in one pass - a starting, tunable bound (one
-    // octave). Without this, Nudge mode's delta-from-current-cached-note
-    // compounds pass after pass with nothing pulling it back, and only the
-    // raw 0..127 MIDI range stops it - a real unbounded random walk over
-    // many passes, not the "gentle walking" the motif engine is meant to
-    // produce. Named for what it protects, not how it's computed.
+    // octave). This alone only bounds one note's leap *within* a pass; it
+    // does nothing to stop the center itself (see patternCenterNote/
+    // boundedHomeCenter below) from drifting further pass after pass -
+    // that's what boundedHomeCenter's own kMaxDriftFromHomeSemitones fixes.
+    // Named for what it protects, not how it's computed.
     constexpr int kMaxDeviationFromCenterSemitones = 12;
 
     // The pattern's own current pitch center - average note across its
@@ -230,6 +230,32 @@ namespace
             sum += snapshot.steps[static_cast<size_t>(stepIndex)].note;
 
         return sum / static_cast<int>(enabledStepIndices.size());
+    }
+
+    // 2026-08-27 fix: patternCenterNote recomputes fresh from whatever the
+    // cache currently holds every single pass (every stampOnePattern call -
+    // section entry, phrase-chain seed/restamp, and every ongoing Nudge/
+    // Phrase pass via applyForSection, roughly every kPassIntervalBars
+    // bars). With nothing pulling it back toward anywhere, that's a genuine
+    // unbounded random walk - confirmed live: a piece with a Tension curve
+    // that stayed elevated for a long stretch (Tension's own register-
+    // center pull is deliberately upward-only, stacking with this) walked
+    // stored note content all the way to MIDI's hard 127 ceiling and stuck
+    // there, in both curve-driven and plain Generative pieces. No per-
+    // instance/role "natural register" concept exists yet to anchor a
+    // *different* home per instance, so kHomeRegisterNote is one fixed
+    // point (middle C) for everyone for now - every centerNote computation
+    // should route through here instead of using patternCenterNote's
+    // result directly, so "organic drift" stays bounded to a musically
+    // sane range regardless of how many passes have compounded, rather
+    // than only being stopped by the MIDI ceiling/floor.
+    constexpr int kHomeRegisterNote = 60;
+    constexpr int kMaxDriftFromHomeSemitones = 24; // 2 octaves either side of kHomeRegisterNote
+
+    int boundedHomeCenter(int liveCenterNote)
+    {
+        return kHomeRegisterNote
+               + std::clamp(liveCenterNote - kHomeRegisterNote, -kMaxDriftFromHomeSemitones, kMaxDriftFromHomeSemitones);
     }
 
     int clampToCenter(int note, int centerNote)
@@ -404,7 +430,7 @@ namespace
         for (size_t i = 0; i < cached.snapshot.steps.size(); ++i)
             if (cached.snapshot.steps[i].enabled)
                 existingEnabled.push_back(static_cast<int>(i));
-        const int centerNote = existingEnabled.empty() ? 60 : patternCenterNote(cached.snapshot, existingEnabled);
+        const int centerNote = existingEnabled.empty() ? 60 : boundedHomeCenter(patternCenterNote(cached.snapshot, existingEnabled));
 
         const size_t noteCount = shapeNotes.size();
         const size_t stepCount = static_cast<size_t>(CCMapping::kPatternSteps);
@@ -538,7 +564,7 @@ namespace MotifEngine
                 if (trackedState.activePattern != 0)
                 {
                     dispatcher.sendCC(instance.midiChannel, CCMapping::kActivePattern, CCMapping::encodeActivePattern(0));
-                    stateTracker.recordGlobal(instance.id, 0, trackedState.gridMode, trackedState.swing);
+                    stateTracker.recordGlobal(instance.id, 0, trackedState.gridMode, trackedState.swing, trackedState.rate);
                 }
                 continue; // resting this pass - nothing to edit
             }
@@ -547,7 +573,7 @@ namespace MotifEngine
             {
                 dispatcher.sendCC(instance.midiChannel, CCMapping::kActivePattern,
                                    CCMapping::encodeActivePattern(homePattern));
-                stateTracker.recordGlobal(instance.id, homePattern, trackedState.gridMode, trackedState.swing);
+                stateTracker.recordGlobal(instance.id, homePattern, trackedState.gridMode, trackedState.swing, trackedState.rate);
             }
 
             const int patternIndex = homePattern - 1;
@@ -587,7 +613,7 @@ namespace MotifEngine
                 continue;
             }
 
-            const int centerNote = patternCenterNote(cached.snapshot, enabledStepIndices);
+            const int centerNote = boundedHomeCenter(patternCenterNote(cached.snapshot, enabledStepIndices));
 
             // Rotate which enabled step this pass starts from, so successive
             // passes spread across the whole pattern instead of repeatedly
@@ -791,5 +817,37 @@ namespace MotifEngine
         const auto shape = shapeForPhraseRole(role, base);
 
         stampOnePattern(instance, patternIndex, shape, patternSync, stateTracker, currentBar, lockedSteps);
+    }
+
+    int taperTransposeForPatternContent(PatternSyncServer& patternSync, const InstanceStateTracker& stateTracker,
+                                         const Instance& instance, int patternIndex, int rawTranspose)
+    {
+        auto& cache = patternSync.getCache();
+
+        CachedPattern cached;
+        if (!cache.get(instance.id, patternIndex, cached))
+            return rawTranspose; // no confirmed real state for this instance yet - don't taper blind
+
+        InstanceParameterState trackedState;
+        stateTracker.getState(instance.id, trackedState);
+
+        // Same Length-window bounding as applyForSection's own centerNote
+        // computation - a step enabled outside the current window isn't
+        // real content from the pattern's audible point of view.
+        const int trackedLength = trackedState.patterns[static_cast<size_t>(patternIndex)].length;
+        const int effectiveSteps = CCMapping::effectiveStepCount(trackedState.gridMode);
+        const size_t windowLimit = static_cast<size_t>(std::clamp(trackedLength, 1, effectiveSteps));
+
+        std::vector<int> enabledStepIndices;
+        for (size_t i = 0; i < windowLimit && i < cached.snapshot.steps.size(); ++i)
+            if (cached.snapshot.steps[i].enabled)
+                enabledStepIndices.push_back(static_cast<int>(i));
+
+        if (enabledStepIndices.empty())
+            return rawTranspose; // fully silent within the audible window - nothing to taper against
+
+        const int patternCenter = boundedHomeCenter(patternCenterNote(cached.snapshot, enabledStepIndices));
+        const int boundedCombinedTarget = boundedHomeCenter(patternCenter + rawTranspose);
+        return boundedCombinedTarget - patternCenter;
     }
 }

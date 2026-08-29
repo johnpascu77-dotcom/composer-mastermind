@@ -62,10 +62,20 @@ void ComposerMastermindAudioProcessor::processBlock(juce::AudioBuffer<float>& bu
                     if (lastBarStartPpq < 0.0 || std::abs(*barStart - lastBarStartPpq) > 1.0e-6)
                     {
                         lastBarStartPpq = *barStart;
-                        composerCore.processBar(currentBarIndex);
+                        composerCore.processBar(currentBarIndex, lastBarStartPpq);
                         ++currentBarIndex;
                     }
                 }
+
+                // Sub-bar tick for loop-cycle-accurate dispatch (fragment
+                // sequencer, 2026-08-27) - runs every block while playing,
+                // not edge-detected like the bar tick above, since a
+                // ModulationRoute in Sequence mode needs to fire mid-bar on a
+                // short, Length-shrunk pattern's own loop cycle. Reads the
+                // live running ppq position, distinct from
+                // getPpqPositionOfLastBarStart() above.
+                if (const auto runningPpq = position->getPpqPosition())
+                    composerCore.processStepTick(*runningPpq);
             }
             else
             {

@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include "PianoRollView.h"
@@ -70,6 +71,19 @@ private:
     void primeForPlaybackClicked();
     void refreshHeaderControls();
 
+    // Score file row (2026-08-27, user's own request): the simple/Score
+    // View is meant to be a self-sufficient "score player" - load a
+    // composition bundle JSON, hear it, done - without ever needing Expert
+    // mode. Deliberately NOT the Scenes tab's "Load/Save Snapshot" buttons
+    // (StateSnapshotStore, a whole-session round-trip) - those look similar
+    // but are the wrong tool here, which is exactly the confusion that
+    // prompted this: CompositionBundleStore is the single-piece format this
+    // whole "composing by numbers" thread has been building, already used
+    // by BlueprintSectionsContent's own Export/Import, just not reachable
+    // from this view before now.
+    void loadScoreClicked();
+    void saveScoreClicked();
+
     ComposerMastermindAudioProcessor& processorRef;
 
     juce::TextButton liveSetupToggleButton { "Setup" };
@@ -83,6 +97,9 @@ private:
     juce::TextButton loadBlueprintButton { "Load" };
     juce::TextButton removeBlueprintButton { "Remove" };
     juce::TextButton primeButton { "Prime for Playback" };
+    juce::TextButton loadScoreButton { "Load Score..." };
+    juce::TextButton saveScoreButton { "Save Score..." };
+    std::unique_ptr<juce::FileChooser> fileChooser;
     juce::Label headerStatusLabel;
 
     PianoRollView pianoRoll;

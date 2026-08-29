@@ -8,6 +8,7 @@
 #include "../model/Blueprint.h"
 #include "../model/Preset.h"
 #include "../model/ModulatorTarget.h"
+#include "../model/ModulationRoute.h"
 
 // Converts the model structs to/from juce::var, per docs/scene_format_v0_1.md.
 // This is the JUCE boundary: model/, routing/, midi/, scheduling/ stay
@@ -109,4 +110,10 @@ namespace StateSerializer
 
     juce::var modulatorTargetsToVar(const std::vector<ModulatorTarget>& targets);
     std::vector<ModulatorTarget> varToModulatorTargets(const juce::var& value);
+
+    juce::var modulationRouteToVar(const ModulationRoute& route);
+    ModulationRoute varToModulationRoute(const juce::var& value);
+
+    juce::var modulationRoutesToVar(const std::vector<ModulationRoute>& routes);
+    std::vector<ModulationRoute> varToModulationRoutes(const juce::var& value);
 }

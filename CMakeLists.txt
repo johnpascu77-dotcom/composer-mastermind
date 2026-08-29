@@ -102,11 +102,13 @@ target_sources(ComposerMastermind PRIVATE
     src/state/BlueprintLibrary.cpp
     src/state/PresetLibrary.cpp
     src/state/ModulatorTargetLibrary.cpp
+    src/state/ModulationRouteLibrary.cpp
     src/state/LockedStepLibrary.cpp
     src/state/MilestoneLibrary.cpp
     src/state/InstancePatternCache.cpp
     src/state/StateSerializer.cpp
     src/state/StateSnapshotStore.cpp
+    src/state/CompositionBundleStore.cpp
 
     src/util/Validation.cpp
     src/util/JsonHelpers.cpp
@@ -201,11 +203,13 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Source Files" FILES
     src/state/BlueprintLibrary.cpp
     src/state/PresetLibrary.cpp
     src/state/ModulatorTargetLibrary.cpp
+    src/state/ModulationRouteLibrary.cpp
     src/state/LockedStepLibrary.cpp
     src/state/MilestoneLibrary.cpp
     src/state/InstancePatternCache.cpp
     src/state/StateSerializer.cpp
     src/state/StateSnapshotStore.cpp
+    src/state/CompositionBundleStore.cpp
     src/util/Validation.cpp
     src/util/JsonHelpers.cpp
 )

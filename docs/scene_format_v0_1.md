@@ -1,5 +1,12 @@
 # Scene Format v0.1
 
+**Superseded — this doc predates persistence and is stale** (still says "not implemented" below; `Scene`
+save/load has been live since v0.2, and the full "score" file format is now
+[composition_bundle_format.md](composition_bundle_format.md), which supersedes this doc entirely - includes
+Retrograde/M7, Swing's 3-state Off/Triplet/Shuffle, Blueprint sections/arc curves, Instances, and Motif Presets,
+none of which existed when this was written). Kept only for historical context on the original flat-vs-hierarchical
+scene-model decision below.
+
 Defines the JSON shape for a persisted `Scene`, once `state/SceneLibrary` / `state/StateSerializer` exist (v0.2 in
 [composer_mastermind_design.md](composer_mastermind_design.md)). **Not implemented yet** — today a `Scene` only
 ever exists transiently, built in memory by the editor's test panel

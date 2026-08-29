@@ -60,6 +60,8 @@ namespace StateSerializer
         obj->setProperty("rotation", pattern.rotation);
         obj->setProperty("length", pattern.length);
         obj->setProperty("inversion", pattern.inversion);
+        obj->setProperty("retrograde", pattern.retrograde);
+        obj->setProperty("m7", pattern.m7);
         return juce::var(obj);
     }
 
@@ -72,6 +74,8 @@ namespace StateSerializer
         pattern.rotation = JsonHelpers::getInt(value, "rotation", 0);
         pattern.length = JsonHelpers::getInt(value, "length", 16);
         pattern.inversion = JsonHelpers::getBool(value, "inversion", false);
+        pattern.retrograde = JsonHelpers::getBool(value, "retrograde", false);
+        pattern.m7 = JsonHelpers::getBool(value, "m7", false);
         return pattern;
     }
 
@@ -82,6 +86,7 @@ namespace StateSerializer
         obj->setProperty("activePattern", override.activePattern);
         obj->setProperty("gridMode", override.gridMode);
         obj->setProperty("swing", override.swing);
+        obj->setProperty("rate", override.rate);
         return juce::var(obj);
     }
 
@@ -92,6 +97,7 @@ namespace StateSerializer
         override.activePattern = JsonHelpers::getInt(value, "activePattern", -1);
         override.gridMode = JsonHelpers::getInt(value, "gridMode", -1);
         override.swing = JsonHelpers::getFloat(value, "swing", -1.0f);
+        override.rate = JsonHelpers::getInt(value, "rate", -1);
         return override;
     }
 
@@ -113,6 +119,7 @@ namespace StateSerializer
         globalObj->setProperty("activePattern", scene.global.activePattern);
         globalObj->setProperty("gridMode", scene.global.gridMode);
         globalObj->setProperty("swing", scene.global.swing);
+        globalObj->setProperty("rate", scene.global.rate);
         obj->setProperty("global", juce::var(globalObj));
 
         juce::Array<juce::var> instanceOverrides;
@@ -152,6 +159,7 @@ namespace StateSerializer
         scene.global.activePattern = JsonHelpers::getInt(globalValue, "activePattern", 1);
         scene.global.gridMode = JsonHelpers::getInt(globalValue, "gridMode", 0);
         scene.global.swing = JsonHelpers::getFloat(globalValue, "swing", 0.0f);
+        scene.global.rate = JsonHelpers::getInt(globalValue, "rate", 1);
 
         for (const auto& item : JsonHelpers::getArray(value, "instanceOverrides"))
             scene.instanceOverrides.push_back(varToSceneInstanceOverride(item));
@@ -495,6 +503,7 @@ namespace StateSerializer
         obj->setProperty("activePattern", preset.activePattern);
         obj->setProperty("gridMode", preset.gridMode);
         obj->setProperty("swing", preset.swing);
+        obj->setProperty("rate", preset.rate);
 
         return juce::var(obj);
     }
@@ -512,6 +521,7 @@ namespace StateSerializer
         preset.activePattern = JsonHelpers::getInt(value, "activePattern", -1);
         preset.gridMode = JsonHelpers::getInt(value, "gridMode", -1);
         preset.swing = JsonHelpers::getFloat(value, "swing", -1.0f);
+        preset.rate = JsonHelpers::getInt(value, "rate", -1);
 
         return preset;
     }
@@ -540,6 +550,7 @@ namespace StateSerializer
         obj->setProperty("activePattern", slot.activePattern);
         obj->setProperty("gridMode", slot.gridMode);
         obj->setProperty("swing", slot.swing);
+        obj->setProperty("rate", slot.rate);
         return juce::var(obj);
     }
 
@@ -550,6 +561,7 @@ namespace StateSerializer
         slot.activePattern = JsonHelpers::getInt(value, "activePattern", -1);
         slot.gridMode = JsonHelpers::getInt(value, "gridMode", -1);
         slot.swing = JsonHelpers::getFloat(value, "swing", -1.0f);
+        slot.rate = JsonHelpers::getInt(value, "rate", -1);
         return slot;
     }
 
@@ -781,5 +793,76 @@ namespace StateSerializer
             for (const auto& item : *array)
                 targets.push_back(varToModulatorTarget(item));
         return targets;
+    }
+
+    juce::var modulationRouteToVar(const ModulationRoute& route)
+    {
+        auto* obj = new juce::DynamicObject();
+        obj->setProperty("schema", "ComposerMastermindModulationRoute.v1");
+        obj->setProperty("id", juce::String(route.id));
+        obj->setProperty("arcDimension", juce::String(route.arcDimension));
+        obj->setProperty("targetInstance", juce::String(route.targetInstance));
+        obj->setProperty("patternIndex", route.patternIndex);
+        obj->setProperty("parameter", juce::String(modulationParameterToString(route.parameter)));
+        obj->setProperty("outputMin", route.outputMin);
+        obj->setProperty("outputMax", route.outputMax);
+        obj->setProperty("threshold", route.threshold);
+        obj->setProperty("invert", route.invert);
+        obj->setProperty("enabled", route.enabled);
+        obj->setProperty("dispatchMode", juce::String(modulationDispatchModeToString(route.dispatchMode)));
+        juce::Array<juce::var> sequenceValuesArray;
+        for (float v : route.sequenceValues)
+            sequenceValuesArray.add(v);
+        obj->setProperty("sequenceValues", sequenceValuesArray);
+        obj->setProperty("phraseLengthBars", route.phraseLengthBars);
+        return juce::var(obj);
+    }
+
+    ModulationRoute varToModulationRoute(const juce::var& value)
+    {
+        ModulationRoute route;
+        route.id = JsonHelpers::getString(value, "id");
+        route.arcDimension = JsonHelpers::getString(value, "arcDimension");
+        route.targetInstance = JsonHelpers::getString(value, "targetInstance");
+        route.patternIndex = JsonHelpers::getInt(value, "patternIndex", 0);
+
+        ModulationParameter parsedParameter;
+        if (modulationParameterFromString(JsonHelpers::getString(value, "parameter", "transpose"), parsedParameter))
+            route.parameter = parsedParameter;
+
+        route.outputMin = JsonHelpers::getFloat(value, "outputMin", 0.0f);
+        route.outputMax = JsonHelpers::getFloat(value, "outputMax", 0.0f);
+        route.threshold = JsonHelpers::getFloat(value, "threshold", 0.5f);
+        route.invert = JsonHelpers::getBool(value, "invert", false);
+        route.enabled = JsonHelpers::getBool(value, "enabled", true);
+
+        ModulationDispatchMode parsedMode;
+        if (modulationDispatchModeFromString(JsonHelpers::getString(value, "dispatchMode", "bar"), parsedMode))
+            route.dispatchMode = parsedMode;
+
+        if (auto* sequenceValuesArray = value["sequenceValues"].getArray())
+            for (const auto& item : *sequenceValuesArray)
+                route.sequenceValues.push_back(static_cast<float>(static_cast<double>(item)));
+
+        route.phraseLengthBars = JsonHelpers::getInt(value, "phraseLengthBars", 4);
+
+        return route;
+    }
+
+    juce::var modulationRoutesToVar(const std::vector<ModulationRoute>& routes)
+    {
+        juce::Array<juce::var> array;
+        for (const auto& route : routes)
+            array.add(modulationRouteToVar(route));
+        return juce::var(array);
+    }
+
+    std::vector<ModulationRoute> varToModulationRoutes(const juce::var& value)
+    {
+        std::vector<ModulationRoute> routes;
+        if (auto* array = value.getArray())
+            for (const auto& item : *array)
+                routes.push_back(varToModulationRoute(item));
+        return routes;
     }
 }

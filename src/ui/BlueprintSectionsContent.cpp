@@ -1,6 +1,7 @@
 #include "BlueprintSectionsContent.h"
 #include "../plugin/PluginProcessor.h"
 #include "../util/Validation.h"
+#include "../state/CompositionBundleStore.h"
 #include <algorithm>
 
 namespace
@@ -12,8 +13,9 @@ namespace
 
     // Sum of every row/gap laid out in resized(), kept in sync with it by
     // hand - see BlueprintSectionsContent::getPreferredHeight(). +50 for the
-    // Captured Content row + preview label added 2026-08-23.
-    constexpr int kPreferredHeight = 710;
+    // Captured Content row + preview label added 2026-08-23. +28 for the
+    // Export/Import row added 2026-08-25.
+    constexpr int kPreferredHeight = 738;
 
     void styleSlider(juce::Slider& slider, double minValue, double maxValue, double step, double initial)
     {
@@ -46,7 +48,7 @@ namespace
 
     const char* kLayerRoleNames[] = { "foreground", "support", "background" };
     const char* kBudgetRoleNames[] = { "anchor", "motif", "counterpoint" };
-    const char* kMutationTypeNames[] = { "transpose", "rotation", "length", "inversion" };
+    const char* kMutationTypeNames[] = { "transpose", "rotation", "length", "inversion", "retrograde", "m7" };
     const char* kArchetypeNames[] = { "", "presentation", "build", "peak", "release" };
 
     // Selects the item whose displayed text matches - used to restore a
@@ -165,6 +167,8 @@ BlueprintSectionsContent::BlueprintSectionsContent(ComposerMastermindAudioProces
     reservedValueTypeCombo.addItem("Rotation", 2);
     reservedValueTypeCombo.addItem("Length", 3);
     reservedValueTypeCombo.addItem("Inversion", 4);
+    reservedValueTypeCombo.addItem("Retrograde", 5);
+    reservedValueTypeCombo.addItem("M7", 6);
     reservedValueTypeCombo.setSelectedId(1, juce::dontSendNotification);
 
     addAndMakeVisible(reservedValueSlider);
@@ -246,6 +250,12 @@ BlueprintSectionsContent::BlueprintSectionsContent(ComposerMastermindAudioProces
 
     addAndMakeVisible(removeBlueprintButton);
     removeBlueprintButton.onClick = [this] { removeBlueprintClicked(); };
+
+    addAndMakeVisible(exportBlueprintButton);
+    exportBlueprintButton.onClick = [this] { exportBlueprintClicked(); };
+
+    addAndMakeVisible(importBlueprintButton);
+    importBlueprintButton.onClick = [this] { importBlueprintClicked(); };
 
     refreshPendingPreview();
     refreshSectionsDisplay();
@@ -385,6 +395,11 @@ void BlueprintSectionsContent::resized()
     loadBlueprintButton.setBounds(loadBlueprintRow.removeFromLeft(90));
     loadBlueprintRow.removeFromLeft(kMargin);
     removeBlueprintButton.setBounds(loadBlueprintRow.removeFromLeft(90));
+
+    auto fileRow = nextRow(kRowHeight);
+    exportBlueprintButton.setBounds(fileRow.removeFromLeft(150));
+    fileRow.removeFromLeft(kMargin);
+    importBlueprintButton.setBounds(fileRow.removeFromLeft(150));
 }
 
 void BlueprintSectionsContent::addLayerRoleClicked()
@@ -446,8 +461,9 @@ void BlueprintSectionsContent::addReservedValueClicked()
     ReservedValue reservedValue;
     reservedValue.targetInstance = reservedValueInstanceCombo.getText().toStdString();
     reservedValue.patternIndex = reservedValuePatternCombo.getSelectedId() - 1;
-    reservedValue.type = kMutationTypeNames[juce::jlimit(0, 3, reservedValueTypeCombo.getSelectedItemIndex())];
-    reservedValue.value = (reservedValue.type == "inversion")
+    reservedValue.type = kMutationTypeNames[juce::jlimit(0, 5, reservedValueTypeCombo.getSelectedItemIndex())];
+    reservedValue.value = (reservedValue.type == "inversion" || reservedValue.type == "retrograde"
+                               || reservedValue.type == "m7")
                                ? (reservedValueSlider.getValue() != 0.0 ? 1 : 0)
                                : static_cast<int>(reservedValueSlider.getValue());
 
@@ -761,6 +777,75 @@ void BlueprintSectionsContent::removeBlueprintClicked()
     processorRef.getComposerCore().getBlueprintLibrary().removeBlueprint(blueprintId);
     setStatus("Removed blueprint '" + juce::String(blueprintId) + "' from library");
     refreshAll();
+}
+
+void BlueprintSectionsContent::exportBlueprintClicked()
+{
+    if (savedBlueprintsCombo.getSelectedId() <= 0)
+    {
+        setStatus("Export blueprint skipped: no saved blueprint selected");
+        return;
+    }
+
+    const auto blueprintId = savedBlueprintsCombo.getText().toStdString();
+
+    std::string errorMessage;
+    const auto json = CompositionBundleStore::createBundle(processorRef.getComposerCore(), blueprintId, errorMessage);
+    if (json.isEmpty())
+    {
+        setStatus("Export blueprint failed: " + juce::String(errorMessage));
+        return;
+    }
+
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Export Composition",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+            .getChildFile(juce::String(blueprintId) + ".json"),
+        "*.json");
+
+    constexpr auto chooserFlags = juce::FileBrowserComponent::saveMode
+                                   | juce::FileBrowserComponent::canSelectFiles
+                                   | juce::FileBrowserComponent::warnAboutOverwriting;
+
+    fileChooser->launchAsync(chooserFlags, [this, json, blueprintId](const juce::FileChooser& chooser)
+    {
+        const auto file = chooser.getResult();
+        if (file == juce::File{})
+            return;
+
+        if (file.replaceWithText(json))
+            setStatus("Exported '" + juce::String(blueprintId) + "' to " + file.getFullPathName());
+        else
+            setStatus("Failed to write " + file.getFullPathName());
+    });
+}
+
+void BlueprintSectionsContent::importBlueprintClicked()
+{
+    fileChooser = std::make_unique<juce::FileChooser>(
+        "Import Composition",
+        juce::File::getSpecialLocation(juce::File::userDocumentsDirectory),
+        "*.json");
+
+    constexpr auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    fileChooser->launchAsync(chooserFlags, [this](const juce::FileChooser& chooser)
+    {
+        const auto file = chooser.getResult();
+        if (file == juce::File{})
+            return;
+
+        std::string errorMessage;
+        if (CompositionBundleStore::importBundle(file.loadFileAsString(), processorRef.getComposerCore(), errorMessage))
+        {
+            setStatus("Imported composition from " + file.getFullPathName());
+            refreshAll();
+        }
+        else
+        {
+            setStatus("Import failed: " + juce::String(errorMessage));
+        }
+    });
 }
 
 void BlueprintSectionsContent::primeForPlaybackClicked()

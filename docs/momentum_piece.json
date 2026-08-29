@@ -1,0 +1,1172 @@
+{
+  "schema": "ComposerMastermindComposition.v3",
+  "blueprint": {
+    "schema": "ComposerMastermindBlueprint.v1",
+    "id": "momentum_piece",
+    "name": "Momentum Piece",
+    "sections": [
+      {
+        "id": "fixed_exposition",
+        "name": "Fixed Exposition",
+        "sceneId": "fixed_exposition_scene",
+        "startBar": 1,
+        "durationBars": 8,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 95,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 100,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 108,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 100,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 72,
+                "velocity": 95,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 90,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 72,
+                "velocity": 98,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 76,
+                "velocity": 105,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 90,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 85,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 80,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 85,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "living_development",
+        "name": "Living Development",
+        "sceneId": "living_development_scene",
+        "startBar": 9,
+        "durationBars": 32,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      },
+      {
+        "id": "fixed_cadence",
+        "name": "Fixed Cadence",
+        "sceneId": "fixed_cadence_scene",
+        "startBar": 41,
+        "durationBars": 8,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 90,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 85,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 90,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 75,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 69,
+                "velocity": 85,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 65,
+                "velocity": 80,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 78,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 90,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "arcCurves": []
+  },
+  "scenes": [
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "fixed_exposition_scene",
+      "name": "Fixed Exposition",
+      "durationBars": 8,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [
+        {
+          "targetInstance": "MPL1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "MPL2",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "MPL3",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": true,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "living_development_scene",
+      "name": "Living Development",
+      "durationBars": 32,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [
+        {
+          "targetInstance": "MPL1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 4,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "MPL2",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 3,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "MPL3",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 5,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "fixed_cadence_scene",
+      "name": "Fixed Cadence",
+      "durationBars": 8,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "MPL3",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": -1
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "MPL1",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        },
+        {
+          "targetInstance": "MPL2",
+          "patternIndex": 0,
+          "transpose": 0,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false,
+          "retrograde": false,
+          "m7": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [
+    {
+      "id": "MPL1",
+      "name": "MPL1",
+      "midiChannel": 1,
+      "role": "anchor",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "MPL2",
+      "name": "MPL2",
+      "midiChannel": 2,
+      "role": "motif",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "MPL3",
+      "name": "MPL3",
+      "midiChannel": 3,
+      "role": "counterpoint",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "v1",
+      "name": "",
+      "midiChannel": 1,
+      "role": "anchor",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "v2",
+      "name": "",
+      "midiChannel": 2,
+      "role": "motif",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "v3",
+      "name": "",
+      "midiChannel": 3,
+      "role": "counterpoint",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "v4",
+      "name": "",
+      "midiChannel": 4,
+      "role": "counterpoint",
+      "enabled": true,
+      "lastKnownScene": ""
+    }
+  ],
+  "motifPresets": [
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "presentation_theme",
+      "name": "Presentation Theme",
+      "tags": [
+        "presentation"
+      ],
+      "notes": [
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.299999952316284,
+          "relativeVelocity": 0.850000023841858
+        },
+        {
+          "semitoneOffset": 2,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.800000011920929
+        },
+        {
+          "semitoneOffset": 5,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.850000023841858
+        },
+        {
+          "semitoneOffset": 4,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.800000011920929
+        },
+        {
+          "semitoneOffset": 2,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.75
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.600000023841858,
+          "relativeVelocity": 0.699999988079071
+        }
+      ]
+    },
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "release_motif",
+      "name": "Release Motif",
+      "tags": [
+        "release"
+      ],
+      "notes": [
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.5,
+          "relativeVelocity": 0.699999988079071
+        },
+        {
+          "semitoneOffset": -2,
+          "relativeDuration": 2.0,
+          "relativeVelocity": 0.600000023841858
+        },
+        {
+          "semitoneOffset": -5,
+          "relativeDuration": 2.5,
+          "relativeVelocity": 0.5
+        }
+      ]
+    },
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "ebb_motif",
+      "name": "Ebb Motif",
+      "tags": [
+        "release"
+      ],
+      "notes": [
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.200000047683716,
+          "relativeVelocity": 0.75
+        },
+        {
+          "semitoneOffset": -2,
+          "relativeDuration": 1.399999976158142,
+          "relativeVelocity": 0.699999988079071
+        },
+        {
+          "semitoneOffset": -4,
+          "relativeDuration": 1.600000023841858,
+          "relativeVelocity": 0.600000023841858
+        },
+        {
+          "semitoneOffset": -1,
+          "relativeDuration": 1.799999952316284,
+          "relativeVelocity": 0.550000011920929
+        }
+      ]
+    },
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "slack_motif",
+      "name": "Slack Motif",
+      "tags": [
+        "release"
+      ],
+      "notes": [
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 2.5,
+          "relativeVelocity": 0.5
+        },
+        {
+          "semitoneOffset": -1,
+          "relativeDuration": 3.0,
+          "relativeVelocity": 0.449999988079071
+        }
+      ]
+    }
+  ],
+  "modulatorTargets": [],
+  "modulationRoutes": [
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "Pad_TensionToTranspose",
+      "arcDimension": "energy",
+      "targetInstance": "*",
+      "patternIndex": 0,
+      "parameter": "transpose",
+      "outputMin": 0.0,
+      "outputMax": 6.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": false,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "length",
+      "arcDimension": "energy",
+      "targetInstance": "*",
+      "patternIndex": 0,
+      "parameter": "length",
+      "outputMin": 1.0,
+      "outputMax": 6.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": false,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "inv",
+      "arcDimension": "energy",
+      "targetInstance": "MPL2",
+      "patternIndex": 0,
+      "parameter": "inversion",
+      "outputMin": 1.0,
+      "outputMax": 6.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "ret",
+      "arcDimension": "energy",
+      "targetInstance": "MPL3",
+      "patternIndex": 0,
+      "parameter": "m7",
+      "outputMin": 1.0,
+      "outputMax": 6.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "demo_mpl1_rotation",
+      "arcDimension": "complexity",
+      "targetInstance": "MPL1",
+      "patternIndex": 0,
+      "parameter": "rotation",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "demo_mpl2_swing",
+      "arcDimension": "density",
+      "targetInstance": "MPL2",
+      "patternIndex": 0,
+      "parameter": "swing",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "demo_mpl3_gridmode",
+      "arcDimension": "complexity",
+      "targetInstance": "MPL3",
+      "patternIndex": 0,
+      "parameter": "gridMode",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "seq_test_route",
+      "arcDimension": "",
+      "targetInstance": "MPL1",
+      "patternIndex": 0,
+      "parameter": "transpose",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "sequence",
+      "sequenceValues": [
+        0.0,
+        -2.0,
+        -4.0,
+        -2.0
+      ],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "mpl2_seq",
+      "arcDimension": "",
+      "targetInstance": "MPL2",
+      "patternIndex": 0,
+      "parameter": "transpose",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "sequence",
+      "sequenceValues": [
+        0.0,
+        3.0,
+        -3.0
+      ],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "mpl3_seq",
+      "arcDimension": "",
+      "targetInstance": "MPL3",
+      "patternIndex": 0,
+      "parameter": "transpose",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "sequence",
+      "sequenceValues": [
+        0.0,
+        -1.0,
+        -3.0,
+        -1.0,
+        1.0
+      ],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "test_tension_to_rate",
+      "arcDimension": "tension",
+      "targetInstance": "MPL1",
+      "patternIndex": 0,
+      "parameter": "rate",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": false,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "tension_to_rate_MPL1",
+      "arcDimension": "tension",
+      "targetInstance": "MPL1",
+      "patternIndex": 0,
+      "parameter": "rate",
+      "outputMin": 0.0,
+      "outputMax": 1.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "tension_to_rate_MPL3",
+      "arcDimension": "tension",
+      "targetInstance": "MPL3",
+      "patternIndex": 0,
+      "parameter": "rate",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "bar",
+      "sequenceValues": [],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "seq_motif_MPL2",
+      "arcDimension": "",
+      "targetInstance": "MPL2",
+      "patternIndex": 0,
+      "parameter": "transpose",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "sequence",
+      "sequenceValues": [
+        0.0,
+        2.0,
+        -1.0,
+        3.0,
+        1.0
+      ],
+      "phraseLengthBars": 4
+    },
+    {
+      "schema": "ComposerMastermindModulationRoute.v1",
+      "id": "seq_counterpoint_MPL3",
+      "arcDimension": "",
+      "targetInstance": "MPL3",
+      "patternIndex": 0,
+      "parameter": "transpose",
+      "outputMin": 0.0,
+      "outputMax": 0.0,
+      "threshold": 0.5,
+      "invert": false,
+      "enabled": true,
+      "dispatchMode": "sequence",
+      "sequenceValues": [
+        0.0,
+        -2.0,
+        1.0,
+        -3.0,
+        -1.0
+      ],
+      "phraseLengthBars": 4
+    }
+  ]
+}

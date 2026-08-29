@@ -1,4 +1,5 @@
 #include "CoherenceEvaluator.h"
+#include "../midi/CCMapping.h"
 #include <unordered_map>
 #include <algorithm>
 
@@ -30,7 +31,8 @@ namespace CoherenceEvaluator
 
         const float patternAgreement = static_cast<float>(maxPatternCount) / states.size();
 
-        // Swing closeness: inverse of the normalized spread across the 0-75% range.
+        // Swing closeness: inverse of the normalized spread across the full
+        // legal swing range (CCMapping::kMaxSwing - Off to Shuffle).
         float minSwing = states.front().swing;
         float maxSwing = states.front().swing;
         for (const auto& state : states)
@@ -39,8 +41,7 @@ namespace CoherenceEvaluator
             maxSwing = std::max(maxSwing, state.swing);
         }
 
-        constexpr float kMaxSwingSpread = 75.0f;
-        const float swingSpread = std::clamp((maxSwing - minSwing) / kMaxSwingSpread, 0.0f, 1.0f);
+        const float swingSpread = std::clamp((maxSwing - minSwing) / CCMapping::kMaxSwing, 0.0f, 1.0f);
         const float swingAgreement = 1.0f - swingSpread;
 
         return (gridAgreement + patternAgreement + swingAgreement) / 3.0f;

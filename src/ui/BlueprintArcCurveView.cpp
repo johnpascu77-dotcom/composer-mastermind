@@ -71,6 +71,23 @@ BlueprintArcCurveView::BlueprintArcCurveView(ComposerMastermindAudioProcessor& p
     addAndMakeVisible(removeButton);
     removeButton.onClick = [this] { removeClicked(); };
 
+    addAndMakeVisible(newButton);
+    newButton.onClick = [this] { newBlueprintClicked(); };
+
+    addAndMakeVisible(barLengthLabel);
+    barLengthSlider.setSliderStyle(juce::Slider::IncDecButtons);
+    barLengthSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 56, 22);
+    barLengthSlider.setRange(4.0, 256.0, 1.0);
+    barLengthSlider.setValue(32.0, juce::dontSendNotification);
+    barLengthSlider.onValueChange = [this]
+    {
+        if (isNewBlueprintMode)
+            curveGraph.setMaxBar((int) barLengthSlider.getValue());
+    };
+    addAndMakeVisible(barLengthSlider);
+    barLengthLabel.setVisible(false);
+    barLengthSlider.setVisible(false);
+
     addAndMakeVisible(badgeLabel);
     badgeLabel.setFont(juce::Font(12.0f, juce::Font::bold));
     badgeLabel.setJustificationType(juce::Justification::centred);
@@ -93,7 +110,7 @@ BlueprintArcCurveView::BlueprintArcCurveView(ComposerMastermindAudioProcessor& p
     saveNameInput.setTextToShowWhenEmpty("name this version, e.g. song_a_v2", juce::Colours::grey);
 
     addAndMakeVisible(saveButton);
-    saveButton.onClick = [this] { saveClicked(); };
+    saveButton.onClick = [this] { primaryActionClicked(); };
 
     addAndMakeVisible(hintLabel);
     hintLabel.setFont(juce::Font(12.0f, juce::Font::italic));
@@ -120,11 +137,16 @@ void BlueprintArcCurveView::resized()
 
     auto pickerRow = nextRow(kRowHeight);
     headerLabel.setBounds(pickerRow.removeFromLeft(80));
-    blueprintCombo.setBounds(pickerRow.removeFromLeft(220));
+    blueprintCombo.setBounds(pickerRow.removeFromLeft(190));
     pickerRow.removeFromLeft(kMargin / 2);
-    removeButton.setBounds(pickerRow.removeFromLeft(70));
+    removeButton.setBounds(pickerRow.removeFromLeft(65));
     pickerRow.removeFromLeft(kMargin);
-    badgeLabel.setBounds(pickerRow.removeFromLeft(160));
+    newButton.setBounds(pickerRow.removeFromLeft(105));
+    pickerRow.removeFromLeft(kMargin);
+    barLengthLabel.setBounds(pickerRow.removeFromLeft(85));
+    barLengthSlider.setBounds(pickerRow.removeFromLeft(100));
+    pickerRow.removeFromLeft(kMargin);
+    badgeLabel.setBounds(pickerRow.removeFromLeft(140));
 
     auto bottomRow = area.removeFromBottom(kRowHeight);
     area.removeFromBottom(kRowGap);
@@ -172,10 +194,53 @@ void BlueprintArcCurveView::removeClicked()
 void BlueprintArcCurveView::blueprintComboChanged()
 {
     const auto selectedId = blueprintCombo.getText().toStdString();
-    if (selectedId.empty() || selectedId == loadedBlueprintId)
+    if (selectedId.empty() || (selectedId == loadedBlueprintId && !isNewBlueprintMode))
         return;
 
+    isNewBlueprintMode = false;
+    barLengthLabel.setVisible(false);
+    barLengthSlider.setVisible(false);
+    blueprintCombo.setVisible(true);
+    removeButton.setVisible(true);
+
     loadSelectedBlueprint();
+}
+
+void BlueprintArcCurveView::newBlueprintClicked()
+{
+    isNewBlueprintMode = true;
+    loadedBlueprintId.clear();
+    loadedBlueprint = Blueprint{};
+    derivedDimensions.clear();
+
+    blueprintCombo.setSelectedId(0, juce::dontSendNotification);
+    blueprintCombo.setVisible(false);
+    removeButton.setVisible(false);
+    barLengthLabel.setVisible(true);
+    barLengthSlider.setVisible(true);
+
+    const int length = (int) barLengthSlider.getValue();
+
+    // A fresh flat curve per dimension, sized to the chosen length rather
+    // than ArcSet's own default (1..64) - a blank ArcSet{} would otherwise
+    // put its second point off the visible axis for any length other than
+    // 64, looking broken the moment "New Blueprint" is clicked.
+    ArcSet blankArcSet;
+    for (const auto& dimensionName : blankArcSet.getArcNames())
+    {
+        Arc arc;
+        arc.setBreakpoints({ { 1, 0.3f }, { length, 0.3f } });
+        blankArcSet.setArc(dimensionName, arc);
+    }
+    scratchArcSet = blankArcSet;
+
+    curveGraph.setMaxBar(length);
+    curveGraph.refreshFromArcSet();
+
+    saveNameInput.setText({}, juce::dontSendNotification);
+
+    updateBadge();
+    setStatus("New blueprint: draw one curve (pick it above the graph), then Generate");
 }
 
 void BlueprintArcCurveView::loadSelectedBlueprint()
@@ -202,9 +267,23 @@ void BlueprintArcCurveView::loadSelectedBlueprint()
 
 void BlueprintArcCurveView::updateBadge()
 {
+    if (isNewBlueprintMode)
+    {
+        badgeLabel.setText("New blueprint", juce::dontSendNotification);
+        badgeLabel.setColour(juce::Label::textColourId, juce::Colours::limegreen);
+        hintLabel.setText(
+            "'" + curveGraph.getSelectedArcName() + "' becomes the driving arc - the other 4 dimensions get "
+            "derived from the sections it produces. Name it below, then Generate.",
+            juce::dontSendNotification);
+        saveButton.setButtonText("Generate Blueprint");
+        return;
+    }
+
     const auto& selectedDimension = curveGraph.getSelectedArcName();
     const bool isDerived = std::find(derivedDimensions.begin(), derivedDimensions.end(), selectedDimension)
                             != derivedDimensions.end();
+
+    saveButton.setButtonText("Save as new blueprint");
 
     if (isDerived)
     {
@@ -220,6 +299,14 @@ void BlueprintArcCurveView::updateBadge()
         badgeLabel.setColour(juce::Label::textColourId, juce::Colours::limegreen);
         hintLabel.setText("Saves every dimension shown here onto a new blueprint.", juce::dontSendNotification);
     }
+}
+
+void BlueprintArcCurveView::primaryActionClicked()
+{
+    if (isNewBlueprintMode)
+        generateClicked();
+    else
+        saveClicked();
 }
 
 void BlueprintArcCurveView::saveClicked()
@@ -289,4 +376,89 @@ void BlueprintArcCurveView::saveClicked()
                   + " curve(s) saved)");
 
     refreshAll();
+}
+
+void BlueprintArcCurveView::generateClicked()
+{
+    const auto newId = saveNameInput.getText().trim().toStdString();
+    if (newId.empty())
+    {
+        setStatus("Generate failed: name this blueprint first");
+        return;
+    }
+
+    const auto drivingArcName = curveGraph.getSelectedArcName();
+
+    auto& composerCore = processorRef.getComposerCore();
+    const auto instances = composerCore.getInstanceRegistry().getAllInstances();
+
+    // Auto-created default base scene (2026-08-27, user's own call when
+    // asked): every registered instance, Pattern 1, Binary, Swing Off - so
+    // a blank-slate piece needs nothing pre-authored. BlueprintGenerator::
+    // generate clones this per section and layers role-preset-matched
+    // overrides on top where they apply.
+    Scene baseScene;
+    baseScene.id = newId + "_scene";
+    baseScene.name = newId + " - Auto Scene";
+    baseScene.durationBars = 4;
+    baseScene.quantize = "bar";
+    for (const auto& instance : instances)
+        baseScene.targets.push_back(instance.id);
+    baseScene.global.activePattern = 1;
+    baseScene.global.gridMode = 0;
+    baseScene.global.swing = 0.0f;
+
+    const auto rolePresets = composerCore.getPresetLibrary().getAllRolePresets();
+    const auto rhythmicPresets = composerCore.getPresetLibrary().getAllRhythmicRelationshipPresets();
+
+    auto proposal = BlueprintGenerator::generate(newId, drivingArcName, scratchArcSet, baseScene, instances,
+                                                   rolePresets, rhythmicPresets);
+
+    if (proposal.blueprint.id.empty())
+    {
+        setStatus("Generate failed: '" + juce::String(drivingArcName)
+                      + "' needs at least 2 breakpoints to derive sections from - draw its shape first");
+        return;
+    }
+
+    // baseScene itself is never referenced by id in the result - each
+    // section gets its own clone (section.id + "_scene") in newScenes, per
+    // BlueprintGenerator::generate - so only those need adding.
+    for (const auto& scene : proposal.newScenes)
+        composerCore.getSceneLibrary().addOrReplaceScene(scene);
+
+    // Persist the full generated 5-curve ArcSet onto the blueprint itself,
+    // same reasoning as ui/GenerateView::commitClicked - so this blueprint's
+    // real arc survives being revisited later rather than only living in
+    // whatever the live ArcSet happened to hold right after this Generate.
+    proposal.blueprint.arcCurves.clear();
+    for (const auto& dimensionName : proposal.candidateArcSet.getArcNames())
+    {
+        const Arc arc = proposal.candidateArcSet.getArc(dimensionName); // see saveClicked's own comment on why
+        BlueprintArcCurve curve;
+        curve.dimension = dimensionName;
+        for (const auto& breakpoint : arc.getBreakpoints())
+            curve.points.push_back({ breakpoint.bar, breakpoint.value });
+        proposal.blueprint.arcCurves.push_back(curve);
+    }
+
+    composerCore.getBlueprintLibrary().addOrReplaceBlueprint(proposal.blueprint);
+    composerCore.setCurrentBlueprint(proposal.blueprint);
+
+    setStatus("Generated and committed '" + juce::String(newId) + "' ("
+                  + juce::String((int) proposal.blueprint.sections.size()) + " section(s), driven by '"
+                  + juce::String(drivingArcName) + "') - now active");
+
+    isNewBlueprintMode = false;
+    barLengthLabel.setVisible(false);
+    barLengthSlider.setVisible(false);
+    blueprintCombo.setVisible(true);
+    removeButton.setVisible(true);
+
+    // Reload as a normal existing-blueprint selection, so the view now
+    // shows the real generated result (sections, non-driving dimensions
+    // baked in) rather than the blank-slate scratch state.
+    refreshAll();
+    blueprintCombo.setText(newId, juce::dontSendNotification);
+    loadSelectedBlueprint();
 }

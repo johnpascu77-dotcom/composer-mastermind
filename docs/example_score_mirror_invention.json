@@ -1,0 +1,215 @@
+{
+  "schema": "ComposerMastermindComposition.v3",
+  "blueprint": {
+    "id": "mirror_invention",
+    "name": "Mirror Invention",
+    "sections": [
+      {
+        "id": "exposition",
+        "name": "Exposition (subject, tonal answer, mirror bass)",
+        "sceneId": "exposition_scene",
+        "startBar": 1,
+        "durationBars": 16,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              { "enabled": true,  "note": 62, "velocity": 85,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 65, "velocity": 95,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 64, "velocity": 100, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 67, "velocity": 108, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 65, "velocity": 105, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 69, "velocity": 112, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 67, "velocity": 100, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 62, "velocity": 90,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              { "enabled": true,  "note": 74, "velocity": 103, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 69, "velocity": 93,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 69, "velocity": 90,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 72, "velocity": 98,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 71, "velocity": 104, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 74, "velocity": 110, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 72, "velocity": 108, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 76, "velocity": 115, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              { "enabled": true,  "note": 65, "velocity": 90,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 69, "velocity": 95,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 67, "velocity": 85,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 62, "velocity": 78,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 62, "velocity": 75,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 65, "velocity": 82,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 64, "velocity": 88,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 67, "velocity": 92,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "invertible_recap",
+        "name": "Invertible recap (subdominant, v1 and v3 exchange registers)",
+        "sceneId": "invertible_recap_scene",
+        "startBar": 17,
+        "durationBars": 16,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "v1",
+            "patternIndex": 0,
+            "steps": [
+              { "enabled": true,  "note": 67, "velocity": 75,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 70, "velocity": 82,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 69, "velocity": 88,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 72, "velocity": 92,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 70, "velocity": 90,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 74, "velocity": 95,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 72, "velocity": 85,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 67, "velocity": 78,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 }
+            ]
+          },
+          {
+            "targetInstance": "v2",
+            "patternIndex": 0,
+            "steps": [
+              { "enabled": true,  "note": 79, "velocity": 103, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 74, "velocity": 93,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 74, "velocity": 90,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 77, "velocity": 98,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 76, "velocity": 104, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 79, "velocity": 110, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 77, "velocity": 108, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 81, "velocity": 115, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 }
+            ]
+          },
+          {
+            "targetInstance": "v3",
+            "patternIndex": 0,
+            "steps": [
+              { "enabled": true,  "note": 70, "velocity": 105, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 74, "velocity": 112, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 72, "velocity": 100, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 67, "velocity": 90,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 67, "velocity": 85,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 70, "velocity": 95,  "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 69, "velocity": 100, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 },
+              { "enabled": true,  "note": 72, "velocity": 108, "duration": 2 },
+              { "enabled": false, "note": 0,  "velocity": 0,   "duration": 0 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "exposition_scene",
+      "name": "Exposition Scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": ["v1", "v2", "v3"],
+      "global": { "activePattern": 1, "gridMode": 0, "swing": 0 },
+      "instanceOverrides": [],
+      "patterns": [
+        { "targetInstance": "v1", "patternIndex": 0, "transpose": 0, "rotation": 0, "length": 16, "inversion": false, "retrograde": false, "m7": false },
+        { "targetInstance": "v2", "patternIndex": 0, "transpose": 0, "rotation": 0, "length": 16, "inversion": false, "retrograde": false, "m7": false },
+        { "targetInstance": "v3", "patternIndex": 0, "transpose": 0, "rotation": 0, "length": 16, "inversion": true,  "retrograde": false, "m7": false }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "invertible_recap_scene",
+      "name": "Invertible Recap Scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": ["v1", "v2", "v3"],
+      "global": { "activePattern": 1, "gridMode": 0, "swing": 0 },
+      "instanceOverrides": [],
+      "patterns": [
+        { "targetInstance": "v1", "patternIndex": 0, "transpose": 0, "rotation": 0, "length": 16, "inversion": true,  "retrograde": false, "m7": false },
+        { "targetInstance": "v2", "patternIndex": 0, "transpose": 0, "rotation": 0, "length": 16, "inversion": false, "retrograde": false, "m7": false },
+        { "targetInstance": "v3", "patternIndex": 0, "transpose": 0, "rotation": 0, "length": 16, "inversion": false, "retrograde": false, "m7": false }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [
+    { "id": "v1", "midiChannel": 1, "role": "anchor",       "enabled": true },
+    { "id": "v2", "midiChannel": 2, "role": "motif",        "enabled": true },
+    { "id": "v3", "midiChannel": 3, "role": "counterpoint", "enabled": true }
+  ],
+  "motifPresets": [],
+  "modulatorTargets": [],
+  "modulationRoutes": []
+}

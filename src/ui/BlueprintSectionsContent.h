@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <functional>
+#include <memory>
 #include <vector>
 #include "../model/Blueprint.h"
 
@@ -53,6 +54,8 @@ private:
     void saveBlueprintClicked();
     void loadBlueprintClicked();
     void removeBlueprintClicked();
+    void exportBlueprintClicked();
+    void importBlueprintClicked();
     void primeForPlaybackClicked();
 
     void refreshPendingPreview();
@@ -142,6 +145,16 @@ private:
     juce::ComboBox savedBlueprintsCombo;
     juce::TextButton loadBlueprintButton { "Load" };
     juce::TextButton removeBlueprintButton { "Remove" };
+
+    // Single-composition JSON round-trip (2026-08-25, state/CompositionBundleStore) -
+    // one blueprint plus only the scenes its sections reference, self-
+    // contained on disk, distinct from SceneListComponent's whole-session
+    // Save/Load Snapshot. Export operates on savedBlueprintsCombo's
+    // selection (same as Remove); Import adds to both libraries and
+    // activates the result, same as Load.
+    juce::TextButton exportBlueprintButton { "Export to File..." };
+    juce::TextButton importBlueprintButton { "Import from File..." };
+    std::unique_ptr<juce::FileChooser> fileChooser;
 
     std::vector<BlueprintSection> workingSections;
     std::vector<SectionLayerRole> pendingLayerRoles;

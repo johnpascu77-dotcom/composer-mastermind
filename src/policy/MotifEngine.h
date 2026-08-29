@@ -285,4 +285,25 @@ namespace MotifEngine
                                  const std::vector<MotifPreset>& motifPresets, PhraseRole role,
                                  PatternSyncServer& patternSync, InstanceStateTracker& stateTracker, int currentBar,
                                  const LockedStepLibrary& lockedSteps, const std::string& avoidPresetId);
+
+    // Content-aware taper for continuous (per-bar) Transpose automation
+    // (2026-08-27, ComposerCore::applyContinuousMelodicCurve's Energy/
+    // Tension curve) - shares the same "keep pitch sane" policy stampOnePattern/
+    // applyForSection already trust for generative writes (boundedHomeCenter/
+    // patternCenterNote), rather than that curve applying its own register
+    // pull blind to what a pattern's content already sounds like. Given the
+    // curve's desired rawTranspose for one instance/pattern, returns the
+    // Transpose actually safe to send: computes that pattern's own current
+    // bounded center from its cached content (same Length-window-bounded
+    // average applyForSection uses), then bounds the COMBINED result (that
+    // center plus rawTranspose) to the same home-register clamp, and returns
+    // whatever Transpose achieves that bounded combined result. A pattern
+    // already sitting near the home register is unaffected; one already
+    // voiced far from it gets less of the curve's pull (or a gentle pull
+    // back) rather than the curve stacking on top unconditionally. Returns
+    // rawTranspose unchanged if nothing is cached yet for this instance/
+    // pattern, or nothing is enabled within its tracked Length window -
+    // same "won't act blind" restraint as everything else in this file.
+    int taperTransposeForPatternContent(PatternSyncServer& patternSync, const InstanceStateTracker& stateTracker,
+                                         const Instance& instance, int patternIndex, int rawTranspose);
 }

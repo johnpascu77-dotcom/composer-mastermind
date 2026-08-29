@@ -1,5 +1,6 @@
 #include "Validation.h"
 #include "../midi/CCMapping.h"
+#include <cmath>
 
 namespace Validation
 {
@@ -20,7 +21,7 @@ namespace Validation
 
     bool isValidSwing(float swing)
     {
-        return swing >= 0.0f && swing <= 75.0f;
+        return swing >= 0.0f && swing <= CCMapping::kMaxSwing;
     }
 
     bool isValidCCNumber(int ccNumber)
@@ -448,6 +449,87 @@ namespace Validation
         if (target.mode == "arc" && target.arcDimension.empty())
         {
             errorMessage = "Modulator target '" + target.id + "' is in 'arc' mode but has no arc dimension set";
+            return false;
+        }
+
+        return true;
+    }
+
+    bool isValidModulationRoute(const ModulationRoute& route, std::string& errorMessage)
+    {
+        if (route.id.empty())
+        {
+            errorMessage = "Modulation route id is empty";
+            return false;
+        }
+
+        if (route.dispatchMode == ModulationDispatchMode::Bar && route.arcDimension.empty())
+        {
+            errorMessage = "Modulation route '" + route.id + "' has no arc dimension set";
+            return false;
+        }
+
+        if (route.dispatchMode == ModulationDispatchMode::Sequence
+            || route.dispatchMode == ModulationDispatchMode::BarCycle)
+        {
+            const char* modeName = route.dispatchMode == ModulationDispatchMode::Sequence ? "Sequence" : "BarCycle";
+
+            if (!isContinuousModulationParameter(route.parameter))
+            {
+                errorMessage = "Modulation route '" + route.id + "' is in " + modeName
+                    + " mode but its parameter isn't continuous (transpose/rotation/length/swing/rate only)";
+                return false;
+            }
+
+            if (route.sequenceValues.empty())
+            {
+                errorMessage = "Modulation route '" + route.id + "' is in " + modeName
+                    + " mode but has no sequence values";
+                return false;
+            }
+
+            for (float value : route.sequenceValues)
+            {
+                if (!std::isfinite(value))
+                {
+                    errorMessage = "Modulation route '" + route.id + "' has a non-finite sequence value";
+                    return false;
+                }
+            }
+        }
+
+        if (route.dispatchMode == ModulationDispatchMode::BarCycle && route.phraseLengthBars < 1)
+        {
+            errorMessage = "Modulation route '" + route.id + "' has a phraseLengthBars below 1";
+            return false;
+        }
+
+        if (route.targetInstance.empty())
+        {
+            errorMessage = "Modulation route '" + route.id + "' has no target instance set (use '*' to broadcast)";
+            return false;
+        }
+
+        // 0-2, matching CCMapping::patternBaseCC's own valid range (MPL only
+        // exposes 3 patterns) - ignored at dispatch time for the global
+        // parameters (Swing/ActivePattern/GridMode), but still validated
+        // here so a stray out-of-range value doesn't silently mean something
+        // else if the route is later repointed at a pattern-scoped parameter.
+        if (route.patternIndex < 0 || route.patternIndex > 2)
+        {
+            errorMessage = "Modulation route '" + route.id + "' has an invalid pattern index (expected 0-2)";
+            return false;
+        }
+
+        if (!std::isfinite(route.outputMin) || !std::isfinite(route.outputMax) || !std::isfinite(route.threshold))
+        {
+            errorMessage = "Modulation route '" + route.id + "' has a non-finite range/threshold value";
+            return false;
+        }
+
+        if (route.threshold < 0.0f || route.threshold > 1.0f)
+        {
+            errorMessage = "Modulation route '" + route.id + "' threshold must be between 0 and 1";
             return false;
         }
 

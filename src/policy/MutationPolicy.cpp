@@ -3,8 +3,8 @@
 
 MutationWeight MutationPolicy::classifyWeight(const Mutation& mutation)
 {
-    if (mutation.type == "inversion")
-        return MutationWeight::Major;
+    if (mutation.type == "inversion" || mutation.type == "retrograde" || mutation.type == "m7")
+        return MutationWeight::Major; // full-pattern identity change, same weight as Inversion
 
     if (mutation.type == "transpose")
         return (std::abs(mutation.amount) >= 12) ? MutationWeight::Major : MutationWeight::Medium;
@@ -14,6 +14,10 @@ MutationWeight MutationPolicy::classifyWeight(const Mutation& mutation)
 
     if (mutation.type == "length")
         return MutationWeight::Medium;
+
+    if (mutation.type == "rate")
+        return MutationWeight::Medium; // full pattern-wide rhythmic-character change, but reversible/single-CC -
+                                        // not identity-flipping like Inversion/Retrograde/M7's Major
 
     // Unknown mutation type: default to the cautious middle ground rather
     // than assuming it's harmless.

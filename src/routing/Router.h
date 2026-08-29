@@ -2,6 +2,7 @@
 
 #include "../model/Scene.h"
 #include "../model/Mutation.h"
+#include "../model/ModulationRoute.h"
 #include "InstanceRegistry.h"
 #include "InstanceStateTracker.h"
 #include "../midi/CCDispatcher.h"
@@ -60,6 +61,42 @@ public:
     // per-pattern), so this preserves whatever Active Pattern/Grid Mode the
     // instance is currently tracked at rather than touching them.
     void routeContinuousSwing(const std::string& targetInstance, float absoluteSwingPercent);
+
+    // Continuous automation for the global Rate parameter (v1.29.0) - same
+    // shape as routeContinuousSwing above, just an already-int 3-state
+    // domain (0=Augmented/1=Normal/2=Diminished) rather than a percent.
+    void routeContinuousRate(const std::string& targetInstance, int absoluteRateState);
+
+    // Modulation matrix (ModulationRoute, model/ModulationRoute.h): generic
+    // continuous dispatch for Transpose/Rotation/Length/Swing/Rate - `value` is
+    // already resolved to the parameter's own absolute domain by the caller
+    // (ComposerCore::sendModulationRouteUpdates), this just clamps/encodes/
+    // sends/tracks it, same bypass-PolicyEngine reasoning as
+    // routeContinuousTranspose/routeContinuousSwing above (curve-driven
+    // automation, not a discrete authored decision). No-op for a parameter
+    // that isn't one of these four, an unknown/disabled instance, or an
+    // out-of-range patternIndex (pattern-scoped parameters only).
+    void routeContinuousParameter(const std::string& targetInstance, int patternIndex,
+                                   ModulationParameter parameter, float value);
+
+    // Modulation matrix: generic threshold-crossing dispatch for
+    // Inversion/Retrograde/M7/ActivePattern/GridMode - `bandedValue` is
+    // already resolved by the caller (0/1 for the boolean ones, the target
+    // pattern 0..kMaxPatterns for ActivePattern, 0/1 for GridMode). Only
+    // ever called on a caller-detected crossing, never every bar. Same
+    // PolicyEngine-bypass reasoning as applyCoherenceDivergenceIfDue's own
+    // direct CC dispatch.
+    void routeThresholdParameter(const std::string& targetInstance, int patternIndex,
+                                  ModulationParameter parameter, int bandedValue);
+
+    // Explicit end-of-piece silence (2026-08-25, user's own spec): sends
+    // Active Pattern = 0 (stop) to every enabled registered instance,
+    // leaving Grid Mode/Swing exactly as tracked - same "touch only what
+    // you mean to touch" reasoning as routeContinuousSwing above, just for
+    // the one moment playback runs past a blueprint's last section rather
+    // than a per-bar curve. Called once per transition, not every bar - see
+    // ComposerCore::advanceBlueprintIfNeeded.
+    void stopAllInstances();
 
 private:
     InstanceRegistry& instanceRegistry;

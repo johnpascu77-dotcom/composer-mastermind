@@ -1,6 +1,7 @@
 #include "Router.h"
 #include "../midi/CCMapping.h"
 #include <algorithm>
+#include <cmath>
 
 Router::Router(InstanceRegistry& registry, CCDispatcher& dispatcher, PolicyEngine& policy, InstanceStateTracker& tracker)
     : instanceRegistry(registry), ccDispatcher(dispatcher), policyEngine(policy), stateTracker(tracker)
@@ -55,6 +56,35 @@ bool Router::routeMutation(const Mutation& mutation, int currentBar)
     if (!instanceRegistry.getInstanceById(mutation.targetInstance, instance) || !instance.enabled)
         return false;
 
+    // Rate is global per-instance (not per-pattern), so it never touches
+    // patternBaseCC/MutationOffset - handled entirely separately here,
+    // mirroring how Swing is special-cased ahead of the pattern-scoped path
+    // in routeContinuousParameter above. Absolute-set, not a delta - see
+    // Mutation.h's own comment for why.
+    if (mutation.type == "rate")
+    {
+        RoleBudget rateOverrideBudget;
+        const RoleBudget* rateOverrideBudgetPtr = nullptr;
+        if (budgetOverrideResolver && budgetOverrideResolver(instance.role, currentBar, rateOverrideBudget))
+            rateOverrideBudgetPtr = &rateOverrideBudget;
+
+        if (!policyEngine.authorize(mutation, instance.role, currentBar, rateOverrideBudgetPtr))
+            return false;
+
+        InstanceParameterState currentState;
+        stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+        const int newRate = CCMapping::rateStateFromMutationAmount(mutation.amount);
+
+        if (reservedValueChecker
+            && reservedValueChecker(instance.id, mutation.patternIndex, mutation.type, newRate, currentBar))
+            return false;
+
+        ccDispatcher.sendCC(instance.midiChannel, CCMapping::kRate, CCMapping::encodeRate(newRate));
+        stateTracker.recordGlobal(instance.id, currentState.activePattern, currentState.gridMode,
+                                   currentState.swing, newRate);
+        return true;
+    }
+
     const int baseCC = CCMapping::patternBaseCC(mutation.patternIndex);
     if (baseCC < 0)
         return false;
@@ -75,9 +105,9 @@ bool Router::routeMutation(const Mutation& mutation, int currentBar)
     // a full re-specification - "rotate by -2" should mean "2 steps back
     // from wherever it currently is", not "set rotation to the literal
     // value -2" (which, for a cyclic 0-15 parameter, silently wrapped to a
-    // musically unrelated +14 before this fix). Inversion is the one
-    // exception: a boolean has no sensible "delta", so amount != 0 stays an
-    // absolute on/off toggle.
+    // musically unrelated +14 before this fix). Inversion, Retrograde, and
+    // M7 are the exception: a boolean has no sensible "delta", so
+    // amount != 0 stays an absolute on/off toggle.
     InstanceParameterState currentState;
     stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
     InstancePatternState updatedPattern = currentState.patterns[mutation.patternIndex];
@@ -104,6 +134,14 @@ bool Router::routeMutation(const Mutation& mutation, int currentBar)
             updatedPattern.inversion = (mutation.amount != 0);
             ccValue = CCMapping::encodeInversion(updatedPattern.inversion);
             break;
+        case CCMapping::MutationOffset::Retrograde:
+            updatedPattern.retrograde = (mutation.amount != 0);
+            ccValue = CCMapping::encodeRetrograde(updatedPattern.retrograde);
+            break;
+        case CCMapping::MutationOffset::M7:
+            updatedPattern.m7 = (mutation.amount != 0);
+            ccValue = CCMapping::encodeM7(updatedPattern.m7);
+            break;
     }
 
     // Apex exclusivity: don't let this mutation reach a value a later
@@ -116,7 +154,9 @@ bool Router::routeMutation(const Mutation& mutation, int currentBar)
         case CCMapping::MutationOffset::Transpose: resultingValue = updatedPattern.transpose; break;
         case CCMapping::MutationOffset::Rotation:  resultingValue = updatedPattern.rotation; break;
         case CCMapping::MutationOffset::Length:    resultingValue = updatedPattern.length; break;
-        case CCMapping::MutationOffset::Inversion: resultingValue = updatedPattern.inversion ? 1 : 0; break;
+        case CCMapping::MutationOffset::Inversion:  resultingValue = updatedPattern.inversion ? 1 : 0;  break;
+        case CCMapping::MutationOffset::Retrograde: resultingValue = updatedPattern.retrograde ? 1 : 0; break;
+        case CCMapping::MutationOffset::M7:         resultingValue = updatedPattern.m7 ? 1 : 0;         break;
     }
 
     if (reservedValueChecker
@@ -127,7 +167,8 @@ bool Router::routeMutation(const Mutation& mutation, int currentBar)
     ccDispatcher.sendCC(instance.midiChannel, ccNumber, ccValue);
 
     stateTracker.recordPattern(instance.id, mutation.patternIndex, updatedPattern.transpose,
-                                updatedPattern.rotation, updatedPattern.length, updatedPattern.inversion);
+                                updatedPattern.rotation, updatedPattern.length, updatedPattern.inversion,
+                                updatedPattern.retrograde, updatedPattern.m7);
     return true;
 }
 
@@ -153,7 +194,8 @@ void Router::routeContinuousTranspose(const std::string& targetInstance, int pat
     ccDispatcher.sendCC(instance.midiChannel, ccNumber, CCMapping::encodeTranspose(clampedTranspose));
 
     stateTracker.recordPattern(instance.id, patternIndex, updatedPattern.transpose, updatedPattern.rotation,
-                                updatedPattern.length, updatedPattern.inversion);
+                                updatedPattern.length, updatedPattern.inversion, updatedPattern.retrograde,
+                                updatedPattern.m7);
 }
 
 void Router::routeContinuousSwing(const std::string& targetInstance, float absoluteSwingPercent)
@@ -169,7 +211,170 @@ void Router::routeContinuousSwing(const std::string& targetInstance, float absol
 
     ccDispatcher.sendCC(instance.midiChannel, CCMapping::kSwing, CCMapping::encodeSwing(clampedSwing));
 
-    stateTracker.recordGlobal(instance.id, currentState.activePattern, currentState.gridMode, clampedSwing);
+    stateTracker.recordGlobal(instance.id, currentState.activePattern, currentState.gridMode, clampedSwing, currentState.rate);
+}
+
+// Rate is global per-instance and already a clean 3-state int (no percent
+// domain to snap, unlike Swing) - value here is the arc-mapped raw state,
+// still banded to 0..2 defensively in case a caller passes something
+// unbanded. Mirrors routeContinuousSwing's shape exactly.
+void Router::routeContinuousRate(const std::string& targetInstance, int absoluteRateState)
+{
+    Instance instance;
+    if (!instanceRegistry.getInstanceById(targetInstance, instance) || !instance.enabled)
+        return;
+
+    const int clampedRate = std::clamp(absoluteRateState, 0, 2);
+
+    InstanceParameterState currentState;
+    stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+
+    ccDispatcher.sendCC(instance.midiChannel, CCMapping::kRate, CCMapping::encodeRate(clampedRate));
+
+    stateTracker.recordGlobal(instance.id, currentState.activePattern, currentState.gridMode, currentState.swing, clampedRate);
+}
+
+void Router::routeContinuousParameter(const std::string& targetInstance, int patternIndex,
+                                       ModulationParameter parameter, float value)
+{
+    if (parameter == ModulationParameter::Swing)
+    {
+        routeContinuousSwing(targetInstance, value);
+        return;
+    }
+
+    if (parameter == ModulationParameter::Rate)
+    {
+        routeContinuousRate(targetInstance, static_cast<int>(std::lround(value)));
+        return;
+    }
+
+    Instance instance;
+    if (!instanceRegistry.getInstanceById(targetInstance, instance) || !instance.enabled)
+        return;
+
+    const int baseCC = CCMapping::patternBaseCC(patternIndex);
+    if (baseCC < 0)
+        return;
+
+    InstanceParameterState currentState;
+    stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+    auto updatedPattern = currentState.patterns[patternIndex];
+
+    switch (parameter)
+    {
+        case ModulationParameter::Transpose:
+        {
+            updatedPattern.transpose = std::clamp(static_cast<int>(std::lround(value)),
+                                                    -CCMapping::kMaxTranspose, CCMapping::kMaxTranspose);
+            const int ccNumber = baseCC + static_cast<int>(CCMapping::MutationOffset::Transpose);
+            ccDispatcher.sendCC(instance.midiChannel, ccNumber, CCMapping::encodeTranspose(updatedPattern.transpose));
+            break;
+        }
+        case ModulationParameter::Rotation:
+        {
+            updatedPattern.rotation = CCMapping::wrapRotation(static_cast<int>(std::lround(value)));
+            const int ccNumber = baseCC + static_cast<int>(CCMapping::MutationOffset::Rotation);
+            ccDispatcher.sendCC(instance.midiChannel, ccNumber, CCMapping::encodeRotation(updatedPattern.rotation));
+            break;
+        }
+        case ModulationParameter::Length:
+        {
+            updatedPattern.length = std::clamp(static_cast<int>(std::lround(value)),
+                                                CCMapping::kMinPatternLoopLength, CCMapping::kPatternSteps);
+            const int ccNumber = baseCC + static_cast<int>(CCMapping::MutationOffset::Length);
+            ccDispatcher.sendCC(instance.midiChannel, ccNumber, CCMapping::encodeLength(updatedPattern.length));
+            break;
+        }
+        default:
+            return; // not a continuous parameter - caller error, nothing sent
+    }
+
+    stateTracker.recordPattern(instance.id, patternIndex, updatedPattern.transpose, updatedPattern.rotation,
+                                updatedPattern.length, updatedPattern.inversion, updatedPattern.retrograde,
+                                updatedPattern.m7);
+}
+
+void Router::routeThresholdParameter(const std::string& targetInstance, int patternIndex,
+                                      ModulationParameter parameter, int bandedValue)
+{
+    Instance instance;
+    if (!instanceRegistry.getInstanceById(targetInstance, instance) || !instance.enabled)
+        return;
+
+    InstanceParameterState currentState;
+    stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+
+    if (parameter == ModulationParameter::ActivePattern)
+    {
+        ccDispatcher.sendCC(instance.midiChannel, CCMapping::kActivePattern,
+                             CCMapping::encodeActivePattern(bandedValue));
+        stateTracker.recordGlobal(instance.id, bandedValue, currentState.gridMode, currentState.swing, currentState.rate);
+        return;
+    }
+
+    if (parameter == ModulationParameter::GridMode)
+    {
+        const int gridMode = bandedValue != 0 ? 1 : 0;
+        ccDispatcher.sendCC(instance.midiChannel, CCMapping::kGridMode, CCMapping::encodeGridMode(gridMode));
+        stateTracker.recordGlobal(instance.id, currentState.activePattern, gridMode, currentState.swing, currentState.rate);
+        return;
+    }
+
+    if (parameter != ModulationParameter::Inversion && parameter != ModulationParameter::Retrograde
+        && parameter != ModulationParameter::M7)
+        return; // not a threshold parameter - caller error, nothing sent
+
+    const int baseCC = CCMapping::patternBaseCC(patternIndex);
+    if (baseCC < 0)
+        return;
+
+    auto updatedPattern = currentState.patterns[patternIndex];
+    const bool on = bandedValue != 0;
+
+    CCMapping::MutationOffset offset = CCMapping::MutationOffset::Inversion;
+    int ccValue = 0;
+
+    if (parameter == ModulationParameter::Inversion)
+    {
+        updatedPattern.inversion = on;
+        offset = CCMapping::MutationOffset::Inversion;
+        ccValue = CCMapping::encodeInversion(on);
+    }
+    else if (parameter == ModulationParameter::Retrograde)
+    {
+        updatedPattern.retrograde = on;
+        offset = CCMapping::MutationOffset::Retrograde;
+        ccValue = CCMapping::encodeRetrograde(on);
+    }
+    else
+    {
+        updatedPattern.m7 = on;
+        offset = CCMapping::MutationOffset::M7;
+        ccValue = CCMapping::encodeM7(on);
+    }
+
+    const int ccNumber = baseCC + static_cast<int>(offset);
+    ccDispatcher.sendCC(instance.midiChannel, ccNumber, ccValue);
+
+    stateTracker.recordPattern(instance.id, patternIndex, updatedPattern.transpose, updatedPattern.rotation,
+                                updatedPattern.length, updatedPattern.inversion, updatedPattern.retrograde,
+                                updatedPattern.m7);
+}
+
+void Router::stopAllInstances()
+{
+    for (const auto& instance : instanceRegistry.getAllInstances())
+    {
+        if (!instance.enabled)
+            continue;
+
+        InstanceParameterState currentState;
+        stateTracker.getState(instance.id, currentState); // no prior state -> currentState keeps its defaults
+
+        ccDispatcher.sendCC(instance.midiChannel, CCMapping::kActivePattern, CCMapping::encodeActivePattern(0));
+        stateTracker.recordGlobal(instance.id, 0, currentState.gridMode, currentState.swing, currentState.rate);
+    }
 }
 
 void Router::sendSceneToInstance(const Scene& scene, const Instance& instance)
@@ -177,6 +382,7 @@ void Router::sendSceneToInstance(const Scene& scene, const Instance& instance)
     int activePattern = scene.global.activePattern;
     int gridMode = scene.global.gridMode;
     float swing = scene.global.swing;
+    int rate = scene.global.rate;
 
     for (const auto& override : scene.instanceOverrides)
     {
@@ -189,6 +395,8 @@ void Router::sendSceneToInstance(const Scene& scene, const Instance& instance)
             gridMode = override.gridMode;
         if (override.swing >= 0.0f)
             swing = override.swing;
+        if (override.rate >= 0)
+            rate = override.rate;
         break;
     }
 
@@ -198,8 +406,10 @@ void Router::sendSceneToInstance(const Scene& scene, const Instance& instance)
                          CCMapping::encodeGridMode(gridMode));
     ccDispatcher.sendCC(instance.midiChannel, CCMapping::kSwing,
                          CCMapping::encodeSwing(swing));
+    ccDispatcher.sendCC(instance.midiChannel, CCMapping::kRate,
+                         CCMapping::encodeRate(rate));
 
-    stateTracker.recordGlobal(instance.id, activePattern, gridMode, swing);
+    stateTracker.recordGlobal(instance.id, activePattern, gridMode, swing, rate);
 }
 
 void Router::sendScenePattern(const ScenePattern& pattern, const Instance& instance)
@@ -220,7 +430,14 @@ void Router::sendScenePattern(const ScenePattern& pattern, const Instance& insta
     ccDispatcher.sendCC(instance.midiChannel,
                          baseCC + static_cast<int>(CCMapping::MutationOffset::Inversion),
                          CCMapping::encodeInversion(pattern.inversion));
+    ccDispatcher.sendCC(instance.midiChannel,
+                         baseCC + static_cast<int>(CCMapping::MutationOffset::Retrograde),
+                         CCMapping::encodeRetrograde(pattern.retrograde));
+    ccDispatcher.sendCC(instance.midiChannel,
+                         baseCC + static_cast<int>(CCMapping::MutationOffset::M7),
+                         CCMapping::encodeM7(pattern.m7));
 
     stateTracker.recordPattern(instance.id, pattern.patternIndex,
-                                pattern.transpose, pattern.rotation, pattern.length, pattern.inversion);
+                                pattern.transpose, pattern.rotation, pattern.length, pattern.inversion,
+                                pattern.retrograde, pattern.m7);
 }

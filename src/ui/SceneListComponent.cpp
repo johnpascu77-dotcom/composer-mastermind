@@ -2,6 +2,7 @@
 #include "../plugin/PluginProcessor.h"
 #include "../util/Validation.h"
 #include "../state/StateSnapshotStore.h"
+#include "../midi/CCMapping.h"
 #include <algorithm>
 
 namespace
@@ -113,8 +114,11 @@ SceneListComponent::SceneListComponent(ComposerMastermindAudioProcessor& process
     gridModeCombo.setSelectedId(1, juce::dontSendNotification);
     addAndMakeVisible(gridModeLabel);
 
-    addAndMakeVisible(swingSlider);
-    styleSlider(swingSlider, 0.0, 75.0, 1.0, 0.0);
+    addAndMakeVisible(swingCombo);
+    swingCombo.addItem("Off", 1);
+    swingCombo.addItem("Triplet", 2);
+    swingCombo.addItem("Shuffle", 3);
+    swingCombo.setSelectedId(1, juce::dontSendNotification);
     addAndMakeVisible(swingLabel);
 
     addAndMakeVisible(durationBarsSlider);
@@ -251,7 +255,7 @@ void SceneListComponent::resized()
 
     auto swingRow = nextRow(kRowHeight);
     swingLabel.setBounds(swingRow.removeFromLeft(180));
-    swingSlider.setBounds(swingRow);
+    swingCombo.setBounds(swingRow.removeFromLeft(150));
 
     auto durationBarsRow = nextRow(kRowHeight);
     durationBarsLabel.setBounds(durationBarsRow.removeFromLeft(180));
@@ -323,7 +327,7 @@ Scene SceneListComponent::buildSceneFromPanel(const std::string& id) const
     scene.durationBars = static_cast<int>(durationBarsSlider.getValue());
     scene.global.activePattern = static_cast<int>(activePatternSlider.getValue());
     scene.global.gridMode = gridModeCombo.getSelectedId() - 1;
-    scene.global.swing = static_cast<float>(swingSlider.getValue());
+    scene.global.swing = CCMapping::swingPercentForState(swingCombo.getSelectedId() - 1);
 
     if (nextSceneCombo.getSelectedId() > 0)
         scene.nextSceneId = nextSceneCombo.getText().toStdString();
@@ -494,7 +498,7 @@ void SceneListComponent::loadSceneClicked()
     sceneNameInput.setText(scene.id, juce::dontSendNotification);
     activePatternSlider.setValue(scene.global.activePattern, juce::dontSendNotification);
     gridModeCombo.setSelectedId(scene.global.gridMode + 1, juce::dontSendNotification);
-    swingSlider.setValue(scene.global.swing, juce::dontSendNotification);
+    swingCombo.setSelectedId(CCMapping::swingStateForPercent(scene.global.swing) + 1, juce::dontSendNotification);
     durationBarsSlider.setValue(scene.durationBars, juce::dontSendNotification);
     selectComboByText(nextSceneCombo, juce::String(scene.nextSceneId));
 

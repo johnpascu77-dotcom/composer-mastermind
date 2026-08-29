@@ -76,8 +76,8 @@ private:
     juce::Label activePatternLabel { {}, "Active Pattern (0=stop, 1-3)" };
     juce::ComboBox gridModeCombo;
     juce::Label gridModeLabel { {}, "Grid Mode" };
-    juce::Slider swingSlider;
-    juce::Label swingLabel { {}, "Swing %" };
+    juce::ComboBox swingCombo;
+    juce::Label swingLabel { {}, "Swing" };
     juce::Slider durationBarsSlider;
     juce::Label durationBarsLabel { {}, "Duration Bars" };
     juce::ComboBox nextSceneCombo;

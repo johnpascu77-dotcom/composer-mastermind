@@ -1,0 +1,250 @@
+{
+  "schema": "ComposerMastermindComposition.v2",
+  "blueprint": {
+    "id": "tides",
+    "name": "Tides",
+    "sections": [
+      {
+        "id": "sec_presentation",
+        "name": "Presentation",
+        "sceneId": "shared_scene",
+        "startBar": 0,
+        "durationBars": 8,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      },
+      {
+        "id": "sec_build1",
+        "name": "Build",
+        "sceneId": "shared_scene",
+        "startBar": 8,
+        "durationBars": 12,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      },
+      {
+        "id": "sec_development",
+        "name": "Development",
+        "sceneId": "shared_scene",
+        "startBar": 20,
+        "durationBars": 8,
+        "archetype": "build",
+        "layerRoles": [
+          { "targetInstance": "MPL1", "layerRole": "background" }
+        ],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      },
+      {
+        "id": "sec_peak",
+        "name": "Peak",
+        "sceneId": "shared_scene",
+        "startBar": 28,
+        "durationBars": 8,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [
+          { "role": "anchor", "maxMinorPerBar": -1, "maxMediumPerBar": 1, "maxMajorPerBar": 1 }
+        ],
+        "reservedValues": [
+          { "targetInstance": "MPL1", "patternIndex": 0, "type": "inversion", "value": 1 }
+        ],
+        "modulatorValues": [],
+        "capturedContent": []
+      },
+      {
+        "id": "sec_release",
+        "name": "Release",
+        "sceneId": "shared_scene",
+        "startBar": 36,
+        "durationBars": 8,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      },
+      {
+        "id": "sec_return",
+        "name": "Return",
+        "sceneId": "shared_scene",
+        "startBar": 44,
+        "durationBars": 8,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      }
+    ],
+    "arcCurves": [
+      {
+        "dimension": "energy",
+        "points": [
+          { "bar": 0, "value": 0.20 },
+          { "bar": 8, "value": 0.35 },
+          { "bar": 20, "value": 0.60 },
+          { "bar": 28, "value": 0.90 },
+          { "bar": 36, "value": 0.90 },
+          { "bar": 44, "value": 0.30 },
+          { "bar": 52, "value": 0.18 }
+        ]
+      },
+      {
+        "dimension": "tension",
+        "points": [
+          { "bar": 0, "value": 0.15 },
+          { "bar": 8, "value": 0.30 },
+          { "bar": 20, "value": 0.55 },
+          { "bar": 28, "value": 0.85 },
+          { "bar": 36, "value": 0.85 },
+          { "bar": 44, "value": 0.25 },
+          { "bar": 52, "value": 0.12 }
+        ]
+      },
+      {
+        "dimension": "density",
+        "points": [
+          { "bar": 0, "value": 0.25 },
+          { "bar": 8, "value": 0.40 },
+          { "bar": 20, "value": 0.65 },
+          { "bar": 28, "value": 0.90 },
+          { "bar": 36, "value": 0.90 },
+          { "bar": 44, "value": 0.35 },
+          { "bar": 52, "value": 0.20 }
+        ]
+      },
+      {
+        "dimension": "complexity",
+        "points": [
+          { "bar": 0, "value": 0.15 },
+          { "bar": 8, "value": 0.35 },
+          { "bar": 20, "value": 0.55 },
+          { "bar": 28, "value": 0.80 },
+          { "bar": 36, "value": 0.80 },
+          { "bar": 44, "value": 0.30 },
+          { "bar": 52, "value": 0.18 }
+        ]
+      },
+      {
+        "dimension": "coherence",
+        "points": [
+          { "bar": 0, "value": 0.75 },
+          { "bar": 8, "value": 0.55 },
+          { "bar": 20, "value": 0.32 },
+          { "bar": 28, "value": 0.08 },
+          { "bar": 36, "value": 0.08 },
+          { "bar": 44, "value": 0.65 },
+          { "bar": 52, "value": 0.78 }
+        ]
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "shared_scene",
+      "name": "Shared Scene",
+      "durationBars": 4,
+      "quantize": "bar",
+      "targets": ["MPL1", "MPL2", "MPL3"],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [
+    { "id": "MPL1", "name": "MPL1", "midiChannel": 1, "role": "anchor", "enabled": true, "lastKnownScene": "" },
+    { "id": "MPL2", "name": "MPL2", "midiChannel": 2, "role": "motif", "enabled": true, "lastKnownScene": "" },
+    { "id": "MPL3", "name": "MPL3", "midiChannel": 3, "role": "counterpoint", "enabled": true, "lastKnownScene": "" }
+  ],
+  "motifPresets": [
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "presentation_theme",
+      "name": "Presentation Theme",
+      "tags": ["presentation"],
+      "notes": [
+        { "semitoneOffset": 0, "relativeDuration": 1.2, "relativeVelocity": 0.9 },
+        { "semitoneOffset": 2, "relativeDuration": 1.0, "relativeVelocity": 0.85 },
+        { "semitoneOffset": 4, "relativeDuration": 1.0, "relativeVelocity": 0.9 },
+        { "semitoneOffset": 5, "relativeDuration": 1.0, "relativeVelocity": 0.85 },
+        { "semitoneOffset": 4, "relativeDuration": 1.0, "relativeVelocity": 0.8 },
+        { "semitoneOffset": 0, "relativeDuration": 1.5, "relativeVelocity": 0.75 }
+      ]
+    },
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "build_motif_a",
+      "name": "Build Motif A",
+      "tags": ["build"],
+      "notes": [
+        { "semitoneOffset": 0, "relativeDuration": 0.8, "relativeVelocity": 1.0 },
+        { "semitoneOffset": 4, "relativeDuration": 0.8, "relativeVelocity": 1.0 },
+        { "semitoneOffset": 7, "relativeDuration": 0.8, "relativeVelocity": 1.05 },
+        { "semitoneOffset": 9, "relativeDuration": 0.8, "relativeVelocity": 1.1 },
+        { "semitoneOffset": 7, "relativeDuration": 0.8, "relativeVelocity": 1.0 }
+      ]
+    },
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "build_motif_b",
+      "name": "Build Motif B",
+      "tags": ["build"],
+      "notes": [
+        { "semitoneOffset": 0, "relativeDuration": 0.6, "relativeVelocity": 1.0 },
+        { "semitoneOffset": -3, "relativeDuration": 0.6, "relativeVelocity": 0.95 },
+        { "semitoneOffset": 2, "relativeDuration": 0.6, "relativeVelocity": 1.05 },
+        { "semitoneOffset": -1, "relativeDuration": 0.6, "relativeVelocity": 1.0 },
+        { "semitoneOffset": 5, "relativeDuration": 0.8, "relativeVelocity": 1.1 },
+        { "semitoneOffset": 0, "relativeDuration": 1.0, "relativeVelocity": 1.0 }
+      ]
+    },
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "peak_motif",
+      "name": "Peak Motif",
+      "tags": ["peak"],
+      "notes": [
+        { "semitoneOffset": 0, "relativeDuration": 0.7, "relativeVelocity": 1.15 },
+        { "semitoneOffset": 12, "relativeDuration": 0.5, "relativeVelocity": 1.2 },
+        { "semitoneOffset": 7, "relativeDuration": 0.7, "relativeVelocity": 1.15 },
+        { "semitoneOffset": 9, "relativeDuration": 0.5, "relativeVelocity": 1.1 },
+        { "semitoneOffset": 4, "relativeDuration": 0.7, "relativeVelocity": 1.1 },
+        { "semitoneOffset": -1, "relativeDuration": 1.0, "relativeVelocity": 1.05 }
+      ]
+    },
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "release_motif",
+      "name": "Release Motif",
+      "tags": ["release"],
+      "notes": [
+        { "semitoneOffset": 0, "relativeDuration": 1.5, "relativeVelocity": 0.7 },
+        { "semitoneOffset": -2, "relativeDuration": 2.0, "relativeVelocity": 0.6 },
+        { "semitoneOffset": -5, "relativeDuration": 2.5, "relativeVelocity": 0.5 }
+      ]
+    }
+  ],
+  "modulatorTargets": []
+}

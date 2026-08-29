@@ -6,7 +6,7 @@
 class ComposerMastermindAudioProcessor;
 
 // Mutations/Debug tab: push a single per-pattern transpose/rotation/length/
-// inversion change to one instance, and see whether the v0.4 policy gate
+// inversion/retrograde/m7 change to one instance, and see whether the v0.4 policy gate
 // let it through. Also hosts Send Test CC, a raw one-shot CC sender used to
 // pair Bitwig controls (e.g. a modulator's own "Learn CC") to a known CC
 // number on demand.

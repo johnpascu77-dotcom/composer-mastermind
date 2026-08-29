@@ -217,6 +217,41 @@ def set_motif_application_mode(mode: str) -> dict:
 
 
 @server.tool()
+def set_pitch_field_broadcast(
+    enabled: bool | None = None,
+    base_cc: int | None = None,
+    channel: int | None = None,
+    min_bars: int | None = None,
+) -> dict:
+    """Controls the pitch-field broadcast: every bar, Composer Mastermind emits
+    the union of pitch classes its structural voices are currently sounding
+    (each registered instance's active-pattern content shifted by its tracked
+    transpose) as a 12-bit mask packed into TWO CCs: base_cc (default 110)
+    carries pitch classes 0-6 (low 7 bits), base_cc+1 carries 7-11 (high 5
+    bits), on the given MIDI channel (default 1). A one-CC-per-pitch-class block
+    would run into CC120/CC121 (All Sound Off / Reset All Controllers) and
+    hard-mute downstream synths. Only sends when the
+    12-bit mask changes, and no more often than min_bars bars apart (default 0 =
+    every changing bar; raise it so per-bar transpose nudges don't make the
+    wash's field flicker). An OrchNoteFilter with "CC# Mask Base" set to the
+    same base (it reads the same two CCs) then constrains its wash to the composition's own harmony instead
+    of a hand-authored scale. Session-level, not persisted. Pass only the fields
+    you want to change; also settable in the plugin's Modulators tab. Returns
+    the current settings plus the last mask (a 12-bit int, bit i = pitch class
+    i)."""
+    params = {}
+    if enabled is not None:
+        params["enabled"] = enabled
+    if base_cc is not None:
+        params["baseCc"] = base_cc
+    if channel is not None:
+        params["channel"] = channel
+    if min_bars is not None:
+        params["minBars"] = min_bars
+    return _call_bridge("setPitchFieldBroadcast", **params)
+
+
+@server.tool()
 def send_test_cc(instance_id: str, cc: int, value: int) -> dict:
     """Fires one raw CC message immediately to one instance, bypassing
     Mutation/Router/PolicyEngine entirely - not a musical action, a
@@ -234,14 +269,19 @@ def send_mutation(instance_id: str, pattern_index: int, mutation_type: str, amou
     "Send Mutation") - goes through Router/PolicyEngine, so it can be
     legitimately blocked by that instance role's per-bar budget; check the
     "sent" field in the response, don't assume success. mutation_type is
-    one of "transpose"/"rotation"/"length"/"inversion". amount is a DELTA
-    from the instance's current tracked value for transpose/rotation/
-    length (e.g. rotation amount=-2 means "2 steps back from wherever it
-    currently is", wrapping cyclically) - NOT an absolute value. For
-    "inversion", amount != 0 is an absolute on/off toggle instead (a
-    boolean has no sensible delta). Call get_instances first if you need
-    to confirm pattern_index (0-2, matching MPL's P1-P3) is the pattern
-    you intend."""
+    one of "transpose"/"rotation"/"length"/"inversion"/"retrograde"/"m7"/
+    "rate". amount is a DELTA from the instance's current tracked value for
+    transpose/rotation/length (e.g. rotation amount=-2 means "2 steps back
+    from wherever it currently is", wrapping cyclically) - NOT an absolute
+    value. For "inversion"/"retrograde"/"m7", amount != 0 is an absolute
+    on/off toggle instead (a boolean has no sensible delta). For "rate"
+    (Augmented/Normal/Diminished - a real augmentation/diminution device,
+    global per-instance not per-pattern, pattern_index is ignored), amount
+    is clamped to [-1, 1] and is an ABSOLUTE target state, not a delta:
+    -1=Augmented, 0=Normal, +1=Diminished - e.g. to flag a cadential close,
+    send amount=-1 a bar or two before a section boundary. Call
+    get_instances first if you need to confirm pattern_index (0-2, matching
+    MPL's P1-P3) is the pattern you intend."""
     return _call_bridge(
         "sendMutation",
         instanceId=instance_id,
@@ -280,8 +320,8 @@ def create_scene(scene: dict) -> dict:
     {
       "id": str, "name": str, "durationBars": int, "quantize": "bar",
       "targets": [instanceId, ...],
-      "global": {"activePattern": int (0=stop,1-3=P1-P3), "gridMode": int (0=binary,1=ternary), "swing": float (0-75)},
-      "instanceOverrides": [{"targetInstance": str, "activePattern": int, "gridMode": int, "swing": float}, ...],
+      "global": {"activePattern": int (0=stop,1-3=P1-P3), "gridMode": int (0=binary,1=ternary), "swing": float (0-75), "rate": int (0=Augmented,1=Normal,2=Diminished)},
+      "instanceOverrides": [{"targetInstance": str, "activePattern": int, "gridMode": int, "swing": float, "rate": int (-1=inherit)}, ...],
       "patterns": [{"targetInstance": str, "patternIndex": int (0-2), "transpose": int, "rotation": int, "length": int (1-16), "inversion": bool}, ...],
       "mutations": [], "nextSceneId": str, "transitionStyle": "hard", "rampBars": int
     }
@@ -353,7 +393,7 @@ def create_role_preset(preset: dict) -> dict:
     {
       "id": str, "name": str, "targetRole": str, "tags": [str, ...],
       "activePattern": int (-1 = inherit), "gridMode": int (-1 = inherit, 0=binary, 1=ternary),
-      "swing": float (-1.0 = inherit, 0-75)
+      "swing": float (-1.0 = inherit, 0-75), "rate": int (-1 = inherit, 0=Augmented,1=Normal,2=Diminished)
     }
     Doesn't apply itself to anything - call apply_role_preset against a
     saved scene afterward."""
@@ -368,7 +408,7 @@ def create_rhythmic_relationship_preset(preset: dict) -> dict:
     chosen together on purpose for a specific groove). Shape:
     {
       "id": str, "name": str, "tags": [str, ...],
-      "roleSlots": [{"targetRole": str, "activePattern": int, "gridMode": int, "swing": float}, ...]
+      "roleSlots": [{"targetRole": str, "activePattern": int, "gridMode": int, "swing": float, "rate": int (-1=inherit)}, ...]
     }
     (same -1/-1.0 inherit sentinel as create_role_preset). Needs at least 2
     role slots. Doesn't apply itself - call
@@ -456,6 +496,82 @@ def get_modulator_targets() -> dict:
     paired to a Bitwig modulator - that pairing lives entirely inside the
     Bitwig project, invisible to Composer Mastermind."""
     return _call_bridge("getModulatorTargets")
+
+
+@server.tool()
+def create_modulation_route(route: dict) -> dict:
+    """Registers (or replaces) a ModulationRoute - the modulation matrix
+    (2026-08-27): wires an ArcSet dimension directly to a real MPL
+    parameter on a specific instance/pattern, or broadcast to every
+    registered instance. Distinct from create_modulator_target: this drives
+    MPL's own parameters through the same CC encoding a Mutation uses, no
+    Bitwig pairing needed at all. Shape:
+    {
+      "id": str, "arcDimension": str (energy/tension/density/complexity/coherence),
+      "targetInstance": str (an instance id, or "*" for every registered instance),
+      "patternIndex": int (0-2; ignored for swing/rate/activePattern/gridMode),
+      "parameter": "transpose" | "rotation" | "length" | "swing" | "rate" |
+                   "inversion" | "retrograde" | "m7" | "activePattern" | "gridMode",
+      "outputMin": float, "outputMax": float,
+      "threshold": float (0-1, default 0.5),
+      "invert": bool, "enabled": bool,
+      "dispatchMode": "bar" | "sequence" | "barCycle" (default "bar"),
+      "sequenceValues": [float, ...]  (required if dispatchMode="sequence" or "barCycle"),
+      "phraseLengthBars": int (default 4, used only if dispatchMode="barCycle")
+    }
+    transpose/rotation/length/swing/rate are continuous - by default re-sent
+    every bar ("bar" dispatch mode), the arc's 0-1 sample linearly mapped into
+    [outputMin, outputMax] (leave both at 0 to use that parameter's own full
+    natural range, e.g. -48..48 for transpose; rate's natural range is 0-2,
+    banded to the nearest of Augmented/Normal/Diminished). inversion/
+    retrograde/m7/gridMode are threshold-crossing booleans (fire only when
+    the sample crosses threshold); activePattern instead bands the sample
+    into 4 states (0=stop, 1-3=pattern) - threshold/outputMin/outputMax are
+    unused for it.
+
+    "sequence" dispatch mode (2026-08-27, "fragment sequencer" - only valid
+    for the 5 continuous parameters, ignores arcDimension/outputMin/
+    outputMax/threshold entirely): steps through sequenceValues[] once per
+    PATTERN LOOP CYCLE instead of once per bar - real melodic sequencing,
+    the device a Bach invention/fugue uses constantly (a short fragment
+    restated at a new pitch level every repetition). Shrink the target
+    pattern's Length first (see send_mutation/create_scene's patterns[]) so
+    a "loop cycle" is short enough to actually cycle through the sequence at
+    a musical rate - a 16-step Length gives one sequence step every 16
+    16th-notes, a Length of 3-4 gives one every bar-fraction, much closer to
+    how a real sequence sounds. Note the loop cycle can never exceed one bar
+    (MPL's own pattern Length caps at 16 steps) - for anything longer, use
+    "barCycle" instead.
+
+    "barCycle" dispatch mode (2026-08-27, phrase-cadence breathing - same
+    parameter/sequenceValues restrictions as "sequence", also ignores
+    arcDimension/outputMin/outputMax/threshold): steps through
+    sequenceValues[] once every phraseLengthBars BARS instead of pattern
+    steps - genuine multi-bar phrasing, decoupled from the one-bar ceiling
+    above. A short phraseLengthBars (2-4) gives phrase-internal breathing
+    within a section; set it equal to a whole section's durationBars for a
+    once-per-section cadence instead (e.g. rate dipping to Augmented near a
+    section's end, no live-fired mutation needed). Give different instances
+    different phraseLengthBars on purpose - that's what keeps an ensemble's
+    breathing from landing in mechanical lockstep every phrase, the same way
+    real independent voices don't all cadence in exact unison.
+
+    If a route targets the exact same instance/pattern/parameter a built-in
+    curve already drives (Energy/Tension -> transpose, Density -> swing),
+    the route wins for that instance and the built-in curve skips it there;
+    every other instance keeps following the built-in curve untouched -
+    true for both dispatch modes."""
+    return _call_bridge("createModulationRoute", route=route)
+
+
+@server.tool()
+def get_modulation_routes() -> dict:
+    """Every registered ModulationRoute: id, arcDimension, targetInstance,
+    patternIndex, parameter, outputMin/outputMax, threshold, invert,
+    enabled, dispatchMode, sequenceValues. Use this to confirm what's
+    actually wired before assuming a route is (or isn't) affecting a given
+    instance's sound."""
+    return _call_bridge("getModulationRoutes")
 
 
 @server.tool()

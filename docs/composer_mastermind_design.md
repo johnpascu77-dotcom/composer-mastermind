@@ -581,6 +581,373 @@ checking `Get-NetTCPConnection -LocalPort 47824` for the true owning PID and kil
 checking that every time this class of "the UI isn't seeing what the bridge just wrote" symptom shows up again,
 before assuming a real desync bug.
 
+### v1.2 follow-up — Retrograde/M7 protocol additions + Coherence's first consumer (2026-08-25; MPL toggles live-tested in Bitwig, Composer Mastermind's own Coherence consumer built same session, NOT yet live-tested)
+
+MPL gained two new per-pattern toggles, own knob + own CC each, exactly like Inversion: **Retrograde** (CC
+34/44/54, time-domain - reflects the loop-relative playback position before Rotation's offset, in
+`getRotatedSourceStepIndex`) and **M7** (CC 35/45/55, pitch-domain - interval multiplication by 7 mod 12 on each
+note's pitch class, ahead of Inversion in `applyPatternTransformsToNote`; its own inverse, same self-cancelling
+character as Inversion). Combining Retrograde + Inversion gives the classic twelve-tone Retrograde-Inversion (RI)
+row form for free. User live-tested both by hand in Bitwig (two independent modulators at half-note rate driving
+two MPL instances) and confirmed the result: described it as what a development section would do to initial
+motifs, and cited it as concrete evidence that driving these parameters through intentional curves - not just ad
+hoc mutations - is the right direction. See [docs/routing_policy_v0_1.md](routing_policy_v0_1.md)'s sibling doc
+for the protocol table.
+
+Composer Mastermind mirrors both as full `Mutation` types, touching every layer Inversion already touched
+(`CCMapping.h`, `Scene.h`/`ComposerState.h`'s pattern-state fields, `InstanceStateTracker::recordPattern`,
+`Router::routeMutation`/`sendScenePattern`, `ComposerCore::restoreMilestone`, `MutationPolicy` weight
+classification, JSON round-trip, both mutation-editing UIs). `ui/PrimaryView.cpp`'s own hand-written mirrors of
+MPL's rotation/inversion math (used by the score-timeline live recorder / drag-out export) needed the identical
+retrograde-reflection and M7-multiplication logic too, or the composer's own preview/export would have silently
+diverged from what MPL actually plays.
+
+**Closes part of v1.2's "Coherence deliberately deferred" gap** - not the harder direction
+[arc_dimension_mapping_concept.md](arc_dimension_mapping_concept.md) originally described (an active
+clamping/nudge mechanism pulling instances toward measured agreement, `policy/CoherenceEvaluator`'s diagnostic
+territory, still unbuilt), but a different, simpler mapping structurally identical to Complexity's own
+threshold-crossing phrase-chain consumer: `ComposerCore::applyCoherenceDivergenceIfDue` samples the live
+Coherence *arc* (the `ArcSet` dimension, not the diagnostic) every bar a section is active and bands it against
+two thresholds (0.35 for Retrograde, 0.15 for M7, both deliberately below every archetype's baseline coherence
+value so picking an archetype alone never triggers this - only a deliberately authored/hand-curved dip does),
+turning divergence on/off per instance as coherence crosses each point. Falling coherence escalates in two
+stages: Retrograde alone, then M7 added on top as divergence deepens. Bypasses PolicyEngine/Router's Mutation
+budget entirely, same as every other continuous/threshold-crossing arc consumer.
+
+### v1.2 follow-up — Swing narrowed to a 3-state choice, then Shuffle corrected to 100% (built 2026-08-26)
+
+Direct consequence of actually listening to the Coherence/Retrograde/M7 work above: user flagged that a moderate
+Density-driven swing value (~20%) read as sloppy rather than musical, while the 75% ceiling was "clearly useful"
+by contrast - see [arc_dimension_mapping_concept.md](arc_dimension_mapping_concept.md)'s "Swing vs. notation"
+section for the full mechanism. Root cause was already half-documented there: MPL's swing range only contains two
+notation-clean ratios (0% straight, 66.67% true triplet), so a continuous value spent most of its time in neither.
+First fix, at the user's own suggestion: replace MPL's Swing knob (CC 24) with a genuine 3-state choice - Off /
+Triplet (66.67%) / Shuffle - rather than trying to reshape a continuous mapping to avoid the middle. Composer
+Mastermind mirrors this at every layer that used to assume a continuous percent (`CCMapping`'s new
+`swingStateForPercent`/`swingPercentForState`/`swingStateForNormalized` are the shared conversion), including
+converting three separate UI sliders (`SceneListComponent`, `PresetLibraryContent`'s role and rhythmic-
+relationship builders) to matching 3-item combos, so a scene/preset can no longer author an illegal swing value
+by hand either.
+
+**Live-tested same day, found incomplete**: Shuffle was initially set to 75% (the old slider's historical
+maximum) and was indistinguishable from Triplet by ear - both are close to a 2:1 ratio (2.2:1 vs. exactly 2:1).
+Corrected to **100%**, the swing delay formula's actual mathematical ceiling, which produces a genuinely
+different 3:1 ratio - the real dotted-shuffle feel. `CCMapping::kMaxSwing` is now just an alias for
+`kShuffleSwingPercent` rather than a separately-tracked value, so `CoherenceEvaluator`'s spread normalizer and
+`Validation::isValidSwing`'s ceiling moved automatically. Both plugins compile clean. **CONFIRMED LIVE 2026-08-26**:
+Triplet/Shuffle read as genuinely distinct in Bitwig at 100%, and the notation-export fix (giving Shuffle its own
+dotted-rhythm onset position instead of folding into Triplet's) was verified correct in Dorico for both.
+
+### v1.2 follow-up — Score View Load/Save Score + composition bundle v2 (Instances/Motif Presets/Modulator Targets) (built 2026-08-27)
+
+`CompositionBundleStore` extended to genuinely self-contained "score" files - a v1 bundle only carried a Blueprint
+plus its referenced Scenes, so importing into a session without the matching Motif Preset already registered
+stamped nothing and played silence (the exact bug the next entry below traces further). Now also bundles every
+registered Instance (role-based archetype eligibility makes a "referenced-only" subset unsafe) and every Motif
+Preset tagged with an archetype the blueprint's sections use. Score View (the simple UI) also gained its own
+**Load Score.../Save Score...** buttons on this same backend, after the Scenes tab's *different*, unrelated
+"Load Snapshot" button was mistaken for it once live. See [score_timeline_ui_concept.md](score_timeline_ui_concept.md)
+for the full writeup, including a delivered example score ("Tides") built to exercise all 5 arc-dimension
+consumers at once.
+
+### v1.2 follow-up — Compose can generate a blueprint from a blank curve; register-drift bug found and fixed (built 2026-08-27)
+
+Compose's "New Blueprint" button now wires directly to `policy/BlueprintGenerator::generate` (curve shape → real
+sections, already-working code that was only reachable from a separate Expert tab before) - pick a bar length,
+draw one curve, Generate, done in one motion. See [score_timeline_ui_concept.md](score_timeline_ui_concept.md).
+
+Testing that feature surfaced a real, pre-existing bug: `policy/MotifEngine`'s register-continuity math
+(`patternCenterNote`, used by every stamp/phrase-chain/Nudge-pass write) recomputed its pitch center fresh from
+whatever was last written, every single pass, with nothing pulling it back toward anywhere - a genuine unbounded
+random walk the code's own comment had already named as a risk without ever fixing. Combined with Tension's
+by-design upward-only register pull staying elevated for a long stretch, stored note content walked all the way
+to MIDI's hard 127 ceiling and stuck there - reproduced in both a curve-driven piece and a plain Generative one
+with reasonable starting notes. Fixed with `boundedHomeCenter`: every computed center now gets clamped to within
+`kMaxDriftFromHomeSemitones` (2 octaves) of a fixed `kHomeRegisterNote` (middle C) before being used - "organic
+drift" stays intentional and bounded instead of only being stopped by MIDI's own ceiling/floor. No per-instance/
+role "natural register" concept exists yet to give different instances different homes; noted as a possible
+future refinement, not built now. Compiled clean. **Not yet live-tested.**
+
+### v1.4 — Modulation Matrix: arc-driven routes to any MPL parameter (built 2026-08-27)
+
+Prompted by the user comparing Composer Mastermind's actual output against a Bitwig screenshot showing 13+
+independently-automated CC lanes per instance and finding MC's output "far from satisfactory... a slow, rusty
+machinery" by comparison. Honest diagnosis: only 2 of the 5 arc dimensions drove anything continuously (Energy/
+Tension → Transpose, Density → Swing), plus 2 threshold-crossing consumers (Complexity → phrase role, Coherence
+→ Retrograde/M7) - everything else MPL exposes (Rotation, Length, Inversion, Active Pattern, Grid Mode, and full
+per-pattern independence across up to 3 instances × 3 patterns) sat idle unless hand-authored. The gap versus raw
+automation was coverage, not musical intelligence.
+
+New `ModulationRoute` model (`src/model/ModulationRoute.h`) lets the user wire any arc dimension to any of 9 MPL
+parameters, on a specific instance/pattern or broadcast to every registered instance (`targetInstance == "*"`) -
+a genuine modulation matrix, authored via a new "Instance Modulation Routes" panel on the existing Modulators tab
+(`ui/ModulatorTargetView`, now Viewport-wrapped to fit two full panels). Deliberately a new model, not a
+repurposed `ModulatorTarget` - that struct's own doc comment ties it explicitly to CCs *outside* the Instance/MPL
+model (a raw channel/CC pair for pairing with a Bitwig modulator's Learn CC), with no instance concept and no
+per-parameter encoding; `ModulationRoute` addresses a real `Instance` by id and dispatches through `CCMapping`'s
+own per-parameter encoders via two new `Router` methods (`routeContinuousParameter`/`routeThresholdParameter`),
+the same `targetInstance` + `patternIndex` targeting shape `Mutation`/`ReservedValue` already use.
+
+Two dispatch shapes, reusing the two patterns already established by the built-in consumers rather than inventing
+a third: Transpose/Rotation/Length/Swing are continuous (linear-mapped into the route's own `[outputMin,
+outputMax]`, re-sent every bar); Inversion/Retrograde/M7/Grid Mode are threshold-crossing (a configurable 0..1
+crossing point) and Active Pattern bands into 4 states (0 = stop, 1-3 = pattern) - all threshold routes only
+dispatch on an actual state change, same restraint as `firePhraseChainIfDue`/`applyCoherenceDivergenceIfDue`.
+Dispatch (`ComposerCore::sendModulationRouteUpdates`) is called from the same call sites as the built-in
+continuous/threshold consumers (`advanceBlueprintIfNeeded`'s "still active" branch, `enterSection`) rather than
+unconditionally every bar the way `ModulatorTarget`'s external-CC dispatch is - routes touch real MPL content, so
+they correctly inherit the frozen-section (Absolute content mode) gate the built-ins already respect.
+
+Conflict handling: a new `ComposerCore::hasActiveRouteOverride` guard lets a user-authored route cleanly take over
+a specific instance's parameter from its built-in curve (checked inside `applyContinuousMelodicCurve`,
+`applyContinuousSwing`, `applyCoherenceDivergenceIfDue` - independently per Retrograde/M7 - and
+`firePhraseChainIfDue`) rather than the two dispatching conflicting values every bar. The built-in consumers
+themselves are untouched otherwise - the guard is a one-line skip, not a rewrite.
+
+Routes persist through every existing mechanism: `StateSerializer`/`StateSnapshotStore` (full-library round-trip)
+and `CompositionBundleStore` (now v3 - routes included by instance membership, since a route isn't referenced
+indirectly through a section's fields the way a `ModulatorTarget` is), plus two new MCP bridge actions
+(`createModulationRoute`/`getModulationRoutes`) mirroring the existing `createModulatorTarget`/
+`getModulatorTargets` pair. Compiled clean (VST3 + Standalone), installs clean, Standalone launches without
+crashing. **Not yet live-tested in Bitwig** - worth confirming a route's dispatch is audible/visible on real MPL
+instances, that the override guard actually prevents flicker when a route and a built-in consumer target the same
+parameter, and that a piece with several routes assigned sounds noticeably more independently-varied than before,
+addressing the originally-reported gap.
+
+### v1.4 follow-up — content-aware continuous Transpose curve (built 2026-08-27)
+
+Found live while testing the modulation matrix above: the built-in Energy/Tension → Transpose curve
+(`ComposerCore::applyContinuousMelodicCurve`) computed its register-pull purely from the Tension arc's value and
+applied it identically to every touched instance, with zero knowledge of where that instance's pattern already
+sat pitch-wise - pushed an already high-voiced pattern (notes in the 78-91 MIDI range) up by another +10
+semitones. User's own framing: Transpose should mostly "walk" a pattern around its own natural register, not
+stack an unconditional pull on top of whatever's already there; bigger deliberate octave moves belong in
+Bitwig-side devices, not this curve.
+
+Fixed by extending the same bounding policy `boundedHomeCenter`/`patternCenterNote` already give generative
+stamping (see the register-drift fix above) to this second, independent pitch-affecting layer: new
+`MotifEngine::taperTransposeForPatternContent` (`policy/MotifEngine.h/.cpp`) reads a pattern's own current bounded
+center from its cached content (same Length-window-bounded average `applyForSection` already trusts), bounds the
+*combined* result (that center plus the curve's desired raw Transpose) to the same home-register clamp, then
+back-solves the Transpose that actually achieves the bounded combined result - a graceful taper, not a hard
+reject: a pattern near the home register is unaffected, one voiced far from it gets less pull (or a gentle pull
+back). One new call in `ComposerCore::applyContinuousMelodicCurve`'s per-instance loop, no changes to
+`stampOnePattern`/`applyForSection`'s own tested `boundedHomeCenter` usage, no changes to `Router::
+routeContinuousTranspose`'s flat ±48 safety clamp (right layer for an absolute-value backstop, wrong layer for
+content-awareness - it has no pattern-cache access). Deliberately scoped to the built-in curve only, not
+user-authored `ModulationRoute`s targeting Transpose (those already have their own user-set, bounded range).
+
+Compiled clean, VST3 reinstalled without a Bitwig file-lock this time. **Not yet re-tested live** - the
+already-running Bitwig plugin instance has the old code resident in memory; needs a reload (remove/re-add the
+instance, or restart Bitwig) before the fix is actually active in that session.
+
+### v1.4 follow-up — loop-cycle-accurate melodic sequencing, "fragment sequencer" (built 2026-08-27)
+
+Grew directly out of analyzing a real Bach invention (BWV 773) live this session. Two corrected understandings
+this feature rests on: MPL applies its Transpose transform fresh, per note, at output time - not baked into
+stored content once per loop - confirmed by reading the sibling project's `applyPatternTransformsToNote`; and
+every CC this plugin exposes is "a knob-string," identical in kind whether moved by a human, a Bitwig LFO, or one
+of this plugin's own consumers - there's no architectural ceiling on update rate, only a *clock choice* per
+consumer. `ModulationRoute`'s existing dispatch ticks once per bar because that's the right clock for slow
+structural drift; real melodic sequencing (a short fragment restated at a new pitch level every repetition -
+empirically confirmed as one of Bach's most-used devices, dozens of recurring transposed interval-patterns found
+via `music21` analysis of BWV 773) needs a loop-cycle clock instead.
+
+New `ModulationDispatchMode` on `ModulationRoute` (`model/ModulationRoute.h`): `Bar` (existing behavior, default,
+zero change for every route built earlier this session) or `Sequence` - steps through an authored
+`sequenceValues[]` list once per pattern LOOP CYCLE rather than once per bar. The loop-cycle clock itself
+(`scheduling/StepClock.h`, new) is lifted from `ui/PrimaryView.cpp`'s already-proven Live Sync playhead
+reconstruction math (same tempo-invariant ppq arithmetic, same 4/4-bar assumption MPL itself makes) - extracted
+into a shared, audio-thread-safe header rather than duplicated ad hoc; `PrimaryView.cpp`'s own UI-thread copy is
+untouched. `ComposerCore::processBar` now carries the bar's host ppq through (`barStartPpq`), captured as
+`currentSectionPpqAnchor` on every section entry (phase-zero for loop-cycle counting); a new
+`ComposerCore::processStepTick(currentPpq)`, called from `PluginProcessor::processBlock` every block while playing
+(not edge-detected like the bar tick - needs sub-bar granularity), detects each loop-cycle boundary a
+Sequence-mode route's target pattern crosses and dispatches the next value via the *existing*
+`Router::routeContinuousParameter` - same knob-string as always, just a different clock triggering it.
+`hasActiveRouteOverride` needed no changes at all to correctly make the built-in curves step aside for a Sequence
+route, confirming the model already generalized cleanly.
+
+Validated: `Validation::isValidModulationRoute` requires Sequence mode to have a non-empty `sequenceValues` and a
+continuous `parameter`. Persisted through the existing `StateSerializer`/bundle/snapshot machinery (two new
+fields, backward-compatible defaults). MCP bridge's `create_modulation_route`/`get_modulation_routes` extended to
+match - the C++ side needed zero new code for the read action once it was switched to reuse
+`StateSerializer::modulationRoutesToVar` instead of hand-building its own (slightly stale) JSON, a small
+cleanup that fell out of this change. UI: the Modulators tab's routes panel gained a Dispatch combo and a
+comma-separated sequence-values field, shown only for continuous parameters in Sequence mode.
+
+Compiled clean, VST3 reinstalled without a Bitwig file-lock. **Confirmed working live in Bitwig same day** - a
+4-step pattern with a 4-value Sequence route produced, in the user's own words, "a full 16 steps melodic 'loop'"
+- the fragment/value-count product giving an effective longer melodic period before true repetition, exactly the
+intended device.
+
+**Keyswitch-style lookahead, same-day follow-up.** User's own framing, precisely correct: a CC change is only
+audible on the step it arrives in time for, not the one it was conceptually meant for - the same discipline a
+sample library's keyswitch needs, sent slightly ahead of the note it gates. `processStepTick`'s original
+`loopCycleIndex`-based detection was purely reactive - it only fired *after* the true ppq boundary had already
+passed, with no margin for this plugin's own per-block CC-queuing quantization or the host's inter-plugin MIDI
+routing latency, both of which could in principle land a value one step late at the destination. Fixed with a new
+`kSequenceLookaheadStepFraction` (10% of one grid-step's own ppq length, tempo-invariant by the same principle
+`StepClock.h` already commits to): the loop now fires a route's next value once `currentPpq` is within that margin
+of the *upcoming* boundary, not only after it, while still snapping straight to the true current cycle index if
+playback jumps further than one cycle since the last check (a host seek, or a route's very first tick). Compiled
+clean, reinstalled. **Confirmed working live same day** - user's own report after re-testing: "I think it is
+working fine now."
+
+**Absolute-mode cache bugfix, same-day.** Building a fuller piece (`momentum_piece`, mixing composed Absolute
+sections with the fragment sequencer) surfaced a separate, real bug: the Score View's Overlay piano-roll
+(`ui/PrimaryView.cpp`, reads note content straight from `InstancePatternCache`) showed nothing for an Absolute
+section despite the audio being completely correct. Root cause: `ComposerCore::enterSection`'s captured-content
+write path sends the real IPC write to MPL but never updated the cache afterward, unlike every other content-write
+path in this file (milestone restore, generative stamping), which all pair the two. Fixed with one
+`cache.store(...)` call mirroring the existing pattern. Confirmed fixed live via a user screenshot showing real
+note blocks rendering correctly post-fix.
+
+### v1.5 — Rate: augmentation/diminution as a real, JSON-scriptable device (built 2026-08-27)
+
+Grew out of researching Cateia Games' Fugue Machine (independent per-voice playhead direction/rate/length) -
+"independent per-voice rate" was the single most musically attractive idea to carry over: a rhythmic variation
+reachable with one CC impulse rather than re-authoring a whole pattern's step durations. Built MPL-side first
+(the sibling project, matching how Retrograde/M7 were proven there before being mirrored here): a global, 3-state
+`AudioParameterChoice` (Augmented=0.5x/Normal=1x/Diminished=2x, CC 23, the one previously-unused global slot
+between Grid Mode=22 and Swing=24), with the one substantive engine change being a single divisor -
+`effectiveGridStepLengthInPpq = gridStepLengthInPpq / getGlobalRateMultiplier()` - substituted into every
+timing (not step-index) expression in `processBlock`'s block-scan loop, so onsets AND durations both scale
+together, a real augmentation/diminution rather than a delayed-onset illusion. Also added the missing custom-
+editor UI control (host generic panels picked up the parameter automatically; the custom editor needed a new
+`Rate` dropdown next to `Swing`, which surfaced and fixed a pre-existing row-overflow bug in that editor).
+
+Manual live testing immediately surfaced a real musical payoff, not just a technical curiosity: switching an
+instance to Augmented for the last 1-2 bars of a phrase reads as a genuine cadential/closing gesture - agogic
+accent (deceleration reads as arrival even with no harmonic resolution available), which matters specifically for
+atonal writing, where tonal cadences aren't available at all. The user's own generalization, confirmed sound: the
+same device works fractally, at a macro (whole-section) scale and a micro (last-few-notes) scale, since both are
+just the same bar-scheduled mechanism at different time-windows.
+
+That motivated immediately giving Rate the same two citizenships every other parameter has on this side:
+- **Mutation type `"rate"`** (`model/Mutation.h`, `routing/Router.cpp::routeMutation`) - deliberately an
+  **absolute set, not a delta** (unlike Rotation/Transpose), following the existing boolean-exception convention
+  Inversion/Retrograde/M7 use but centered on `0`=Normal for safety: `amount` clamped to `[-1, 1]` maps directly
+  to state via `state = amount + 1` (`CCMapping::rateStateFromMutationAmount`). This is the direct authoring
+  mechanism for the cadential-flag use case: `{"type": "rate", "amount": -1, "applyAtBar": N}` sets Augmented at
+  bar N, deterministically, regardless of whatever state came before.
+- **`ModulationParameter::Rate`** (`model/ModulationRoute.h`) - global like Swing (not per-pattern), continuous
+  like Swing (banded to 3 states from an arc's 0..1 sample via a new `CCMapping::rateStateForNormalized`), usable
+  in both `Bar` and `Sequence` dispatch mode. Required an explicit `case` in three separate allowlists that would
+  otherwise have silently mis-handled it (`isContinuousModulationParameter`/`isGlobalModulationParameter`, a new
+  `Router::routeContinuousRate` mirroring `routeContinuousSwing`, and `ComposerCore::sendModulationRouteUpdates`'s
+  domain-default `switch` - without that last one, Rate would have silently inherited Swing's 0..100 domain).
+
+Storage: `int rate` on `InstanceParameterState`/`SceneGlobal`/`SceneInstanceOverride`/`RolePreset`/
+`RhythmicRelationshipRoleSlot` (0=Augmented/1=Normal/2=Diminished) - an int, not a float-percent like Swing,
+since the model is already a clean 3-state domain with no percent metaphor to invent; reuses `activePattern`/
+`gridMode`'s existing `-1` = "inherit" sentinel convention rather than Swing's `-1.0f`. `InstanceStateTracker::
+recordGlobal` grew a 5th parameter, threaded through all 10 existing call sites across 4 files.
+
+**Fixed the Live Sync/StepClock desync in the same pass, not deferred again.** This was explicitly flagged as a
+known gap while Rate was MPL-only ("nobody can script it yet, so it barely comes up"); making Rate JSON/arc-
+schedulable means the desync between MPL's real (rate-scaled) playback and this plugin's own un-rated
+`scheduling/StepClock.h`/`ui/PrimaryView.cpp` reconstructions would now trigger routinely instead of only when a
+human manually turned the MPL knob. New `CCMapping::rateMultiplierForState` (mirrors MPL's own
+`getGlobalRateMultiplier()` exactly) threaded into both `StepClock::gridStepLengthInPpq`/`loopCycleIndex` (used by
+`processStepTick`'s Sequence-mode cadence) and `PrimaryView.cpp`'s own `gridStepLengthInPpqFor`/
+`computeLivePlayheadFraction` plus its inlined take-recorder copy - all now read the relevant instance's tracked
+`rate` from state already in scope at each call site.
+
+Compiled clean on the first attempt (both the MPL-side engine/UI change and the Composer Mastermind-side mirroring
+phase), VST3s reinstalled without a Bitwig file-lock. Docs (`docs/composition_bundle_format.md`) and the MCP
+bridge's tool docstrings (`send_mutation`/`create_modulation_route`/`create_scene`/`create_role_preset`/
+`create_rhythmic_relationship_preset`) updated to match.
+
+**Confirmed working live in Bitwig same day**, both mechanisms independently: a direct `send_mutation` with
+`type="rate"` landed correctly (CC 23 confirmed reaching MPL, user's own words: "This is the missing puzzle
+piece"); a live `tension→Rate` `ModulationRoute` (`invert: false` - low tension eases toward Augmented, high
+tension pushes toward Diminished, the actual cadence-vs-intensity pairing this was built for) also confirmed. A
+full demonstration piece, **"Slack Tide"** (`docs/example_score_slack_tide.json`, 5 sections/~40 bars), was
+composed and played live specifically to close the loop: two `tension→rate` routes carry the *macro*, fully
+arc-automatic deceleration into the final section (no manual input once loaded), while one live `send_mutation`
+fired at the arranged moment (bar 38) on the melodic voice supplies the *micro*, deliberate flourish - the same
+macro/micro split the user described. Real limitation surfaced along the way, not new: a `Scene`'s own
+`mutations[]` array still isn't auto-dispatched during blueprint playback (`docs/composition_bundle_format.md`'s
+own pre-existing caveat), so the micro gesture had to be fired live over the MCP bridge rather than authored
+into the JSON directly - noted as a real follow-up, not solved here.
+
+### v1.6 — BarCycle: multi-bar phrase-cadence dispatch (built 2026-08-27)
+
+Grew directly out of framing v1.5's Rate work in terms of musical form: phrase-internal breathing (micro) and
+section-boundary softening (macro) turned out to be the same device - a periodic dip toward Augmented - just at
+different timescales, matching the "fractal" pattern the user had already described. `Sequence` mode almost
+covers this, but its loop cycle is measured in MPL pattern steps, hard-capped by `CCMapping::kPatternSteps = 16`
+- at most one bar, never a real multi-bar phrase. The user also specifically asked that this not be mechanical:
+different instances should be able to breathe on different periods (2 bars, 3 bars, 4 bars) so an ensemble's
+phrasing drifts in and out of alignment rather than landing in lockstep every time - deterministic variety (a
+different fixed number per route), not randomness, consistent with `MotifEngine`'s own established "no ML, no
+raw randomness" stance.
+
+Third `ModulationDispatchMode`, **`BarCycle`**, alongside `Bar`/`Sequence`. New `int phraseLengthBars` field on
+`ModulationRoute` (default 4). Cycle math is genuinely simpler than `Sequence` mode's ppq arithmetic - no new
+anchor tracking needed at all, since `currentBar` and the active section's own `startBar` are already plain ints
+available at the call site:
+```cpp
+const int phraseIndex = (currentBar - section.startBar) / std::max(1, route.phraseLengthBars);
+```
+New `ComposerCore::firePhraseCadenceIfDue(section, currentBar)` mirrors `sequenceRouteLastFiredIndex`'s exact
+`"routeId|instanceId" -> last-fired-index` map shape (new `phraseCadenceLastFiredIndex` member, same
+`blueprintMutex` guard, cleared on the same section-boundary reset), and dispatches through the *existing*
+`Router::routeContinuousParameter` - the same endpoint `Bar` and `Sequence` already use, so **no `Router.cpp`
+changes were needed at all**. Bar-granularity by construction (checked once per bar, from the same two call sites
+`sendModulationRouteUpdates` already uses), so unlike `Sequence` mode's ppq-based `processStepTick`, no sub-bar
+lookahead machinery is needed - every other bar-boundary CC send in this codebase already fires plainly at the
+bar tick.
+
+One mode elegantly covers both of v1.5's use cases: a short `phraseLengthBars` (2-4) gives phrase-internal
+breathing; set equal to a whole section's `durationBars`, it reproduces the exact "once, near the end" macro
+cadence that previously needed a live-fired `send_mutation` (Slack Tide's bar-38 gesture) - now fully
+JSON-authorable, no live input required. Closing `Scene.mutations[]`'s own `applyAtBar` dispatch gap (noted at
+the end of v1.5 above) remains a real, separate follow-up for a genuinely irregular one-off event, but is no
+longer needed for the cadence-breathing pattern this session was actually building toward.
+
+Compiled clean on the first attempt, VST3 reinstalled without a Bitwig file-lock. `Validation::isValidModulationRoute`
+extended (shares `Sequence`'s parameter/non-empty-`sequenceValues` check, plus a `phraseLengthBars >= 1` floor).
+Docs (`docs/composition_bundle_format.md`) and the MCP bridge's `create_modulation_route` docstring updated to
+match. **Confirmed working live in Bitwig same day** - user's own words: "I think it is working well. Clearly an
+improvement."
+
+Live testing immediately surfaced a real orchestration lesson, not a bug: letting every voice's `tension → rate`
+route reach Diminished together at a section's peak, combined with a fragment-sequencer route also running fast
+content on the same voice at the same moment, produced an unintelligible blur at normal tempo - two
+density-increasing devices compounding rather than adding. Fixed live by capping one voice's `outputMax` at `1`
+(never reaches Diminished, holds the ensemble's steady pulse) while leaving another's at the full `0..2` range
+(carries the peak intensity alone) - no engine changes, pure authoring. Written up as a permanent guideline in
+`docs/advanced_workflow_example.md`'s "Troubleshooting quick hits," and `docs/example_score_slack_tide.json`
+updated to match the fix rather than the version that needed a tempo workaround.
+
+**Follow-up, same day: Modulators tab UI closed the JSON-only gap.** `BarCycle` (and, it turned out, `Rate`
+itself - `kParameterOptions` never had a "Rate" entry, so the whole parameter was JSON/MCP-only until now) were
+unreachable from the Expert UI's route form entirely; the dispatch-mode combo only had two items and the save
+logic hardcoded `== 2 ? Sequence : Bar`, silently collapsing any third option to `Bar`. Added the "Rate" parameter
+option, a third "Bar Cycle (phrase cadence)" dispatch item, a `phraseLengthBars` slider (its own row, since
+BarCycle needs `sequenceValues` and `phraseLengthBars` visible together, unlike range/threshold/sequence which
+are always mutually exclusive), and a proper `0..2` range preset for Rate in Bar mode (previously silently
+defaulted to Transpose's `-48..48`). Compiled clean, installed.
+
+**Follow-up, same day: `InstanceRegistry` channel-uniqueness enforcement.** Real problem hit live earlier this
+session: `v1`-`v4` (from an earlier piece, `Grand Invention`) were still registered alongside `MPL1`-`MPL3`,
+sharing the same MIDI channels - a genuine collision, both silently receiving identical CC traffic. Root cause,
+confirmed by reading the code: `InstanceRegistry::addInstance` only ever upserted by id, with no channel check at
+all, and neither Load Score's composition-bundle import nor a Bitwig preset recall ever clears the registry
+first (both merge/upsert everything, `docs/composer_mastermind_design.md`'s own "fully reconfigures" language
+notwithstanding - true for blueprint/scenes/routes, not for instances). Fixed with the smaller of the two options
+presented earlier (the larger one - making the MIDI channel itself the addressing key everywhere, replacing the
+free-string `id` - remains a real but genuinely separate, breaking migration, deliberately not attempted):
+`addInstance` now evicts any other registered entry already on the incoming instance's `midiChannel` before
+adding it, since a channel can only ever reach one real physical MPL instance - a collision is always a stale
+leftover, never a legitimate second occupant. Self-healing: the next time anything re-registers `MPL1`-`MPL3`
+(a fresh Load Score, or manually via Add Instance), the colliding `v1`-`v3` entries are evicted automatically;
+`v4` (channel 4, no current collision) stays registered until removed by hand or superseded by something new on
+channel 4. Compiled clean, installed - not yet re-verified live (the reinstall itself drops the MCP bridge's
+socket connection to the reloaded plugin).
+
 ## New Ideas (beyond the source roadmap)
 
 1. **Instance capability negotiation.** `CCMapping::kMaxPatterns = 3` and the 30/40/50 CC blocks hard-code "MPL has

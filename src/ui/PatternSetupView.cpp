@@ -250,7 +250,7 @@ void PatternSetupView::commitClicked()
     stateTracker.getState(instance.id, trackedState);
     composerCore.getCCDispatcher().sendCC(instance.midiChannel, CCMapping::kGridMode,
                                            CCMapping::encodeGridMode(gridMode));
-    stateTracker.recordGlobal(instance.id, trackedState.activePattern, gridMode, trackedState.swing);
+    stateTracker.recordGlobal(instance.id, trackedState.activePattern, gridMode, trackedState.swing, trackedState.rate);
 
     patternSync.sendWriteFullPattern(instance.midiChannel, patternIndex, steps);
     patternSync.requestSync(instance.midiChannel, patternIndex);

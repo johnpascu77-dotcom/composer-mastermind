@@ -4,6 +4,7 @@
 #include "../policy/BlueprintGenerator.h"
 #include "../policy/PresetResolver.h"
 #include "../midi/CCMapping.h"
+#include "../scheduling/StepClock.h"
 #include "../util/Validation.h"
 #include "../state/StateSerializer.h"
 #include <cmath>
@@ -103,6 +104,11 @@ ModulatorTargetLibrary& ComposerCore::getModulatorTargetLibrary()
     return modulatorTargetLibrary;
 }
 
+ModulationRouteLibrary& ComposerCore::getModulationRouteLibrary()
+{
+    return modulationRouteLibrary;
+}
+
 PatternSyncServer& ComposerCore::getPatternSyncServer()
 {
     return patternSyncServer;
@@ -171,7 +177,7 @@ bool ComposerCore::restoreMilestone(size_t index)
                              CCMapping::encodeActivePattern(state.activePattern));
         ccDispatcher.sendCC(instance.midiChannel, CCMapping::kGridMode, CCMapping::encodeGridMode(state.gridMode));
         ccDispatcher.sendCC(instance.midiChannel, CCMapping::kSwing, CCMapping::encodeSwing(state.swing));
-        instanceStateTracker.recordGlobal(instance.id, state.activePattern, state.gridMode, state.swing);
+        instanceStateTracker.recordGlobal(instance.id, state.activePattern, state.gridMode, state.swing, state.rate);
 
         for (int patternIndex = 0; patternIndex < CCMapping::kMaxPatterns; ++patternIndex)
         {
@@ -192,9 +198,15 @@ bool ComposerCore::restoreMilestone(size_t index)
             ccDispatcher.sendCC(instance.midiChannel,
                                  baseCC + static_cast<int>(CCMapping::MutationOffset::Inversion),
                                  CCMapping::encodeInversion(pattern.inversion));
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::Retrograde),
+                                 CCMapping::encodeRetrograde(pattern.retrograde));
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::M7),
+                                 CCMapping::encodeM7(pattern.m7));
 
             instanceStateTracker.recordPattern(instance.id, patternIndex, pattern.transpose, pattern.rotation,
-                                                pattern.length, pattern.inversion);
+                                                pattern.length, pattern.inversion, pattern.retrograde, pattern.m7);
         }
 
         for (const auto& patternSnapshot : instanceState.patterns)
@@ -396,13 +408,14 @@ bool ComposerCore::getCurrentScene(Scene& outScene) const
     return true;
 }
 
-void ComposerCore::processBar(int currentBar)
+void ComposerCore::processBar(int currentBar, double barStartPpq)
 {
     currentBarValue.store(currentBar);
     dispatchSceneIfNeeded(currentBar);
     advanceSceneChainIfNeeded(currentBar);
-    advanceBlueprintIfNeeded(currentBar);
+    advanceBlueprintIfNeeded(currentBar, barStartPpq);
     sendModulatorTargetUpdates(currentBar);
+    sendPitchFieldBroadcast(currentBar);
 }
 
 void ComposerCore::fullRefresh()
@@ -472,7 +485,7 @@ void ComposerCore::advanceSceneChainIfNeeded(int currentBar)
     router.routeScene(nextScene, currentBar);
 }
 
-void ComposerCore::advanceBlueprintIfNeeded(int currentBar)
+void ComposerCore::advanceBlueprintIfNeeded(int currentBar, double barStartPpq)
 {
     Blueprint blueprint;
     std::string previousSectionId;
@@ -519,6 +532,9 @@ void ComposerCore::advanceBlueprintIfNeeded(int currentBar)
                 fireMotifPassIfDue(*activeSection, currentBar);
                 applyContinuousMelodicCurve(*activeSection, currentBar);
                 applyContinuousSwing(*activeSection, currentBar);
+                applyCoherenceDivergenceIfDue(*activeSection, currentBar);
+                sendModulationRouteUpdates(currentBar);
+                firePhraseCadenceIfDue(*activeSection, currentBar);
             }
         }
         return;
@@ -530,10 +546,28 @@ void ComposerCore::advanceBlueprintIfNeeded(int currentBar)
         motifPassCountForSection = 0;
         lastMotifPassBar = currentBar;
         hasPhraseChainRole = false; // sentinel - forces the first check this section to sync immediately
+        hasCoherenceDivergenceState = false; // same sentinel shape, see its own comment
+        modulationRouteThresholdState.clear(); // same sentinel shape - forces every route to resync
+        currentSectionPpqAnchor = barStartPpq; // phase-zero for every Sequence-mode route's loop-cycle count
+        sequenceRouteLastFiredIndex.clear(); // fresh section - every sequence route resyncs from cycle 0
+        phraseCadenceLastFiredIndex.clear(); // fresh section - every BarCycle route resyncs from phrase 0
     }
 
     if (activeSection == nullptr)
-        return; // moved outside every section - nothing to enter
+    {
+        // Reached past the blueprint's last section (2026-08-25, user's own
+        // spec, found by actually listening to a demo piece run past its
+        // end): explicitly silence every instance rather than leaving
+        // whatever the last section wrote looping forever - Bitwig's own
+        // playhead may well keep moving, but nothing should still be
+        // sounding once the piece itself has finished. Reached exactly once
+        // per transition (this branch only runs when newSectionId differs
+        // from previousSectionId, same one-shot shape as enterSection
+        // below), not resent every bar while past the end.
+        router.stopAllInstances();
+        logActivity(currentBar, "Blueprint '" + blueprint.name + "' reached its end - stopped all instances");
+        return; // nothing to enter
+    }
 
     enterSection(*activeSection, currentBar);
 }
@@ -598,6 +632,19 @@ void ComposerCore::enterSection(const BlueprintSection& section, int currentBar)
                 continue;
 
             patternSyncServer.sendWriteFullPattern(instance.midiChannel, entry.patternIndex, entry.steps);
+
+            // Update Composer Mastermind's own record of this pattern's content
+            // too, not just MPL's real storage - every other content-write path in
+            // this file pairs the two (see e.g. restoreMilestone,
+            // resetRhythmBaselineForSection), but this one didn't, which is why the
+            // Score View's Overlay piano-roll (PrimaryView.cpp, reads straight from
+            // this cache) rendered nothing for a frozen section despite the audio
+            // being completely correct - the cache genuinely never learned what was
+            // written, found live 2026-08-27.
+            PatternSnapshot capturedSnapshot;
+            capturedSnapshot.patternIndex = entry.patternIndex;
+            capturedSnapshot.steps = entry.steps;
+            patternSyncServer.getCache().store(instance.id, capturedSnapshot, currentBar);
         }
 
         logActivity(currentBar, "Wrote captured (Absolute) content for section '" + section.name + "' - frozen for its duration");
@@ -609,6 +656,9 @@ void ComposerCore::enterSection(const BlueprintSection& section, int currentBar)
         applyRhythmForSection(section, 0);
         applyContinuousMelodicCurve(section, currentBar);
         applyContinuousSwing(section, currentBar);
+        applyCoherenceDivergenceIfDue(section, currentBar);
+        sendModulationRouteUpdates(currentBar);
+        firePhraseCadenceIfDue(section, currentBar);
     }
 
     // Milestone capture (Phase 3, 2026-08-22) - after everything above has
@@ -646,6 +696,7 @@ void ComposerCore::resetToFactoryDefaults()
     blueprintLibrary.clear();
     presetLibrary.clear();
     modulatorTargetLibrary.clear();
+    modulationRouteLibrary.clear();
 
     {
         std::lock_guard<std::mutex> lock(sceneMutex);
@@ -665,6 +716,9 @@ void ComposerCore::resetToFactoryDefaults()
         avoidMotifPresetIdForSection.clear();
         currentSectionMotifPresetId.clear();
         motifHomePatternForSection.clear();
+        modulationRouteThresholdState.clear();
+        currentSectionPpqAnchor = 0.0;
+        sequenceRouteLastFiredIndex.clear();
     }
 
     logActivity(getCurrentBar(), "Factory reset - every library cleared");
@@ -710,6 +764,9 @@ void ComposerCore::firePhraseChainIfDue(const BlueprintSection& section, int cur
 
     for (const auto& instance : touchedInstances)
     {
+        if (hasActiveRouteOverride(instance.id, 0, ModulationParameter::ActivePattern))
+            continue; // a user-authored modulation route already owns Active Pattern here
+
         int nextPattern = 0;
         {
             std::lock_guard<std::mutex> lock(blueprintMutex);
@@ -744,7 +801,7 @@ void ComposerCore::firePhraseChainIfDue(const BlueprintSection& section, int cur
             // rather than un-resting it out of turn.
             ccDispatcher.sendCC(instance.midiChannel, CCMapping::kActivePattern,
                                  CCMapping::encodeActivePattern(nextPattern));
-            instanceStateTracker.recordGlobal(instance.id, nextPattern, trackedState.gridMode, trackedState.swing);
+            instanceStateTracker.recordGlobal(instance.id, nextPattern, trackedState.gridMode, trackedState.swing, trackedState.rate);
             logActivity(currentBar, instance.id + ": phrase chain advanced to pattern "
                                          + std::to_string(nextPattern) + roleSuffix);
         }
@@ -897,7 +954,8 @@ void ComposerCore::resetRhythmBaselineForSection(const BlueprintSection& section
         ccDispatcher.sendCC(instance.midiChannel, baseCC + static_cast<int>(CCMapping::MutationOffset::Length),
                              CCMapping::encodeLength(CCMapping::kPatternSteps));
 
-        instanceStateTracker.recordPattern(instance.id, patternIndex, 0, 0, CCMapping::kPatternSteps, false);
+        instanceStateTracker.recordPattern(instance.id, patternIndex, 0, 0, CCMapping::kPatternSteps,
+                                            false, false, false);
 
         // Also clear the pattern's real step content and the cache's belief
         // about it - not just the pattern-level parameters above. Without
@@ -1048,7 +1106,12 @@ void ComposerCore::applyContinuousMelodicCurve(const BlueprintSection& section, 
         if (homePattern <= 0)
             continue; // section wants this instance silent throughout - nothing to walk
 
-        router.routeContinuousTranspose(instance.id, homePattern - 1, curveTargetTranspose);
+        if (hasActiveRouteOverride(instance.id, homePattern - 1, ModulationParameter::Transpose))
+            continue; // a user-authored modulation route already owns Transpose here
+
+        const int taperedTranspose = MotifEngine::taperTransposeForPatternContent(
+            patternSyncServer, instanceStateTracker, instance, homePattern - 1, curveTargetTranspose);
+        router.routeContinuousTranspose(instance.id, homePattern - 1, taperedTranspose);
     }
 }
 
@@ -1062,9 +1125,17 @@ void ComposerCore::applyContinuousSwing(const BlueprintSection& section, int cur
     if (touchedInstances.empty())
         return;
 
+    // v1.28.0: Density no longer glides Swing continuously across the full
+    // 0..75% range - MPL's own Swing knob narrowed to 3 states (Off/Triplet/
+    // Shuffle, see CCMapping.h), so a linear multiply would just compute an
+    // illegal in-between percent that gets silently snapped away at
+    // encodeSwing time, leaving InstanceStateTracker's recorded value
+    // disagreeing with what actually got sent. Bands Density into the same
+    // 3 states directly instead, so the tracked value is always exactly one
+    // of the three, matching reality.
     const float densityValue = arcSet.getArc("density").evaluate(currentBar).value;
     const float targetSwing =
-        std::clamp(densityValue, 0.0f, 1.0f) * CCMapping::kMaxSwing;
+        CCMapping::swingPercentForState(CCMapping::swingStateForNormalized(densityValue));
 
     // Unlike applyContinuousMelodicCurve, deliberately doesn't check
     // motifHomePatternForSection/skip resting instances - Swing is a global
@@ -1073,7 +1144,370 @@ void ComposerCore::applyContinuousSwing(const BlueprintSection& section, int cur
     // instance happens to be resting this particular bar. Keeping it current
     // means an instance already has the right feel the moment it resumes.
     for (const auto& instance : touchedInstances)
+    {
+        if (hasActiveRouteOverride(instance.id, 0, ModulationParameter::Swing)) // patternIndex ignored - global parameter
+            continue; // a user-authored modulation route already owns Swing here
+
         router.routeContinuousSwing(instance.id, targetSwing);
+    }
+}
+
+void ComposerCore::applyCoherenceDivergenceIfDue(const BlueprintSection& section, int currentBar)
+{
+    if (section.archetype.empty())
+        return;
+
+    const float coherenceValue = arcSet.getArc("coherence").evaluate(currentBar).value;
+    const bool targetRetrograde = coherenceValue < kCoherenceRetrogradeThreshold;
+    const bool targetM7 = coherenceValue < kCoherenceM7Threshold;
+
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        if (hasCoherenceDivergenceState && lastCoherenceRetrograde == targetRetrograde
+            && lastCoherenceM7 == targetM7)
+            return; // no threshold crossing since last check - hold the current state
+        hasCoherenceDivergenceState = true;
+        lastCoherenceRetrograde = targetRetrograde;
+        lastCoherenceM7 = targetM7;
+    }
+
+    const auto touchedInstances =
+        MotifEngine::eligibleInstancesForArchetype(section.archetype, instanceRegistry.getAllInstances());
+    if (touchedInstances.empty())
+        return;
+
+    std::map<std::string, int> homePatterns;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        homePatterns = motifHomePatternForSection;
+    }
+
+    for (const auto& instance : touchedInstances)
+    {
+        const auto homeIt = homePatterns.find(instance.id);
+        const int homePattern = (homeIt != homePatterns.end()) ? homeIt->second : 0;
+        if (homePattern <= 0)
+            continue; // section wants this instance silent throughout - nothing to diverge
+
+        const int patternIndex = homePattern - 1;
+        const int baseCC = CCMapping::patternBaseCC(patternIndex);
+        if (baseCC < 0)
+            continue;
+
+        InstanceParameterState trackedState;
+        instanceStateTracker.getState(instance.id, trackedState);
+        const auto& pattern = trackedState.patterns[patternIndex];
+
+        // A user-authored modulation route can own Retrograde and/or M7
+        // independently for this instance/pattern - only send (and only
+        // record) whichever of the two this consumer still owns.
+        const bool retrogradeOverridden =
+            hasActiveRouteOverride(instance.id, patternIndex, ModulationParameter::Retrograde);
+        const bool m7Overridden = hasActiveRouteOverride(instance.id, patternIndex, ModulationParameter::M7);
+
+        if (!retrogradeOverridden)
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::Retrograde),
+                                 CCMapping::encodeRetrograde(targetRetrograde));
+        if (!m7Overridden)
+            ccDispatcher.sendCC(instance.midiChannel,
+                                 baseCC + static_cast<int>(CCMapping::MutationOffset::M7),
+                                 CCMapping::encodeM7(targetM7));
+
+        instanceStateTracker.recordPattern(instance.id, patternIndex, pattern.transpose, pattern.rotation,
+                                            pattern.length, pattern.inversion,
+                                            retrogradeOverridden ? pattern.retrograde : targetRetrograde,
+                                            m7Overridden ? pattern.m7 : targetM7);
+
+        if (!retrogradeOverridden || !m7Overridden)
+            logActivity(currentBar, instance.id + ": coherence divergence -> retrograde "
+                                         + std::string(targetRetrograde ? "on" : "off") + ", m7 "
+                                         + std::string(targetM7 ? "on" : "off") + " (coherence "
+                                         + juce::String(coherenceValue, 2).toStdString() + ")");
+    }
+}
+
+bool ComposerCore::hasActiveRouteOverride(const std::string& instanceId, int patternIndex,
+                                           ModulationParameter parameter) const
+{
+    const bool isGlobalParameter = isGlobalModulationParameter(parameter);
+
+    for (const auto& route : modulationRouteLibrary.getAllRoutes())
+    {
+        if (!route.enabled || route.parameter != parameter)
+            continue;
+
+        if (route.targetInstance != "*" && route.targetInstance != instanceId)
+            continue;
+
+        if (!isGlobalParameter && route.patternIndex != patternIndex)
+            continue;
+
+        return true;
+    }
+
+    return false;
+}
+
+void ComposerCore::sendModulationRouteUpdates(int currentBar)
+{
+    for (const auto& route : modulationRouteLibrary.getAllRoutes())
+    {
+        if (!route.enabled)
+            continue;
+
+        if (route.dispatchMode == ModulationDispatchMode::Sequence
+            || route.dispatchMode == ModulationDispatchMode::BarCycle)
+            continue; // driven by processStepTick / firePhraseCadenceIfDue instead, not this bar-sampled path
+
+        float sample = arcSet.getArc(route.arcDimension).evaluate(currentBar).value;
+        if (route.invert)
+            sample = 1.0f - sample;
+        sample = std::clamp(sample, 0.0f, 1.0f);
+
+        std::vector<std::string> targetInstanceIds;
+        if (route.targetInstance == "*")
+        {
+            for (const auto& instance : instanceRegistry.getAllInstances())
+                targetInstanceIds.push_back(instance.id);
+        }
+        else
+        {
+            targetInstanceIds.push_back(route.targetInstance);
+        }
+
+        if (isContinuousModulationParameter(route.parameter))
+        {
+            float outputMin = route.outputMin;
+            float outputMax = route.outputMax;
+            if (outputMax <= outputMin)
+            {
+                // 0/0 (the struct's own default) means "use the parameter's
+                // full domain" - resolved here, at dispatch time, so a route
+                // saved before a domain constant changes doesn't silently
+                // mean something else.
+                switch (route.parameter)
+                {
+                    case ModulationParameter::Transpose:
+                        outputMin = -static_cast<float>(CCMapping::kMaxTranspose);
+                        outputMax = static_cast<float>(CCMapping::kMaxTranspose);
+                        break;
+                    case ModulationParameter::Rotation:
+                        outputMin = 0.0f;
+                        outputMax = static_cast<float>(CCMapping::kPatternSteps - 1);
+                        break;
+                    case ModulationParameter::Length:
+                        outputMin = static_cast<float>(CCMapping::kMinPatternLoopLength);
+                        outputMax = static_cast<float>(CCMapping::kPatternSteps);
+                        break;
+                    case ModulationParameter::Rate:
+                        // Explicit, not left to fall through to Swing's 0..100
+                        // domain below - Rate is a 3-state 0..2 int, not a
+                        // percent, and would be silently corrupted otherwise.
+                        outputMin = 0.0f;
+                        outputMax = 2.0f;
+                        break;
+                    default: // Swing
+                        outputMin = 0.0f;
+                        outputMax = CCMapping::kMaxSwing;
+                        break;
+                }
+            }
+
+            const float value = outputMin + sample * (outputMax - outputMin);
+            for (const auto& instanceId : targetInstanceIds)
+                router.routeContinuousParameter(instanceId, route.patternIndex, route.parameter, value);
+        }
+        else
+        {
+            // ActivePattern bands into 4 states (0 = stop, 1-3 = pattern);
+            // every other threshold parameter here is a plain on/off crossing.
+            const int bandedValue = route.parameter == ModulationParameter::ActivePattern
+                ? CCMapping::bandNormalized(sample, CCMapping::kMaxPatterns + 1)
+                : (sample >= route.threshold ? 1 : 0);
+
+            bool shouldSend = false;
+            {
+                std::lock_guard<std::mutex> lock(blueprintMutex);
+                const auto it = modulationRouteThresholdState.find(route.id);
+                const int previousValue = (it != modulationRouteThresholdState.end()) ? it->second : -1;
+                if (previousValue != bandedValue)
+                {
+                    modulationRouteThresholdState[route.id] = bandedValue;
+                    shouldSend = true;
+                }
+            }
+
+            if (!shouldSend)
+                continue;
+
+            for (const auto& instanceId : targetInstanceIds)
+                router.routeThresholdParameter(instanceId, route.patternIndex, route.parameter, bandedValue);
+        }
+    }
+}
+
+void ComposerCore::firePhraseCadenceIfDue(const BlueprintSection& section, int currentBar)
+{
+    for (const auto& route : modulationRouteLibrary.getAllRoutes())
+    {
+        if (!route.enabled || route.dispatchMode != ModulationDispatchMode::BarCycle)
+            continue;
+
+        if (route.sequenceValues.empty() || !isContinuousModulationParameter(route.parameter))
+            continue; // nothing authored to step through, or not a parameter this mode applies to
+
+        const int clampedPhraseLength = std::max(1, route.phraseLengthBars);
+        // currentBar >= section.startBar always holds here (the caller only ever
+        // passes the currently active section), so plain integer division floors
+        // correctly with no need for the negative-aware wrap wrapRotation-style
+        // helpers use elsewhere.
+        const int phraseIndex = (currentBar - section.startBar) / clampedPhraseLength;
+
+        std::vector<std::string> targetInstanceIds;
+        if (route.targetInstance == "*")
+        {
+            for (const auto& instance : instanceRegistry.getAllInstances())
+                targetInstanceIds.push_back(instance.id);
+        }
+        else
+        {
+            targetInstanceIds.push_back(route.targetInstance);
+        }
+
+        const size_t valueIndex = static_cast<size_t>(phraseIndex) % route.sequenceValues.size();
+        const float value = route.sequenceValues[valueIndex];
+
+        for (const auto& instanceId : targetInstanceIds)
+        {
+            const std::string stateKey = route.id + "|" + instanceId;
+
+            bool shouldSend = false;
+            {
+                std::lock_guard<std::mutex> lock(blueprintMutex);
+                const auto it = phraseCadenceLastFiredIndex.find(stateKey);
+                const int lastFiredIndex = (it != phraseCadenceLastFiredIndex.end()) ? it->second : -1;
+                if (lastFiredIndex != phraseIndex)
+                {
+                    phraseCadenceLastFiredIndex[stateKey] = phraseIndex;
+                    shouldSend = true;
+                }
+            }
+
+            if (shouldSend)
+                router.routeContinuousParameter(instanceId, route.patternIndex, route.parameter, value);
+        }
+    }
+}
+
+void ComposerCore::processStepTick(double currentPpq)
+{
+    // Only meaningful while a blueprint is actually driving playback - find
+    // the section covering the current bar exactly the way
+    // advanceBlueprintIfNeeded does, and respect the same frozen (Absolute
+    // content) gate every other continuous/threshold consumer here does.
+    Blueprint blueprint;
+    double sectionAnchor = 0.0;
+    {
+        std::lock_guard<std::mutex> lock(blueprintMutex);
+        if (!hasCurrentBlueprint)
+            return;
+        blueprint = currentBlueprintData;
+        sectionAnchor = currentSectionPpqAnchor;
+    }
+
+    const int currentBar = getCurrentBar();
+    const BlueprintSection* activeSection = nullptr;
+    for (const auto& section : blueprint.sections)
+    {
+        if (currentBar >= section.startBar && currentBar < section.startBar + section.durationBars)
+        {
+            activeSection = &section;
+            break;
+        }
+    }
+
+    if (activeSection == nullptr)
+        return;
+
+    const bool isFrozen = getContentMode() == ContentMode::Absolute && !activeSection->capturedContent.empty();
+    if (isFrozen)
+        return;
+
+    for (const auto& route : modulationRouteLibrary.getAllRoutes())
+    {
+        if (!route.enabled || route.dispatchMode != ModulationDispatchMode::Sequence)
+            continue;
+
+        if (route.sequenceValues.empty() || !isContinuousModulationParameter(route.parameter))
+            continue; // nothing authored to step through, or not a parameter Sequence mode applies to
+
+        std::vector<std::string> targetInstanceIds;
+        if (route.targetInstance == "*")
+        {
+            for (const auto& instance : instanceRegistry.getAllInstances())
+                targetInstanceIds.push_back(instance.id);
+        }
+        else
+        {
+            targetInstanceIds.push_back(route.targetInstance);
+        }
+
+        for (const auto& instanceId : targetInstanceIds)
+        {
+            InstanceParameterState trackedState;
+            instanceStateTracker.getState(instanceId, trackedState); // no prior state -> defaults (Length 16, Binary)
+
+            const int trackedLength = isGlobalModulationParameter(route.parameter)
+                ? CCMapping::effectiveStepCount(trackedState.gridMode)
+                : trackedState.patterns[static_cast<size_t>(route.patternIndex)].length;
+            const bool ternary = trackedState.gridMode == 1;
+            const double stepLengthInPpq = StepClock::gridStepLengthInPpq(ternary, trackedState.rate);
+            const double lookaheadPpq = kSequenceLookaheadStepFraction * stepLengthInPpq;
+
+            // currentTrueIndex: the strict, already-elapsed loop-cycle index
+            // (no lookahead) - the ground truth used to snap forward
+            // correctly if playback jumped further than one cycle since the
+            // last check (a host seek/relocate, or this route's very first
+            // tick this section). candidateIndex: the NEXT index after
+            // whatever was last fired - fired early, within
+            // kSequenceLookaheadStepFraction of its own boundary, rather
+            // than only after that boundary has passed (see this class's own
+            // comment on kSequenceLookaheadStepFraction for why).
+            const int currentTrueIndex = StepClock::loopCycleIndex(sectionAnchor, currentPpq, ternary, trackedLength,
+                                                                     trackedState.rate);
+
+            const std::string stateKey = route.id + "|" + instanceId;
+            int indexToFire = -1;
+            {
+                std::lock_guard<std::mutex> lock(blueprintMutex);
+                const auto it = sequenceRouteLastFiredIndex.find(stateKey);
+                const int lastFiredIndex = (it != sequenceRouteLastFiredIndex.end()) ? it->second : -1;
+                const int candidateIndex = lastFiredIndex + 1;
+
+                if (currentTrueIndex > candidateIndex)
+                {
+                    indexToFire = currentTrueIndex; // jumped ahead - snap to the real current cycle directly
+                }
+                else
+                {
+                    const double candidateBoundaryPpq =
+                        sectionAnchor + static_cast<double>(candidateIndex) * trackedLength * stepLengthInPpq;
+                    if (currentPpq >= candidateBoundaryPpq - lookaheadPpq)
+                        indexToFire = candidateIndex;
+                }
+
+                if (indexToFire < 0 || indexToFire == lastFiredIndex)
+                    continue; // nothing due yet for this instance
+
+                sequenceRouteLastFiredIndex[stateKey] = indexToFire;
+            }
+
+            const size_t valueIndex = static_cast<size_t>(indexToFire) % route.sequenceValues.size();
+            const float value = route.sequenceValues[valueIndex];
+            router.routeContinuousParameter(instanceId, route.patternIndex, route.parameter, value);
+        }
+    }
 }
 
 void ComposerCore::sendSectionModulatorValues(const BlueprintSection& section)
@@ -1088,6 +1522,152 @@ void ComposerCore::sendSectionModulatorValues(const BlueprintSection& section)
     }
 }
 
+float ComposerCore::getNarrativePositionAt(int currentBar) const
+{
+    std::lock_guard<std::mutex> lock(blueprintMutex);
+
+    if (!hasCurrentBlueprint || currentBlueprintData.sections.empty())
+        return 0.0f;
+
+    int firstStart = currentBlueprintData.sections.front().startBar;
+    int lastEnd = firstStart;
+
+    for (const auto& section : currentBlueprintData.sections)
+    {
+        firstStart = std::min(firstStart, section.startBar);
+        lastEnd = std::max(lastEnd, section.startBar + section.durationBars);
+    }
+
+    const int span = lastEnd - firstStart;
+
+    if (span <= 0)
+        return 0.0f;
+
+    const float position = static_cast<float>(currentBar - firstStart) / static_cast<float>(span);
+    return juce::jlimit(0.0f, 1.0f, position);
+}
+
+bool ComposerCore::isPitchFieldBroadcastEnabled() const { return pitchFieldBroadcastEnabled.load(); }
+
+void ComposerCore::setPitchFieldBroadcastEnabled(bool enabled)
+{
+    pitchFieldBroadcastEnabled.store(enabled);
+    // Always forget the last mask AND the last-broadcast bar: toggling off/on OR
+    // re-calling this while already enabled both force a fresh re-broadcast next
+    // bar (past the min-bars hold), so a late-joining OrchNoteFilter can be
+    // brought current.
+    lastBroadcastPitchFieldMask.store(-1);
+    lastPitchFieldBroadcastBar.store(-1);
+}
+
+int ComposerCore::getPitchFieldBroadcastBaseCc() const { return pitchFieldBroadcastBaseCc.load(); }
+
+void ComposerCore::setPitchFieldBroadcastBaseCc(int cc)
+{
+    pitchFieldBroadcastBaseCc.store(juce::jlimit(0, 118, cc));
+    lastBroadcastPitchFieldMask.store(-1);
+}
+
+int ComposerCore::getPitchFieldBroadcastChannel() const { return pitchFieldBroadcastChannel.load(); }
+
+void ComposerCore::setPitchFieldBroadcastChannel(int channel)
+{
+    pitchFieldBroadcastChannel.store(juce::jlimit(1, 16, channel));
+    lastBroadcastPitchFieldMask.store(-1);
+}
+
+int ComposerCore::getLastBroadcastPitchFieldMask() const { return lastBroadcastPitchFieldMask.load(); }
+
+int ComposerCore::getPitchFieldBroadcastMinBars() const { return pitchFieldBroadcastMinBars.load(); }
+
+void ComposerCore::setPitchFieldBroadcastMinBars(int bars)
+{
+    pitchFieldBroadcastMinBars.store(juce::jlimit(0, 32, bars));
+}
+
+void ComposerCore::sendPitchFieldBroadcast(int currentBar)
+{
+    if (!pitchFieldBroadcastEnabled.load())
+        return;
+
+    const int baseCc = juce::jlimit(0, 118, pitchFieldBroadcastBaseCc.load());
+    if (baseCc == 0)
+        return;
+
+    // Union of the pitch classes each registered instance's currently-active
+    // pattern is sounding - its confirmed step content (InstancePatternCache)
+    // put through the same M7 / Inversion / Transpose the pattern is carrying,
+    // reduced to pitch class. Matches MPL's applyPatternTransformsToNote order.
+    auto& cache = patternSyncServer.getCache();
+    int mask = 0;
+
+    for (const auto& instance : instanceRegistry.getAllInstances())
+    {
+        InstanceParameterState state;
+        if (!instanceStateTracker.getState(instance.id, state))
+            continue;
+
+        const int activePattern = state.activePattern; // 1..3, 0 = section wants it silent
+        if (activePattern < 1 || activePattern > 3)
+            continue;
+
+        const int patternIndex = activePattern - 1;
+
+        CachedPattern cached;
+        if (!cache.get(instance.id, patternIndex, cached))
+            continue;
+
+        const auto& patternState = state.patterns[static_cast<size_t>(patternIndex)];
+        const int transpose = patternState.transpose;
+        const bool m7 = patternState.m7;
+        const bool inversion = patternState.inversion;
+        // Retrograde and rotation only reorder steps - the pitch-class set is
+        // unchanged - so they're deliberately not consulted here.
+
+        for (const auto& step : cached.snapshot.steps)
+        {
+            if (!step.enabled)
+                continue;
+
+            // Mirror MPL's own transform order (applyPatternTransformsToNote):
+            // stored note -> M7 -> Inversion -> Transpose, reduced to pitch class.
+            int pc = ((step.note % 12) + 12) % 12;
+            if (m7)
+                pc = (pc * 7) % 12;
+            if (inversion)
+                pc = (12 - pc) % 12; // MPL inverts about note 60; 120 % 12 == 0
+            pc = ((pc + transpose) % 12 + 12) % 12;
+            mask |= (1 << pc);
+        }
+    }
+
+    if (mask == 0)
+        return; // no confirmed content yet - keep whatever was last broadcast
+
+    if (mask == lastBroadcastPitchFieldMask.load())
+        return;
+
+    // Rate limit: hold a changed field for at least minBars bars, so the
+    // per-bar transpose micro-nudges don't make the field flicker. The next
+    // eligible bar picks up whatever the mask has become by then.
+    const int minBars = juce::jlimit(0, 32, pitchFieldBroadcastMinBars.load());
+    const int lastBar = lastPitchFieldBroadcastBar.load();
+    if (minBars > 0 && lastBar >= 0 && (currentBar - lastBar) < minBars)
+        return;
+
+    lastBroadcastPitchFieldMask.store(mask);
+    lastPitchFieldBroadcastBar.store(currentBar);
+
+    // The 12-bit mask is packed into two CCs, not one-per-pitch-class: a
+    // 12-CC block starting at any usable base runs into CC120/CC121 (All Sound
+    // Off / Reset All Controllers, MIDI Channel Mode messages) which hard-mute
+    // every downstream synth voice. baseCc carries pitch classes 0-6 (low 7
+    // bits), baseCc+1 carries 7-11 (high 5 bits). OrchNoteFilter reassembles.
+    const int channel = juce::jlimit(1, 16, pitchFieldBroadcastChannel.load());
+    ccDispatcher.sendCC(channel, baseCc,     mask & 0x7F);
+    ccDispatcher.sendCC(channel, baseCc + 1, (mask >> 7) & 0x1F);
+}
+
 void ComposerCore::sendModulatorTargetUpdates(int currentBar)
 {
     for (const auto& target : modulatorTargetLibrary.getAllTargets())
@@ -1095,9 +1675,11 @@ void ComposerCore::sendModulatorTargetUpdates(int currentBar)
         if (target.mode != "arc")
             continue; // "section" mode is driven by sendSectionModulatorValues instead
 
-        const Arc arc = arcSet.getArc(target.arcDimension);
-        const auto sample = arc.evaluate(currentBar);
-        const int ccValue = CCMapping::encodeFloat(sample.value, 0.0f, 1.0f);
+        const float value = target.arcDimension == kNarrativePositionDimension
+            ? getNarrativePositionAt(currentBar)
+            : arcSet.getArc(target.arcDimension).evaluate(currentBar).value;
+
+        const int ccValue = CCMapping::encodeFloat(value, 0.0f, 1.0f);
         ccDispatcher.sendCC(target.midiChannel, target.ccNumber, ccValue);
     }
 }
@@ -1255,6 +1837,8 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
         result->setProperty("coherence", getCurrentCoherence());
         result->setProperty("activeSectionId", juce::String(getActiveSectionId()));
         result->setProperty("registeredInstanceCount", static_cast<int>(instanceRegistry.getAllInstances().size()));
+        result->setProperty("pitchFieldBroadcastEnabled", isPitchFieldBroadcastEnabled());
+        result->setProperty("pitchFieldBroadcastMask", getLastBroadcastPitchFieldMask());
         return mcpOk(result);
     }
 
@@ -1367,6 +1951,28 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
 
         auto* result = new juce::DynamicObject();
         result->setProperty("applicationMode", mode);
+        return mcpOk(result);
+    }
+
+    if (action == "setPitchFieldBroadcast")
+    {
+        if (request.hasProperty("minBars"))
+            setPitchFieldBroadcastMinBars(static_cast<int>(request["minBars"]));
+        if (request.hasProperty("baseCc"))
+            setPitchFieldBroadcastBaseCc(static_cast<int>(request["baseCc"]));
+        if (request.hasProperty("channel"))
+            setPitchFieldBroadcastChannel(static_cast<int>(request["channel"]));
+        // enabled last: its setter clears the rate-limit state so a re-enable
+        // re-broadcasts immediately regardless of the other fields.
+        if (request.hasProperty("enabled"))
+            setPitchFieldBroadcastEnabled(static_cast<bool>(request["enabled"]));
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("enabled", isPitchFieldBroadcastEnabled());
+        result->setProperty("baseCc", getPitchFieldBroadcastBaseCc());
+        result->setProperty("channel", getPitchFieldBroadcastChannel());
+        result->setProperty("minBars", getPitchFieldBroadcastMinBars());
+        result->setProperty("lastMask", getLastBroadcastPitchFieldMask());
         return mcpOk(result);
     }
 
@@ -1663,6 +2269,28 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
             targetsArray.add(juce::var(obj));
         }
         result->setProperty("targets", targetsArray);
+        return mcpOk(result);
+    }
+
+    if (action == "createModulationRoute")
+    {
+        const ModulationRoute route = StateSerializer::varToModulationRoute(request["route"]);
+
+        std::string errorMessage;
+        if (!Validation::isValidModulationRoute(route, errorMessage))
+            return mcpError("createModulationRoute: " + juce::String(errorMessage));
+
+        modulationRouteLibrary.addOrReplaceRoute(route);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("routeId", juce::String(route.id));
+        return mcpOk(result);
+    }
+
+    if (action == "getModulationRoutes")
+    {
+        auto* result = new juce::DynamicObject();
+        result->setProperty("routes", StateSerializer::modulationRoutesToVar(modulationRouteLibrary.getAllRoutes()));
         return mcpOk(result);
     }
 

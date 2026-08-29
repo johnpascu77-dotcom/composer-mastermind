@@ -1,0 +1,125 @@
+{
+  "schema": "ComposerMastermindComposition.v2",
+  "blueprint": {
+    "id": "blank_score_template",
+    "name": "Blank Score Template",
+    "sections": [
+      {
+        "id": "section_1",
+        "name": "Presentation",
+        "sceneId": "shared_scene",
+        "startBar": 0,
+        "durationBars": 8,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      },
+      {
+        "id": "section_2",
+        "name": "Peak",
+        "sceneId": "shared_scene",
+        "startBar": 8,
+        "durationBars": 8,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "type": "inversion",
+            "value": 1
+          }
+        ],
+        "modulatorValues": [],
+        "capturedContent": []
+      }
+    ],
+    "arcCurves": [
+      {
+        "dimension": "energy",
+        "points": [
+          { "bar": 0, "value": 0.3 },
+          { "bar": 8, "value": 0.9 },
+          { "bar": 16, "value": 0.9 }
+        ]
+      },
+      {
+        "dimension": "tension",
+        "points": [
+          { "bar": 0, "value": 0.2 },
+          { "bar": 8, "value": 0.8 },
+          { "bar": 16, "value": 0.8 }
+        ]
+      },
+      {
+        "dimension": "density",
+        "points": [
+          { "bar": 0, "value": 0.5 },
+          { "bar": 8, "value": 0.5 },
+          { "bar": 16, "value": 0.5 }
+        ]
+      },
+      {
+        "dimension": "complexity",
+        "points": [
+          { "bar": 0, "value": 0.3 },
+          { "bar": 8, "value": 0.6 },
+          { "bar": 16, "value": 0.6 }
+        ]
+      },
+      {
+        "dimension": "coherence",
+        "points": [
+          { "bar": 0, "value": 0.6 },
+          { "bar": 8, "value": 0.6 },
+          { "bar": 16, "value": 0.6 }
+        ]
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "shared_scene",
+      "name": "Shared Scene",
+      "durationBars": 4,
+      "quantize": "bar",
+      "targets": ["MPL1", "MPL2", "MPL3"],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [
+    { "id": "MPL1", "name": "MPL1", "midiChannel": 1, "role": "anchor", "enabled": true, "lastKnownScene": "" },
+    { "id": "MPL2", "name": "MPL2", "midiChannel": 2, "role": "motif", "enabled": true, "lastKnownScene": "" },
+    { "id": "MPL3", "name": "MPL3", "midiChannel": 3, "role": "counterpoint", "enabled": true, "lastKnownScene": "" }
+  ],
+  "motifPresets": [
+    {
+      "schema": "ComposerMastermindMotifPreset.v1",
+      "id": "template_motif",
+      "name": "Template Motif",
+      "tags": ["presentation", "peak"],
+      "notes": [
+        { "semitoneOffset": 0, "relativeDuration": 1.0, "relativeVelocity": 1.0 },
+        { "semitoneOffset": 4, "relativeDuration": 1.0, "relativeVelocity": 1.0 },
+        { "semitoneOffset": 7, "relativeDuration": 1.0, "relativeVelocity": 1.0 },
+        { "semitoneOffset": 5, "relativeDuration": 1.0, "relativeVelocity": 1.0 }
+      ]
+    }
+  ],
+  "modulatorTargets": []
+}

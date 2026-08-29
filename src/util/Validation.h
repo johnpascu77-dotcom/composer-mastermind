@@ -7,6 +7,7 @@
 #include "../model/Blueprint.h"
 #include "../model/Preset.h"
 #include "../model/ModulatorTarget.h"
+#include "../model/ModulationRoute.h"
 
 namespace Validation
 {
@@ -25,4 +26,5 @@ namespace Validation
     bool isValidArcPreset(const ArcPreset& preset, std::string& errorMessage);
     bool isValidMotifPreset(const MotifPreset& preset, std::string& errorMessage);
     bool isValidModulatorTarget(const ModulatorTarget& target, std::string& errorMessage);
+    bool isValidModulationRoute(const ModulationRoute& route, std::string& errorMessage);
 }

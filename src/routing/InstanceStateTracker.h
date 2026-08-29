@@ -14,9 +14,10 @@
 class InstanceStateTracker
 {
 public:
-    void recordGlobal(const std::string& instanceId, int activePattern, int gridMode, float swing);
+    void recordGlobal(const std::string& instanceId, int activePattern, int gridMode, float swing, int rate);
     void recordPattern(const std::string& instanceId, int patternIndex,
-                        int transpose, int rotation, int length, bool inversion);
+                        int transpose, int rotation, int length, bool inversion,
+                        bool retrograde, bool m7);
 
     bool getState(const std::string& instanceId, InstanceParameterState& outState) const;
 
