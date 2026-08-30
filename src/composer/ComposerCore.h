@@ -20,6 +20,7 @@
 #include "../state/MilestoneLibrary.h"
 #include "PatternSyncServer.h"
 #include "McpBridgeServer.h"
+#include "TransportCompanionClient.h"
 #include "../policy/PolicyEngine.h"
 #include "../policy/MotifEngine.h"
 #include "../policy/ArcSet.h"
@@ -126,6 +127,14 @@ public:
     // Narrative Scan bridge (docs/composer_mastermind_design.md). Not a member
     // of ArcSet::getArcNames(); sendModulatorTargetUpdates special-cases it.
     static constexpr const char* kNarrativePositionDimension = "narrative-position";
+
+    // Transport-companion signal (2026-08-30): a plugin can't touch the host
+    // transport, so at blueprint end MC opens a one-shot TCP connection to a
+    // Bitwig controller script that calls transport.stop() - see
+    // TransportCompanionClient (port lives there) and
+    // Controller Scripts/ComposerMastermind/. A MIDI signal was tried first but
+    // this rig can't loop a loopMIDI port back to a controller input in the
+    // same Bitwig process.
 
     // 0..1 progress of currentBar through the current blueprint's full section
     // span (min startBar .. max startBar+durationBars). 0 if no blueprint is
@@ -263,6 +272,7 @@ private:
     ModulationRouteLibrary modulationRouteLibrary;
     PatternSyncServer patternSyncServer;
     McpBridgeServer mcpBridgeServer;
+    TransportCompanionClient transportCompanionClient;
     ArcSet arcSet;
     LockedStepLibrary lockedStepLibrary;
     MilestoneLibrary milestoneLibrary;

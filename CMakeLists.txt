@@ -79,6 +79,7 @@ target_sources(ComposerMastermind PRIVATE
     src/composer/ComposerCore.cpp
     src/composer/PatternSyncServer.cpp
     src/composer/McpBridgeServer.cpp
+    src/composer/TransportCompanionClient.cpp
 
     src/routing/InstanceRegistry.cpp
     src/routing/InstanceStateTracker.cpp
@@ -184,6 +185,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Source Files" FILES
     src/composer/ComposerCore.cpp
     src/composer/PatternSyncServer.cpp
     src/composer/McpBridgeServer.cpp
+    src/composer/TransportCompanionClient.cpp
     src/routing/InstanceRegistry.cpp
     src/routing/InstanceStateTracker.cpp
     src/routing/Router.cpp

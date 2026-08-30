@@ -565,7 +565,14 @@ void ComposerCore::advanceBlueprintIfNeeded(int currentBar, double barStartPpq)
         // from previousSectionId, same one-shot shape as enterSection
         // below), not resent every bar while past the end.
         router.stopAllInstances();
-        logActivity(currentBar, "Blueprint '" + blueprint.name + "' reached its end - stopped all instances");
+
+        // Transport-companion stop signal, fired exactly once here (same
+        // one-shot shape as the branch itself). A Bitwig controller script
+        // turns this into transport.stop() so the clip-launcher "wash" ends
+        // with the composition - the plugin can't reach the host transport.
+        transportCompanionClient.signalBlueprintEnd();
+
+        logActivity(currentBar, "Blueprint '" + blueprint.name + "' reached its end - stopped all instances, sent transport-stop signal");
         return; // nothing to enter
     }
 
