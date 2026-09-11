@@ -71,6 +71,7 @@ target_sources(ComposerMastermind PRIVATE
     src/ui/PresetLibraryContent.cpp
     src/ui/PresetLibraryView.cpp
     src/ui/GenerateView.cpp
+    src/ui/ProposeView.cpp
     src/ui/ModulatorTargetView.cpp
     src/ui/PatternAwarenessView.cpp
     src/ui/ActivityLogView.cpp
@@ -98,6 +99,9 @@ target_sources(ComposerMastermind PRIVATE
     src/policy/BlueprintGenerator.cpp
     src/policy/MotifEngine.cpp
     src/policy/MonophonicOverlap.cpp
+    src/policy/DurationCalculator.cpp
+    src/policy/ArcShapeLibrary.cpp
+    src/policy/NarrativeLaneSuggester.cpp
 
     src/state/SceneLibrary.cpp
     src/state/BlueprintLibrary.cpp
@@ -110,6 +114,7 @@ target_sources(ComposerMastermind PRIVATE
     src/state/StateSerializer.cpp
     src/state/StateSnapshotStore.cpp
     src/state/CompositionBundleStore.cpp
+    src/state/ProposalLibrary.cpp
 
     src/util/Validation.cpp
     src/util/JsonHelpers.cpp
@@ -178,6 +183,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Source Files" FILES
     src/ui/PresetLibraryContent.cpp
     src/ui/PresetLibraryView.cpp
     src/ui/GenerateView.cpp
+    src/ui/ProposeView.cpp
     src/ui/ModulatorTargetView.cpp
     src/ui/PatternAwarenessView.cpp
     src/ui/ActivityLogView.cpp
@@ -201,6 +207,9 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Source Files" FILES
     src/policy/BlueprintGenerator.cpp
     src/policy/MotifEngine.cpp
     src/policy/MonophonicOverlap.cpp
+    src/policy/DurationCalculator.cpp
+    src/policy/ArcShapeLibrary.cpp
+    src/policy/NarrativeLaneSuggester.cpp
     src/state/SceneLibrary.cpp
     src/state/BlueprintLibrary.cpp
     src/state/PresetLibrary.cpp
@@ -212,6 +221,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Source Files" FILES
     src/state/StateSerializer.cpp
     src/state/StateSnapshotStore.cpp
     src/state/CompositionBundleStore.cpp
+    src/state/ProposalLibrary.cpp
     src/util/Validation.cpp
     src/util/JsonHelpers.cpp
 )

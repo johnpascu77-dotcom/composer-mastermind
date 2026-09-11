@@ -338,6 +338,7 @@ namespace StateSerializer
         obj->setProperty("startBar", section.startBar);
         obj->setProperty("durationBars", section.durationBars);
         obj->setProperty("archetype", juce::String(section.archetype));
+        obj->setProperty("suggestedNarrativeLane", juce::String(section.suggestedNarrativeLane));
 
         juce::Array<juce::var> layerRoles;
         for (const auto& layerRole : section.layerRoles)
@@ -376,6 +377,7 @@ namespace StateSerializer
         section.startBar = JsonHelpers::getInt(value, "startBar", 0);
         section.durationBars = JsonHelpers::getInt(value, "durationBars", 4);
         section.archetype = JsonHelpers::getString(value, "archetype");
+        section.suggestedNarrativeLane = JsonHelpers::getString(value, "suggestedNarrativeLane");
 
         for (const auto& item : JsonHelpers::getArray(value, "layerRoles"))
             section.layerRoles.push_back(varToSectionLayerRole(item));

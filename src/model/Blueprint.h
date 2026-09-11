@@ -119,6 +119,15 @@ struct BlueprintSection
     std::vector<ReservedValue> reservedValues;
     std::vector<SectionModulatorValue> modulatorValues;
     std::vector<SectionCapturedContent> capturedContent;
+
+    // Optional, purely descriptive export metadata (policy/NarrativeLaneSuggester.h):
+    // the sibling plugin OrchConductor's own Narrative Lane name whose
+    // character best matches this section, for the user to read and set
+    // in OrchConductor's own UI once per project. Empty means "no
+    // suggestion" (e.g. a hand-authored section, or a blueprint from
+    // before this field existed). Never consumed by MC's own playback -
+    // MC<->OrchConductor's real bridge is the narrative-position CC, not this.
+    std::string suggestedNarrativeLane;
 };
 
 // One breakpoint of an explicitly-saved arc dimension curve for a blueprint:

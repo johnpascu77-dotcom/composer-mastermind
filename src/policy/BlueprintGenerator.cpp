@@ -1,5 +1,6 @@
 #include "BlueprintGenerator.h"
 #include "PresetResolver.h"
+#include "NarrativeLaneSuggester.h"
 #include <algorithm>
 
 namespace
@@ -370,6 +371,31 @@ namespace BlueprintGenerator
         return "presentation";
     }
 
+    Scene generateSeedScene(const std::string& sceneId,
+                             const std::vector<Instance>& allInstances,
+                             const std::vector<RolePreset>& /*rolePresets*/)
+    {
+        Scene scene;
+        scene.id = sceneId;
+        scene.name = sceneId;
+
+        int index = 0;
+        for (const auto& instance : allInstances)
+        {
+            scene.targets.push_back(instance.id);
+
+            ScenePattern pattern;
+            pattern.targetInstance = instance.id;
+            pattern.patternIndex = 0;
+            pattern.rotation = (index * 3) % 16; // deterministic, not raw random - see header comment
+            scene.patterns.push_back(pattern);
+
+            ++index;
+        }
+
+        return scene;
+    }
+
     GeneratedBlueprintProposal generate(const std::string& blueprintId,
                                          const std::string& drivingArcName,
                                          const ArcSet& liveArcSet,
@@ -405,6 +431,9 @@ namespace BlueprintGenerator
             section.durationBars = plan.endBar - plan.startBar;
             section.sceneId = section.id + "_scene";
             section.archetype = tag;
+            section.suggestedNarrativeLane = NarrativeLaneSuggester::suggestLane(
+                tag, derivedValue("energy", archetype, section, allInstances),
+                derivedValue("tension", archetype, section, allInstances));
 
             applyArchetypeRules(archetype, allInstances, section);
 

@@ -70,6 +70,36 @@ namespace BlueprintGenerator
                                          const std::vector<RolePreset>& rolePresets,
                                          const std::vector<RhythmicRelationshipPreset>& rhythmicPresets);
 
+    // Generates the one seed Scene generate() needs as its baseScene input,
+    // for the "Propose a Piece" flow (policy/DurationCalculator.h,
+    // policy/ArcShapeLibrary.h) where there is no hand-authored scene to
+    // start from at all. Closes the one gap this file's own top comment
+    // already names - "assembles a candidate Blueprint from the existing
+    // preset library rather than requiring one fully hand-authored" was
+    // only ever true for the section layer; the seed scene itself still
+    // had to be hand-built. Never invents Instances - only ever addresses
+    // whichever ones are already in allInstances (which instances exist is
+    // a human Bitwig-routing decision, never a generator's to make - the
+    // same principle the sibling plugin OrchConductor's own design holds
+    // for its note path). Targets every given instance with exactly one
+    // ScenePattern (patternIndex 0, MPL's "home" pattern slot), a small
+    // deterministic per-instance rotation offset (index * 3, wrapped to a
+    // 16-step pattern) so instances don't all start in unison lockstep -
+    // not a musical judgment call, just enough starting variety for
+    // MotifEngine and the routing/Mutation pipeline to develop from.
+    // Transpose/inversion/retrograde/m7 stay at their neutral defaults -
+    // register and transform decisions are already this codebase's other
+    // machinery's job (MotifEngine's home-register clamp, the Mutation/
+    // Router/PolicyEngine budget pipeline), not this function's.
+    // rolePresets is accepted for signature symmetry with generate() but
+    // not consulted here - RolePreset only ever touches
+    // instanceOverrides/targets (see policy/PresetResolver.h), which
+    // buildSectionScene's own preset-matching pass already applies per
+    // section after this seed is cloned.
+    Scene generateSeedScene(const std::string& sceneId,
+                             const std::vector<Instance>& allInstances,
+                             const std::vector<RolePreset>& rolePresets);
+
     // Derives a full 5-dimension ArcSet directly from a blueprint's own
     // section/archetype sequence, for a blueprint that has no explicitly
     // authored arc data at all (e.g. hand-composed as explicit sections,
