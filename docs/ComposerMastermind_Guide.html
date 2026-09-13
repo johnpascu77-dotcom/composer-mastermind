@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Composer Mastermind — Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#15120F; --surface:#1E1A15; --surface-2:#262019; --surface-3:#2E2620;
+    --border:#3A2F22; --border-soft:#2A2319;
+    --text:#EDE6D9; --text-dim:#A79B87; --text-faint:#6E6353;
+    --brass:#D8A94E; --brass-dim:#A67E38;
+    --note:#CB6E47; --note-dim:#8C4C31;
+    --control:#5C93B8; --control-dim:#3E6A85;
+    --sage:#84A672; --sage-dim:#5C7A4E;
+    --violet:#9488B0; --violet-dim:#665C7C;
+    color-scheme: dark;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    background:var(--bg); color:var(--text); margin:0;
+    font-family:"Work Sans", ui-sans-serif, system-ui, sans-serif;
+    line-height:1.55; font-size:15px;
+    background-image: radial-gradient(1200px 500px at 10% -10%, color-mix(in srgb, var(--brass) 10%, transparent), transparent 60%);
+  }
+  .wrap{ max-width:1180px; margin:0 auto; padding:36px 26px 80px; }
+  .mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+  .crumbs{ font-family:"IBM Plex Mono"; font-size:.7rem; color:var(--text-faint); letter-spacing:.04em; margin-bottom:16px; }
+  .crumbs b{ color:var(--brass); font-weight:500; }
+  .nameplate{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    padding-bottom:18px; margin-bottom:22px; border-bottom:2px solid var(--border); }
+  .nameplate h1{ font-family:"Big Shoulders Display"; font-weight:800; text-transform:uppercase;
+    font-size:clamp(2.3rem,5.4vw,3.6rem); line-height:.9; margin:0; letter-spacing:.005em; }
+  .nameplate .role{ color:var(--text-dim); font-size:.94rem; max-width:58ch; margin-top:8px; }
+  .badges{ display:flex; gap:8px; flex-wrap:wrap; }
+  .badge{ font-family:"IBM Plex Mono"; font-size:.66rem; text-transform:uppercase; letter-spacing:.06em;
+    padding:3px 9px; border-radius:20px; white-space:nowrap; }
+  .badge.chain{ color:var(--brass); border:1px solid var(--brass-dim); background:color-mix(in srgb, var(--brass) 14%, transparent); }
+  .badge.live{ color:var(--sage); border:1px solid var(--sage-dim); background:color-mix(in srgb, var(--sage) 14%, transparent); }
+  .lede{ color:var(--text-dim); max-width:82ch; margin:0 0 24px; font-size:.98rem; }
+  .lede strong{ color:var(--text); font-weight:600; }
+
+  .navmap{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:40px; }
+  @media (max-width:760px){ .navmap{ grid-template-columns:1fr 1fr; } }
+  .navcard{ background:var(--surface); border:1px solid var(--border-soft); border-radius:8px; padding:14px 16px; }
+  .navcard .n-tag{ font-family:"IBM Plex Mono"; font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--brass); }
+  .navcard .n-name{ font-family:"Big Shoulders Display"; font-weight:700; font-size:1.15rem; text-transform:uppercase; margin-top:2px; }
+  .navcard .n-desc{ color:var(--text-dim); font-size:.78rem; margin-top:5px; line-height:1.4; }
+
+  .section-head{ display:flex; align-items:baseline; gap:14px; margin:54px 0 18px; }
+  .section-head .num{ font-family:"IBM Plex Mono"; color:var(--text-faint); font-size:.82rem; }
+  .section-head h2{ font-family:"Big Shoulders Display"; font-weight:700; text-transform:uppercase; font-size:1.6rem; margin:0; }
+  .section-head .rule{ flex:1; height:1px; background:var(--border); }
+  .section-note{ color:var(--text-dim); max-width:82ch; margin:-6px 0 20px; font-size:.9rem; }
+
+  .subsection{ margin-top:38px; }
+  .subsection-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+  .subsection-head .sub-num{ font-family:"IBM Plex Mono"; color:var(--control); font-size:.72rem; }
+  .subsection-head h3{ font-family:"Big Shoulders Display"; font-weight:700; text-transform:uppercase; font-size:1.15rem; margin:0; }
+  .subsection-head .sub-rule{ flex:1; height:1px; background:var(--border-soft); }
+
+  .layout{ display:grid; grid-template-columns: 1fr 380px; gap:24px; align-items:start; }
+  @media (max-width:900px){ .layout{ grid-template-columns:1fr; } }
+  .shot-frame{ position:relative; border:1px solid var(--border-soft); border-radius:8px; overflow:hidden;
+    background:#0C0A08; box-shadow: 0 14px 34px -16px rgba(0,0,0,.7); }
+  .shot-frame img{ display:block; width:100%; height:auto; }
+  .marker{ position:absolute; transform:translate(-50%,-50%); width:24px; height:24px; border-radius:50%;
+    background:var(--brass); color:#1D1506; border:2px solid #1D1506; font-family:"IBM Plex Mono"; font-weight:600;
+    font-size:.74rem; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--brass) 45%, transparent), 0 3px 10px rgba(0,0,0,.5); }
+  .marker.sm{ width:20px; height:20px; font-size:.66rem; }
+  .shot-caption{ color:var(--text-faint); font-size:.74rem; margin-top:9px; }
+
+  .region-list{ display:flex; flex-direction:column; }
+  .region{ display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--border-soft); }
+  .region:last-child{ border-bottom:none; }
+  .region .badge-num{ flex:none; width:22px; height:22px; border-radius:50%; background:var(--surface-2);
+    border:1px solid var(--brass-dim); color:var(--brass); font-family:"IBM Plex Mono"; font-weight:600;
+    font-size:.7rem; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .region .r-name{ font-weight:600; font-size:.86rem; }
+  .region .r-desc{ color:var(--text-dim); font-size:.79rem; margin-top:4px; line-height:1.46; }
+  .region .r-desc code{ font-family:"IBM Plex Mono"; color:var(--brass); font-size:.75rem; }
+
+  .readout-note{ display:flex; gap:14px; background:var(--surface); border:1px solid var(--border-soft); border-radius:8px;
+    padding:14px 16px; margin-top:16px; align-items:flex-start; }
+  .readout-note .dot{ flex:none; width:9px; height:9px; border-radius:50%; background:var(--sage); margin-top:6px; }
+  .readout-note p{ margin:0; color:var(--text-dim); font-size:.85rem; }
+  .readout-note code{ font-family:"IBM Plex Mono"; color:var(--sage); font-size:.8rem; }
+
+  .tabstrip{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px; font-family:"IBM Plex Mono"; font-size:.72rem; }
+  .tabstrip .t{ padding:5px 11px; border-radius:5px; background:var(--surface-2); border:1px solid var(--border-soft); color:var(--text-dim); }
+  .tabstrip .t.here{ background:color-mix(in srgb, var(--control) 20%, var(--surface-2)); border-color:var(--control-dim); color:var(--control); font-weight:600; }
+
+  footer{ margin-top:70px; padding-top:20px; border-top:1px solid var(--border); color:var(--text-faint); font-size:.76rem;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="crumbs">The Brain → <b>Composer Mastermind</b></div>
+
+  <div class="nameplate">
+    <div>
+      <h1>Composer Mastermind</h1>
+      <div class="role">The autonomous conductor — not a performance tool, the actual author of the piece.</div>
+    </div>
+    <div class="badges">
+      <span class="badge chain">control path · drives MPL + the Orch chain</span>
+      <span class="badge live">live</span>
+    </div>
+  </div>
+
+  <p class="lede">
+    The biggest UI surface in the whole ecosystem: 4 shell views, one of them (Expert) holding 10 more tabs
+    underneath. Every screen below is a real screenshot of the running Standalone build with numbered region
+    callouts — not per-control this time (MC is bigger than OrchConductor), one marker per functional group,
+    same convention as the biggest 3 Orch guides.
+  </p>
+
+  <div class="navmap">
+    <div class="navcard"><div class="n-tag">01 · default</div><div class="n-name">Score View</div>
+      <div class="n-desc">Load a blueprint, watch it play, resync instances. What every session actually opens to.</div></div>
+    <div class="navcard"><div class="n-tag">02</div><div class="n-name">Compose</div>
+      <div class="n-desc">Hand-draw one blueprint's 5-curve arc directly on the graph.</div></div>
+    <div class="navcard"><div class="n-tag">03</div><div class="n-name">Propose</div>
+      <div class="n-desc">v1: intent → duration → shape → seed scene → full blueprint, saved to a JSON library.</div></div>
+    <div class="navcard"><div class="n-tag">04 · 10 tabs</div><div class="n-name">Expert</div>
+      <div class="n-desc">Every underlying system, exposed directly — Instances through Milestones.</div></div>
+  </div>
+
+  <!-- ============ 01 SCORE VIEW ============ -->
+  <div class="section-head"><span class="num">01</span><h2>Score View</h2><div class="rule"></div></div>
+  <p class="section-note">The default view — not a tab of Expert, its own peer. What you see the moment the plugin opens.</p>
+  <div class="layout">
+    <div class="shot-frame">
+      <img src="assets/mc-scoreview.png" alt="Composer Mastermind Score View, real screenshot, 5 numbered regions">
+      <div class="marker" style="left:83.9%; top:6.6%">1</div>
+      <div class="marker" style="left:82.3%; top:12.6%">2</div>
+      <div class="marker" style="left:38.8%; top:17.3%">3</div>
+      <div class="marker" style="left:13.5%; top:21.8%">4</div>
+      <div class="marker" style="left:49.7%; top:59%">5</div>
+    </div>
+    <div class="region-list">
+      <div class="region"><div class="badge-num">1</div><div><div class="r-name">View Switch</div>
+        <div class="r-desc">Compose / Propose / Expert — the other 3 shell views. Whichever one isn't current shows here; the current one shows its own name in place of itself.</div></div></div>
+      <div class="region"><div class="badge-num">2</div><div><div class="r-name">Export: As Performed · Lane View · Setup</div>
+        <div class="r-desc">Export toggles what leaves the plugin (as-performed vs. quantized); Lane View / Setup switch the track display below between live monitoring and hand-authoring modes.</div></div></div>
+      <div class="region"><div class="badge-num">3</div><div><div class="r-name">Header Controls</div>
+        <div class="r-desc">Resync All, Content mode (<code>Generative</code>/<code>Absolute</code>), the active-blueprint picker, Load / Remove, and <strong>Prime for Playback</strong> — stamps the first section's content so patterns are already correct the instant transport starts.</div></div></div>
+      <div class="region"><div class="badge-num">4</div><div><div class="r-name">Load Score / Save Score</div>
+        <div class="r-desc">Mirrors the composition-bundle Load/Save into this simple header — a full self-contained piece (Blueprint + Scenes + Instances + Motif Presets + Modulator Targets) in one JSON file.</div></div></div>
+      <div class="region"><div class="badge-num">5</div><div><div class="r-name">Track / Piano-Roll Area</div>
+        <div class="r-desc">One row per registered instance, condensed-score style, synced live to what's actually playing. Drag out real MIDI. Center readout shows transport state (<code>stopped</code> here).</div></div></div>
+    </div>
+  </div>
+  <div class="shot-caption">Real capture of the Standalone build — a real project loaded ("ternarytest"), Content mode = Generative.</div>
+
+  <!-- ============ 02 COMPOSE ============ -->
+  <div class="section-head"><span class="num">02</span><h2>Compose</h2><div class="rule"></div></div>
+  <p class="section-note">The curve-based blueprint authoring screen — hand-draw a blueprint's arc directly, the same graph editor Generate/Propose preview onto.</p>
+  <div class="layout">
+    <div class="shot-frame">
+      <img src="assets/mc-compose.png" alt="Composer Mastermind Compose view, real screenshot, 4 numbered regions">
+      <div class="marker" style="left:83.9%; top:6.6%">1</div>
+      <div class="marker" style="left:26.6%; top:12.5%">2</div>
+      <div class="marker" style="left:23.1%; top:18.4%">3</div>
+      <div class="marker" style="left:49.7%; top:55.4%">4</div>
+      <div class="marker" style="left:24.8%; top:96.6%">5</div>
+    </div>
+    <div class="region-list">
+      <div class="region"><div class="badge-num">1</div><div><div class="r-name">View Switch</div><div class="r-desc">Score View / Propose / Expert.</div></div></div>
+      <div class="region"><div class="badge-num">2</div><div><div class="r-name">Blueprint Selector</div>
+        <div class="r-desc">Pick a saved blueprint to edit, Remove it, or New Blueprint to start fresh from a bar length + one curve.</div></div></div>
+      <div class="region"><div class="badge-num">3</div><div><div class="r-name">Editing Arc</div>
+        <div class="r-desc">Which of the 5 dimensions (Energy/Tension/Density/Complexity/Coherence) the graph below is currently showing/editing.</div></div></div>
+      <div class="region"><div class="badge-num">4</div><div><div class="r-name">Curve Graph</div>
+        <div class="r-desc">Drag a point to move it, double-click empty space to add one, right-click to remove. Editing a derived (grey) curve turns it into a real saved one.</div></div></div>
+      <div class="region"><div class="badge-num">5</div><div><div class="r-name">Save As New Blueprint</div>
+        <div class="r-desc">Names and commits the current curve as its own blueprint version.</div></div></div>
+    </div>
+  </div>
+  <div class="shot-caption">Real capture — no blueprint saved yet in this session, editing a flat default Energy curve.</div>
+
+  <!-- ============ 03 PROPOSE ============ -->
+  <div class="section-head"><span class="num">03</span><h2>Propose</h2><div class="rule"></div></div>
+  <p class="section-note">
+    Built this session (v1): intent (length, tempo, named shape) → a full generated blueprint, previewed before
+    commit, optionally saved to a JSON proposal library. Full parameter detail already exists in the project's own
+    <code class="mono">docs/</code> — this section is the visual map, not a repeat of that.
+  </p>
+  <div class="layout">
+    <div class="shot-frame">
+      <img src="assets/mc-propose.png" alt="Composer Mastermind Propose view, real screenshot, 10 numbered regions">
+      <div class="marker sm" style="left:83.9%; top:6.6%">1</div>
+      <div class="marker sm" style="left:17.7%; top:16.0%">2</div>
+      <div class="marker sm" style="left:26.6%; top:20.2%">3</div>
+      <div class="marker sm" style="left:26.2%; top:24.3%">4</div>
+      <div class="marker sm" style="left:29.7%; top:28.4%">5</div>
+      <div class="marker sm" style="left:20.0%; top:32.5%">6</div>
+      <div class="marker sm" style="left:49.7%; top:46.0%">7</div>
+      <div class="marker sm" style="left:49.7%; top:76.7%">8</div>
+      <div class="marker sm" style="left:17.7%; top:91.9%">9</div>
+      <div class="marker sm" style="left:79.0%; top:96.6%">10</div>
+    </div>
+    <div class="region-list">
+      <div class="region"><div class="badge-num">1</div><div><div class="r-name">View Switch</div></div></div>
+      <div class="region"><div class="badge-num">2</div><div><div class="r-name">Blueprint Name</div></div></div>
+      <div class="region"><div class="badge-num">3</div><div><div class="r-name">Length / Beats-per-Bar / Sections</div></div></div>
+      <div class="region"><div class="badge-num">4</div><div><div class="r-name">Tempo (start / end BPM)</div>
+        <div class="r-desc">Flat if equal; a ramp otherwise. Feeds a tempo map for hand-transcribing into Bitwig's own Tempo lane — MC never drives tempo directly.</div></div></div>
+      <div class="region"><div class="badge-num">5</div><div><div class="r-name">Shape / Restlessness</div>
+        <div class="r-desc">10 named whole-piece arc shapes (ported from OrchConductor's own Narrative Lane Maker), plus a seeded-jitter variety knob.</div></div></div>
+      <div class="region"><div class="badge-num">6</div><div><div class="r-name">Seed / Reroll / Propose</div></div></div>
+      <div class="region"><div class="badge-num">7</div><div><div class="r-name">Proposal Summary</div>
+        <div class="r-desc">Total bars, the tempo map, and per-section archetype + suggested OrchConductor Narrative Lane.</div></div></div>
+      <div class="region"><div class="badge-num">8</div><div><div class="r-name">Preview Graph</div></div></div>
+      <div class="region"><div class="badge-num">9</div><div><div class="r-name">Commit / Save to Proposal Library</div>
+        <div class="r-desc">Independent actions — file a proposal away without making it live, or make it live without keeping a copy.</div></div></div>
+      <div class="region"><div class="badge-num">10</div><div><div class="r-name">Proposal Library</div>
+        <div class="r-desc">Load or Delete a previously saved proposal.</div></div></div>
+    </div>
+  </div>
+  <div class="shot-caption">Real capture — default values, nothing proposed yet this session.</div>
+
+  <!-- ============ 04 EXPERT ============ -->
+  <div class="section-head"><span class="num">04</span><h2>Expert Mode</h2><div class="rule"></div></div>
+  <p class="section-note">
+    A fixed 10-tab <code class="mono">TabbedComponent</code>, not dynamic — every underlying system exposed
+    directly. A shared status bar and a periodic refresh timer keep every tab's lists current regardless of
+    which one is active.
+  </p>
+  <div class="tabstrip">
+    <span class="t here">Instances</span><span class="t">Scenes</span><span class="t">Mutations</span>
+    <span class="t">Blueprint</span><span class="t">Presets</span><span class="t">Generate</span>
+    <span class="t">Modulators</span><span class="t">Awareness</span><span class="t">Activity Log</span><span class="t">Milestones</span>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.1</span><h3>Instances</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-instances.png" alt="Instances tab, real screenshot, 3 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:31.1%; top:17.0%">1</div>
+        <div class="marker" style="left:31.1%; top:21.1%">2</div>
+        <div class="marker" style="left:35.5%; top:25.9%">3</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">T</div><div><div class="r-desc">The 10-tab bar itself.</div></div></div>
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Register a New Instance</div>
+          <div class="r-desc">id, MIDI channel, role (Anchor/Motif/Counterpoint/Unrestricted), Add Instance — must byte-match the target MPL instance's own External Control Channel.</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Load / Remove / New Project</div>
+          <div class="r-desc">New Project (Reset All) is the cold-start/factory-reset control.</div></div></div>
+        <div class="region"><div class="badge-num">3</div><div><div class="r-name">Registry Status</div>
+          <div class="r-desc">Coherence readout (how much registered instances currently agree) plus one line per instance: channel, enabled, role.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.2</span><h3>Scenes</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-scenes.png" alt="Scenes tab, real screenshot, 3 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:44.4%; top:28.3%">1</div>
+        <div class="marker" style="left:30.2%; top:47.2%">2</div>
+        <div class="marker" style="left:24.8%; top:70.8%">3</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Global Scene</div>
+          <div class="r-desc">Active Pattern, Grid Mode, Swing, Duration Bars, and the hand-authored <code>Next Scene</code> chain — the older scene-to-scene mechanism, independent of a Blueprint's own section timeline.</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Targets / Overrides / Send</div>
+          <div class="r-desc">Which instances this scene addresses, per-instance parameter overrides, Send Scene Now for a manual trigger.</div></div></div>
+        <div class="region"><div class="badge-num">3</div><div><div class="r-name">Scene Library</div>
+          <div class="r-desc">Save/Load/Remove named scenes; snapshot import/export; Content Mode (Generative/Absolute) toggle.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.3</span><h3>Mutations</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-mutations.png" alt="Mutations tab, real screenshot, 2 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:26.6%; top:25.9%">1</div>
+        <div class="marker" style="left:26.6%; top:53.1%">2</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Send Mutation</div>
+          <div class="r-desc">Manually fire one Transpose/Rotation/Length/Inversion/Retrograde/M7 mutation at a target instance/pattern — Amount is a delta from the current value, not absolute.</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Send Test CC</div>
+          <div class="r-desc">Raw CC diagnostic tool — pick an instance, CC number, 0-127 value, Send Once. For confirming MPL routing directly, bypassing every policy layer.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.4</span><h3>Blueprint</h3><div class="sub-rule"></div></div>
+    <p class="section-note" style="margin-bottom:14px">Two inner sub-tabs: Arcs (the 5-curve editor, same graph as Compose) and Sections (hand-authoring the section timeline directly).</p>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-blueprint.png" alt="Blueprint tab, Arcs sub-tab, real screenshot, 3 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:6.9%; top:15.9%">S</div>
+        <div class="marker" style="left:16.0%; top:21.3%">1</div>
+        <div class="marker" style="left:49.7%; top:59.0%">2</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">S</div><div><div class="r-name">Arcs / Sections sub-tabs</div></div></div>
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Editing Arc</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Curve Graph</div>
+          <div class="r-desc">Same graph editor as Compose — this IS the blueprint's real arc, not a copy.</div></div></div>
+      </div>
+    </div>
+    <div class="layout" style="margin-top:22px">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-blueprint-sections.png" alt="Blueprint tab, Sections sub-tab, real screenshot, 4 numbered regions">
+        <div class="marker" style="left:44.4%; top:21.5%">1</div>
+        <div class="marker" style="left:13.3%; top:29.5%">2</div>
+        <div class="marker" style="left:22.2%; top:59.0%">3</div>
+        <div class="marker" style="left:35.5%; top:86.1%">4</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Active Blueprint / Prime for Playback</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Section Fields</div>
+          <div class="r-desc">id, scene, Start Bar, Duration, Archetype (presentation/build/peak/release — drives the whole motif/policy machinery for that stretch).</div></div></div>
+        <div class="region"><div class="badge-num">3</div><div><div class="r-name">Pending: Layer Roles / Budgets / Reserved Values / Modulator Values / Captured Content</div>
+          <div class="r-desc">The full authoring surface <span class="mono">BlueprintGenerator</span> fills in automatically for a generated section — hand-editable here for a manually built one.</div></div></div>
+        <div class="region"><div class="badge-num">4</div><div><div class="r-name">Add Section / Sections in this Blueprint</div></div></div>
+      </div>
+    </div>
+    <div class="shot-caption">Real capture — no active blueprint loaded in either sub-tab this session.</div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.5</span><h3>Presets</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-presets.png" alt="Presets tab, real screenshot, 3 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:17.7%; top:25.9%">1</div>
+        <div class="marker" style="left:17.7%; top:65.4%">2</div>
+        <div class="marker" style="left:26.6%; top:82.5%">3</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Role Preset Builder + Library</div>
+          <div class="r-desc">A named, reusable instance-parameter bundle addressed by role, not literal instance id — resolved at apply-time to whoever currently holds that role.</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Apply Role Preset to Scene</div></div></div>
+        <div class="region"><div class="badge-num">3</div><div><div class="r-name">Rhythmic Relationship Preset Builder</div>
+          <div class="r-desc">A deliberately joint, correlated choice across two or more roles at once (e.g. a real polyrhythm), not independent per-role picks.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.6</span><h3>Generate</h3><div class="sub-rule"></div></div>
+    <p class="section-note" style="margin-bottom:14px">The v1.1 generative layer — classifies an already-drawn arc into Presentation/Build/Peak/Release sections and dresses each with tag-matched presets. Propose (§03) builds on this same engine, upstream of it.</p>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-generate.png" alt="Generate tab, real screenshot, 4 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:26.6%; top:20.6%">1</div>
+        <div class="marker" style="left:49.7%; top:32.4%">2</div>
+        <div class="marker" style="left:49.7%; top:64.9%">3</div>
+        <div class="marker" style="left:13.3%; top:92.0%">4</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Generate Blueprint Proposal</div>
+          <div class="r-desc">Blueprint id, base scene, driving arc dimension, Generate.</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Proposal Summary</div></div></div>
+        <div class="region"><div class="badge-num">3</div><div><div class="r-name">Preview (not committed)</div></div></div>
+        <div class="region"><div class="badge-num">4</div><div><div class="r-name">Commit / Discard</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.7</span><h3>Modulators</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-modulators.png" alt="Modulators tab, real screenshot, 3 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:26.6%; top:21.8%">1</div>
+        <div class="marker" style="left:26.6%; top:47.2%">2</div>
+        <div class="marker" style="left:26.6%; top:84.9%">3</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Pitch Field Broadcast</div>
+          <div class="r-desc">MC → OrchNoteFilter: the live 12-pitch-class mask of whatever's sounding, packed onto 2 CCs from Base CC (default 110).</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">External Modulator Targets</div>
+          <div class="r-desc">Any of the 5 arc dimensions (or the synthetic <code>narrative-position</code>) → any CC/channel — the MC→OrchConductor bridge and any Bitwig modulator ride this same mechanism.</div></div></div>
+        <div class="region"><div class="badge-num">3</div><div><div class="r-name">Instance Modulation Routes</div>
+          <div class="r-desc">Drives a real MPL parameter directly from an arc dimension, per-instance or broadcast.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.8</span><h3>Awareness</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-awareness.png" alt="Awareness tab, real screenshot, 2 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:26.6%; top:18.3%">1</div>
+        <div class="marker" style="left:49.7%; top:47.2%">2</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Instance / Pattern / Resync</div>
+          <div class="r-desc">The IPC connection count ("N of M registered instances connected via IPC") — the fastest way to confirm the PatternSyncServer channel is actually live before trusting anything below.</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Confirmed Pattern Content</div>
+          <div class="r-desc">The real cached step content MC believes MPL holds, ground truth for MotifEngine's own writes.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.9</span><h3>Activity Log</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-activitylog.png" alt="Activity Log tab, real screenshot, 1 numbered region">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:49.7%; top:47.2%">1</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Activity Feed</div>
+          <div class="r-desc">Newest first — every section start and Prime for Playback event. The plain-language "what just happened" log.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <div class="subsection-head"><span class="sub-num">04.10</span><h3>Milestones</h3><div class="sub-rule"></div></div>
+    <div class="layout">
+      <div class="shot-frame">
+        <img src="assets/mc-expert-milestones.png" alt="Milestones tab, real screenshot, 2 numbered regions">
+        <div class="marker" style="left:39.9%; top:11.4%">T</div>
+        <div class="marker" style="left:49.7%; top:41.3%">1</div>
+        <div class="marker" style="left:44.4%; top:92.2%">2</div>
+      </div>
+      <div class="region-list">
+        <div class="region"><div class="badge-num">1</div><div><div class="r-name">Milestones List</div>
+          <div class="r-desc">Captured automatically every time a section starts — session-local only, not saved with the project.</div></div></div>
+        <div class="region"><div class="badge-num">2</div><div><div class="r-name">Restore</div>
+          <div class="r-desc">Rewinds live state to a captured milestone — an undo mechanism for a session gone sideways.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="readout-note">
+    <div class="dot"></div>
+    <p>For narrative, start-to-finish walkthroughs rather than this control-by-control map, see
+    <code>docs/user_guide.md</code> (core loop) and <code>docs/advanced_workflow_example.md</code> (every tab
+    earning its keep in one real piece) — both already exist and cover the "how do I actually compose something"
+    question this page deliberately doesn't try to answer.</p>
+  </div>
+
+  <footer>
+    <span>Source: <span class="mono">src/ui/*.cpp</span> — screens captured from the real Standalone build, not mockups.</span>
+    <span>Composer Mastermind · <span class="mono">johnpascu77-dotcom</span></span>
+  </footer>
+
+</div>
+</body>
+</html>
