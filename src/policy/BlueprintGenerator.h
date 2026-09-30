@@ -53,6 +53,20 @@ namespace BlueprintGenerator
     {
         Blueprint blueprint;
         std::vector<Scene> newScenes; // one per section, cloned from the base scene + tag-matched presets applied
+
+        // Factory MotifPresets (policy/FactoryMotifPresets.h) for any
+        // archetype this proposal actually uses that the live library has
+        // no preset tagged for (2026-09-21 - a generated blueprint used to
+        // silently depend on the user having separately authored a matching
+        // MotifPreset; without one, MotifEngine::stampMotifForSection would
+        // find nothing to restamp a section with, most visibly on
+        // Presentation where resetRhythmBaselineForSection unconditionally
+        // clears content first). Caller must add these to PresetLibrary at
+        // commit time, same as newScenes - this proposal is otherwise not
+        // self-sufficient. Empty if every archetype used already had a
+        // matching preset in motifPresets.
+        std::vector<MotifPreset> newMotifPresets;
+
         ArcSet candidateArcSet;
     };
 
@@ -61,14 +75,17 @@ namespace BlueprintGenerator
     // fewer than 2 breakpoints (no sections derivable, including an
     // unrecognized dimension name - ArcSet::getArc returns an empty
     // default Arc for those), returns a proposal with an empty
-    // blueprint.id - callers treat that as "could not generate."
+    // blueprint.id - callers treat that as "could not generate." motifPresets
+    // is the live library's current MotifPresets (read-only, just to check
+    // archetype coverage - see GeneratedBlueprintProposal::newMotifPresets).
     GeneratedBlueprintProposal generate(const std::string& blueprintId,
                                          const std::string& drivingArcName,
                                          const ArcSet& liveArcSet,
                                          const Scene& baseScene,
                                          const std::vector<Instance>& allInstances,
                                          const std::vector<RolePreset>& rolePresets,
-                                         const std::vector<RhythmicRelationshipPreset>& rhythmicPresets);
+                                         const std::vector<RhythmicRelationshipPreset>& rhythmicPresets,
+                                         const std::vector<MotifPreset>& motifPresets);
 
     // Generates the one seed Scene generate() needs as its baseScene input,
     // for the "Propose a Piece" flow (policy/DurationCalculator.h,

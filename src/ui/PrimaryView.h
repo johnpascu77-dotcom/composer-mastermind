@@ -84,6 +84,16 @@ private:
     void loadScoreClicked();
     void saveScoreClicked();
 
+    // Opens score-generator/generate_score.html (2026-09-21) in the
+    // system's default browser - the offline, no-server JS port of
+    // score-generator/generate_score.py (see that file's own module
+    // docstring for exactly which C++ files it mirrors). Generates a
+    // composition-bundle JSON entirely client-side and downloads it; the
+    // user then Loads it here same as any other score. Dev-machine-local
+    // path (kGenerateScoreHtmlPath), same single-machine assumption this
+    // whole repo already makes (CLAUDE.md's own hardcoded paths).
+    void generateScoreClicked();
+
     ComposerMastermindAudioProcessor& processorRef;
 
     juce::TextButton liveSetupToggleButton { "Setup" };
@@ -99,6 +109,7 @@ private:
     juce::TextButton primeButton { "Prime for Playback" };
     juce::TextButton loadScoreButton { "Load Score..." };
     juce::TextButton saveScoreButton { "Save Score..." };
+    juce::TextButton generateScoreButton { "Generate Score..." };
     std::unique_ptr<juce::FileChooser> fileChooser;
     juce::Label headerStatusLabel;
 

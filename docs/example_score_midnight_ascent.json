@@ -1,0 +1,2613 @@
+{
+  "schema": "ComposerMastermindComposition.v3",
+  "blueprint": {
+    "id": "Midnight Ascent",
+    "name": "Midnight Ascent",
+    "sections": [
+      {
+        "id": "Midnight Ascent_section1",
+        "name": "Midnight Ascent_section1_build",
+        "sceneId": "Midnight Ascent_section1_scene",
+        "startBar": 0,
+        "durationBars": 16,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 36,
+                "velocity": 71,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 38,
+                "velocity": 87,
+                "duration": 3
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 72,
+                "velocity": 99,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 78,
+                "velocity": 84,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 81,
+                "velocity": 90,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 81,
+                "velocity": 96,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 78,
+                "velocity": 95,
+                "duration": 1
+              },
+              {
+                "enabled": true,
+                "note": 78,
+                "velocity": 68,
+                "duration": 1
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 55,
+                "velocity": 72,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 99,
+                "duration": 7
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Midnight Ascent_section2",
+        "name": "Midnight Ascent_section2_presentation",
+        "sceneId": "Midnight Ascent_section2_scene",
+        "startBar": 16,
+        "durationBars": 16,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 36,
+                "velocity": 80,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 38,
+                "velocity": 74,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 81,
+                "velocity": 81,
+                "duration": 8
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 78,
+                "velocity": 65,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 74,
+                "velocity": 69,
+                "duration": 3
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 57,
+                "duration": 8
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 69,
+                "duration": 3
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Midnight Ascent_section3",
+        "name": "Midnight Ascent_section3_presentation",
+        "sceneId": "Midnight Ascent_section3_scene",
+        "startBar": 32,
+        "durationBars": 16,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 36,
+                "velocity": 57,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 36,
+                "velocity": 63,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 34,
+                "velocity": 82,
+                "duration": 8
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 74,
+                "velocity": 74,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 78,
+                "velocity": 80,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 79,
+                "velocity": 80,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 57,
+                "duration": 8
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 46,
+                "velocity": 55,
+                "duration": 1
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 65,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Midnight Ascent_section4",
+        "name": "Midnight Ascent_section4_build",
+        "sceneId": "Midnight Ascent_section4_scene",
+        "startBar": 48,
+        "durationBars": 16,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 38,
+                "velocity": 86,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 42,
+                "velocity": 77,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 45,
+                "velocity": 93,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 98,
+                "duration": 1
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 81,
+                "velocity": 91,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 82,
+                "velocity": 96,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 84,
+                "velocity": 72,
+                "duration": 1
+              },
+              {
+                "enabled": true,
+                "note": 81,
+                "velocity": 79,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 81,
+                "velocity": 91,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 48,
+                "velocity": 100,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 51,
+                "velocity": 78,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 55,
+                "velocity": 71,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Midnight Ascent_section5",
+        "name": "Midnight Ascent_section5_build",
+        "sceneId": "Midnight Ascent_section5_scene",
+        "startBar": 64,
+        "durationBars": 16,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 69,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 65,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 71,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 67,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 82,
+                "velocity": 72,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 86,
+                "velocity": 66,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 90,
+                "velocity": 72,
+                "duration": 6
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 60,
+                "velocity": 99,
+                "duration": 8
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 60,
+                "velocity": 72,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 84,
+                "duration": 1
+              },
+              {
+                "enabled": true,
+                "note": 63,
+                "velocity": 80,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Midnight Ascent_section6",
+        "name": "Midnight Ascent_section6_peak",
+        "sceneId": "Midnight Ascent_section6_scene",
+        "startBar": 80,
+        "durationBars": 16,
+        "archetype": "peak",
+        "layerRoles": [
+          {
+            "targetInstance": "MPL1",
+            "layerRole": "foreground"
+          },
+          {
+            "targetInstance": "MPL2",
+            "layerRole": "foreground"
+          },
+          {
+            "targetInstance": "MPL3",
+            "layerRole": "foreground"
+          }
+        ],
+        "budgetOverrides": [],
+        "reservedValues": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "type": "inversion",
+            "value": 1
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "type": "inversion",
+            "value": 1
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "type": "inversion",
+            "value": 1
+          }
+        ],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "MPL1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 50,
+                "velocity": 115,
+                "duration": 8
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL2",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 90,
+                "velocity": 106,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 81,
+                "velocity": 92,
+                "duration": 4
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 74,
+                "velocity": 110,
+                "duration": 1
+              },
+              {
+                "enabled": true,
+                "note": 74,
+                "velocity": 93,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 72,
+                "velocity": 115,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          },
+          {
+            "targetInstance": "MPL3",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 62,
+                "velocity": 102,
+                "duration": 1
+              },
+              {
+                "enabled": true,
+                "note": 57,
+                "velocity": 120,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 60,
+                "velocity": 99,
+                "duration": 2
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 60,
+                "velocity": 116,
+                "duration": 3
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "arcCurves": [
+      {
+        "dimension": "energy",
+        "points": [
+          {
+            "bar": 0,
+            "value": 0.3986707135579819
+          },
+          {
+            "bar": 16,
+            "value": 0.4746987279024909
+          },
+          {
+            "bar": 32,
+            "value": 0.34732873858195873
+          },
+          {
+            "bar": 48,
+            "value": 0.20016003290835946
+          },
+          {
+            "bar": 64,
+            "value": 0.3554091576512916
+          },
+          {
+            "bar": 80,
+            "value": 0.6560138536968023
+          },
+          {
+            "bar": 96,
+            "value": 1.0
+          }
+        ]
+      },
+      {
+        "dimension": "tension",
+        "points": [
+          {
+            "bar": 0,
+            "value": 0.5
+          },
+          {
+            "bar": 16,
+            "value": 0.2
+          },
+          {
+            "bar": 32,
+            "value": 0.2
+          },
+          {
+            "bar": 48,
+            "value": 0.5
+          },
+          {
+            "bar": 64,
+            "value": 0.5
+          },
+          {
+            "bar": 80,
+            "value": 0.9
+          },
+          {
+            "bar": 96,
+            "value": 0.9
+          }
+        ]
+      },
+      {
+        "dimension": "density",
+        "points": [
+          {
+            "bar": 0,
+            "value": 0.5
+          },
+          {
+            "bar": 16,
+            "value": 0.3
+          },
+          {
+            "bar": 32,
+            "value": 0.3
+          },
+          {
+            "bar": 48,
+            "value": 0.5
+          },
+          {
+            "bar": 64,
+            "value": 0.5
+          },
+          {
+            "bar": 80,
+            "value": 0.9
+          },
+          {
+            "bar": 96,
+            "value": 0.9
+          }
+        ]
+      },
+      {
+        "dimension": "complexity",
+        "points": [
+          {
+            "bar": 0,
+            "value": 0.5
+          },
+          {
+            "bar": 16,
+            "value": 0.2
+          },
+          {
+            "bar": 32,
+            "value": 0.2
+          },
+          {
+            "bar": 48,
+            "value": 0.5
+          },
+          {
+            "bar": 64,
+            "value": 0.5
+          },
+          {
+            "bar": 80,
+            "value": 0.8
+          },
+          {
+            "bar": 96,
+            "value": 0.8
+          }
+        ]
+      },
+      {
+        "dimension": "coherence",
+        "points": [
+          {
+            "bar": 0,
+            "value": 0.5
+          },
+          {
+            "bar": 16,
+            "value": 0.6
+          },
+          {
+            "bar": 32,
+            "value": 0.6
+          },
+          {
+            "bar": 48,
+            "value": 0.5
+          },
+          {
+            "bar": 64,
+            "value": 0.5
+          },
+          {
+            "bar": 80,
+            "value": 0.8
+          },
+          {
+            "bar": 96,
+            "value": 0.8
+          }
+        ]
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "id": "Midnight Ascent_section1_scene",
+      "name": "Midnight Ascent_section1_scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0,
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      }
+    },
+    {
+      "id": "Midnight Ascent_section2_scene",
+      "name": "Midnight Ascent_section2_scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0,
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      }
+    },
+    {
+      "id": "Midnight Ascent_section3_scene",
+      "name": "Midnight Ascent_section3_scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0,
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      }
+    },
+    {
+      "id": "Midnight Ascent_section4_scene",
+      "name": "Midnight Ascent_section4_scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0,
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      }
+    },
+    {
+      "id": "Midnight Ascent_section5_scene",
+      "name": "Midnight Ascent_section5_scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0,
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      }
+    },
+    {
+      "id": "Midnight Ascent_section6_scene",
+      "name": "Midnight Ascent_section6_scene",
+      "durationBars": 16,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0,
+      "global": {
+        "activePattern": 1,
+        "gridMode": 1,
+        "swing": 66.67,
+        "rate": 1
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "MPL1",
+      "name": "MPL1",
+      "midiChannel": 1,
+      "role": "anchor",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "MPL2",
+      "name": "MPL2",
+      "midiChannel": 2,
+      "role": "motif",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "MPL3",
+      "name": "MPL3",
+      "midiChannel": 3,
+      "role": "counterpoint",
+      "enabled": true,
+      "lastKnownScene": ""
+    }
+  ],
+  "motifPresets": [
+    {
+      "id": "Midnight Ascent_build_motif",
+      "name": "Midnight Ascent_build_motif",
+      "tags": [
+        "build"
+      ],
+      "notes": [
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 2.0,
+          "relativeVelocity": 0.99,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 6,
+          "relativeDuration": 4.0,
+          "relativeVelocity": 0.84,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 9,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.9,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 9,
+          "relativeDuration": 4.0,
+          "relativeVelocity": 0.96,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 6,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.95,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 6,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.68,
+          "isRest": false
+        }
+      ]
+    },
+    {
+      "id": "Midnight Ascent_presentation_motif",
+      "name": "Midnight Ascent_presentation_motif",
+      "tags": [
+        "presentation"
+      ],
+      "notes": [
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 8.0,
+          "relativeVelocity": 0.81,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": -3,
+          "relativeDuration": 2.0,
+          "relativeVelocity": 0.65,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": -7,
+          "relativeDuration": 3.0,
+          "relativeVelocity": 0.69,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        }
+      ]
+    },
+    {
+      "id": "Midnight Ascent_peak_motif",
+      "name": "Midnight Ascent_peak_motif",
+      "tags": [
+        "peak"
+      ],
+      "notes": [
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 2.0,
+          "relativeVelocity": 1.06,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": -9,
+          "relativeDuration": 4.0,
+          "relativeVelocity": 0.92,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": -16,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.1,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": -16,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 0.93,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": -18,
+          "relativeDuration": 2.0,
+          "relativeVelocity": 1.15,
+          "isRest": false
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        },
+        {
+          "semitoneOffset": 0,
+          "relativeDuration": 1.0,
+          "relativeVelocity": 1.0,
+          "isRest": true
+        }
+      ]
+    }
+  ],
+  "modulatorTargets": [],
+  "modulationRoutes": []
+}

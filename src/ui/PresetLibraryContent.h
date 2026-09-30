@@ -57,13 +57,16 @@ private:
     void refreshArcPresetsDisplay();
 
     void addMotifNoteClicked();
+    void addMotifRestClicked();
     void clearPendingMotifNotesClicked();
     void saveMotifPresetClicked();
     void loadMotifPresetClicked();
     void removeMotifPresetClicked();
+    void captureMotifPresetClicked();
     void refreshPendingMotifNotesPreview();
     void refreshMotifPresetsDisplay();
     void motifApplicationModeChanged();
+    void refreshCaptureInstanceCombo();
 
     ComposerMastermindAudioProcessor& processorRef;
     std::function<void(const juce::String&)> setStatus;
@@ -172,14 +175,29 @@ private:
     juce::TextEditor motifIdInput;
     juce::TextEditor motifTagsInput;
 
+    juce::Label motifSemitoneOffsetLabel { {}, "Semitone Offset" };
     juce::Slider motifSemitoneOffsetSlider;
+    juce::Label motifRelativeDurationLabel { {}, "Relative Duration" };
     juce::Slider motifRelativeDurationSlider;
+    juce::Label motifRelativeVelocityLabel { {}, "Relative Velocity" };
     juce::Slider motifRelativeVelocitySlider;
     juce::TextButton addMotifNoteButton { "Add Note" };
+    juce::TextButton addMotifRestButton { "Add Rest" };
 
     juce::Label pendingMotifNotesLabel;
     juce::TextButton saveMotifPresetButton { "Save Preset" };
     juce::TextButton clearPendingMotifNotesButton { "Clear Pending" };
+
+    // Capture from MPL (2026-09-21, user's own workflow): draw/play the
+    // motive for real in MPL, resync it, pull its confirmed content
+    // straight into pendingMotifNotes instead of re-entering it note by
+    // note above - same instance/pattern-picker shape as
+    // BlueprintSectionsContent's "Capture Current", including its "resync
+    // it first" refusal.
+    juce::Label captureHeaderLabel { {}, "Capture from MPL" };
+    juce::ComboBox captureInstanceCombo;
+    juce::ComboBox capturePatternCombo;
+    juce::TextButton captureMotifPresetButton { "Capture Pattern" };
 
     juce::Label motifLibraryHeaderLabel { {}, "Motif Preset Library" };
     juce::ComboBox savedMotifPresetsCombo;

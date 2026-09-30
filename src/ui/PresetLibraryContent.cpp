@@ -16,7 +16,7 @@ namespace
 
     // Sum of every row/gap laid out in resized(), kept in sync by hand -
     // see PresetLibraryContent::getPreferredHeight().
-    constexpr int kPreferredHeight = 1664;
+    constexpr int kPreferredHeight = 1744;
 
     void styleSlider(juce::Slider& slider, double minValue, double maxValue, double step, double initial)
     {
@@ -312,17 +312,26 @@ PresetLibraryContent::PresetLibraryContent(ComposerMastermindAudioProcessor& pro
     addAndMakeVisible(motifTagsInput);
     motifTagsInput.setTextToShowWhenEmpty("tags, comma-separated (optional)", juce::Colours::grey);
 
+    addAndMakeVisible(motifSemitoneOffsetLabel);
+    motifSemitoneOffsetLabel.setFont(juce::Font(11.0f, juce::Font::plain));
     addAndMakeVisible(motifSemitoneOffsetSlider);
     styleSlider(motifSemitoneOffsetSlider, -24.0, 24.0, 1.0, 0.0);
 
+    addAndMakeVisible(motifRelativeDurationLabel);
+    motifRelativeDurationLabel.setFont(juce::Font(11.0f, juce::Font::plain));
     addAndMakeVisible(motifRelativeDurationSlider);
     styleSlider(motifRelativeDurationSlider, 0.25, 4.0, 0.25, 1.0);
 
+    addAndMakeVisible(motifRelativeVelocityLabel);
+    motifRelativeVelocityLabel.setFont(juce::Font(11.0f, juce::Font::plain));
     addAndMakeVisible(motifRelativeVelocitySlider);
     styleSlider(motifRelativeVelocitySlider, 0.25, 2.0, 0.05, 1.0);
 
     addAndMakeVisible(addMotifNoteButton);
     addMotifNoteButton.onClick = [this] { addMotifNoteClicked(); };
+
+    addAndMakeVisible(addMotifRestButton);
+    addMotifRestButton.onClick = [this] { addMotifRestClicked(); };
 
     addAndMakeVisible(pendingMotifNotesLabel);
     pendingMotifNotesLabel.setFont(juce::Font(12.0f, juce::Font::italic));
@@ -333,6 +342,21 @@ PresetLibraryContent::PresetLibraryContent(ComposerMastermindAudioProcessor& pro
 
     addAndMakeVisible(clearPendingMotifNotesButton);
     clearPendingMotifNotesButton.onClick = [this] { clearPendingMotifNotesClicked(); };
+
+    addAndMakeVisible(captureHeaderLabel);
+    captureHeaderLabel.setFont(juce::Font(13.0f, juce::Font::bold));
+
+    addAndMakeVisible(captureInstanceCombo);
+    captureInstanceCombo.setTextWhenNothingSelected("(pick instance)");
+
+    addAndMakeVisible(capturePatternCombo);
+    capturePatternCombo.addItem("Pattern 1", 1);
+    capturePatternCombo.addItem("Pattern 2", 2);
+    capturePatternCombo.addItem("Pattern 3", 3);
+    capturePatternCombo.setSelectedId(1, juce::dontSendNotification);
+
+    addAndMakeVisible(captureMotifPresetButton);
+    captureMotifPresetButton.onClick = [this] { captureMotifPresetClicked(); };
 
     addAndMakeVisible(motifLibraryHeaderLabel);
     motifLibraryHeaderLabel.setFont(juce::Font(15.0f, juce::Font::bold));
@@ -550,6 +574,13 @@ void PresetLibraryContent::resized()
     motifIdInput.setBounds(nextRow(kRowHeight).removeFromLeft(220));
     motifTagsInput.setBounds(nextRow(kRowHeight));
 
+    auto motifNoteLabelRow = nextRow(16);
+    motifSemitoneOffsetLabel.setBounds(motifNoteLabelRow.removeFromLeft(150));
+    motifNoteLabelRow.removeFromLeft(kMargin);
+    motifRelativeDurationLabel.setBounds(motifNoteLabelRow.removeFromLeft(150));
+    motifNoteLabelRow.removeFromLeft(kMargin);
+    motifRelativeVelocityLabel.setBounds(motifNoteLabelRow.removeFromLeft(150));
+
     auto motifNoteRow = nextRow(kRowHeight);
     motifSemitoneOffsetSlider.setBounds(motifNoteRow.removeFromLeft(150));
     motifNoteRow.removeFromLeft(kMargin);
@@ -557,7 +588,10 @@ void PresetLibraryContent::resized()
     motifNoteRow.removeFromLeft(kMargin);
     motifRelativeVelocitySlider.setBounds(motifNoteRow.removeFromLeft(150));
 
-    addMotifNoteButton.setBounds(nextRow(kRowHeight).removeFromLeft(150));
+    auto addMotifRow = nextRow(kRowHeight);
+    addMotifNoteButton.setBounds(addMotifRow.removeFromLeft(150));
+    addMotifRow.removeFromLeft(kMargin);
+    addMotifRestButton.setBounds(addMotifRow.removeFromLeft(150));
 
     pendingMotifNotesLabel.setBounds(nextRow(18));
 
@@ -565,6 +599,16 @@ void PresetLibraryContent::resized()
     saveMotifPresetButton.setBounds(saveMotifRow.removeFromLeft(150));
     saveMotifRow.removeFromLeft(kMargin);
     clearPendingMotifNotesButton.setBounds(saveMotifRow.removeFromLeft(120));
+
+    area.removeFromTop(kMargin - kRowGap);
+    captureHeaderLabel.setBounds(nextRow(18));
+
+    auto captureRow = nextRow(kRowHeight);
+    captureInstanceCombo.setBounds(captureRow.removeFromLeft(150));
+    captureRow.removeFromLeft(kMargin);
+    capturePatternCombo.setBounds(captureRow.removeFromLeft(110));
+    captureRow.removeFromLeft(kMargin);
+    captureMotifPresetButton.setBounds(captureRow.removeFromLeft(140));
 
     area.removeFromTop(kMargin - kRowGap);
     motifLibraryHeaderLabel.setBounds(nextRow(20));
@@ -1253,6 +1297,16 @@ void PresetLibraryContent::addMotifNoteClicked()
     refreshPendingMotifNotesPreview();
 }
 
+void PresetLibraryContent::addMotifRestClicked()
+{
+    MotifNote note;
+    note.isRest = true;
+    note.relativeDuration = static_cast<float>(motifRelativeDurationSlider.getValue());
+
+    pendingMotifNotes.push_back(note);
+    refreshPendingMotifNotesPreview();
+}
+
 void PresetLibraryContent::clearPendingMotifNotesClicked()
 {
     pendingMotifNotes.clear();
@@ -1340,6 +1394,39 @@ void PresetLibraryContent::removeMotifPresetClicked()
     refreshAll();
 }
 
+void PresetLibraryContent::captureMotifPresetClicked()
+{
+    if (captureInstanceCombo.getSelectedId() <= 0)
+    {
+        setStatus("Capture skipped: pick an instance first");
+        return;
+    }
+
+    const auto instanceId = captureInstanceCombo.getText().toStdString();
+    const int patternIndex = capturePatternCombo.getSelectedId() - 1;
+
+    CachedPattern cached;
+    if (!processorRef.getComposerCore().getPatternSyncServer().getCache().get(instanceId, patternIndex, cached))
+    {
+        setStatus("Capture failed: no confirmed content for '" + juce::String(instanceId) + "' P"
+                      + juce::String(patternIndex + 1) + " yet - resync it first (Awareness tab)");
+        return;
+    }
+
+    const auto derived = MotifEngine::deriveMotifPresetFromPattern("", {}, cached.snapshot.steps);
+    if (derived.notes.empty())
+    {
+        setStatus("Capture failed: '" + juce::String(instanceId) + "' P" + juce::String(patternIndex + 1)
+                      + " has no enabled steps - nothing to capture");
+        return;
+    }
+
+    pendingMotifNotes = derived.notes;
+    refreshPendingMotifNotesPreview();
+    setStatus("Captured '" + juce::String(instanceId) + "' P" + juce::String(patternIndex + 1) + " ("
+                  + juce::String((int) derived.notes.size()) + " entries) - name it above and Save Preset");
+}
+
 void PresetLibraryContent::refreshPendingMotifNotesPreview()
 {
     juce::String text = "Pending notes: ";
@@ -1353,8 +1440,12 @@ void PresetLibraryContent::refreshPendingMotifNotesPreview()
         {
             if (i > 0)
                 text << ", ";
-            text << pendingMotifNotes[i].semitoneOffset << "st/x" << pendingMotifNotes[i].relativeDuration
-                 << "dur/x" << pendingMotifNotes[i].relativeVelocity << "vel";
+
+            if (pendingMotifNotes[i].isRest)
+                text << "REST/x" << pendingMotifNotes[i].relativeDuration << "dur";
+            else
+                text << pendingMotifNotes[i].semitoneOffset << "st/x" << pendingMotifNotes[i].relativeDuration
+                     << "dur/x" << pendingMotifNotes[i].relativeVelocity << "vel";
         }
     }
     pendingMotifNotesLabel.setText(text, juce::dontSendNotification);
@@ -1418,8 +1509,18 @@ void PresetLibraryContent::refreshAll()
         motifPresetIds.push_back(preset.id);
     repopulate(savedMotifPresetsCombo, motifPresetIds, false);
 
+    refreshCaptureInstanceCombo();
+
     refreshPresetsDisplay();
     refreshRhythmicPresetsDisplay();
     refreshArcPresetsDisplay();
     refreshMotifPresetsDisplay();
+}
+
+void PresetLibraryContent::refreshCaptureInstanceCombo()
+{
+    std::vector<std::string> instanceIds;
+    for (const auto& instance : processorRef.getComposerCore().getInstanceRegistry().getAllInstances())
+        instanceIds.push_back(instance.id);
+    repopulate(captureInstanceCombo, instanceIds, false);
 }

@@ -160,9 +160,10 @@ void GenerateView::generateClicked()
     const auto instances = composerCore.getInstanceRegistry().getAllInstances();
     const auto rolePresets = composerCore.getPresetLibrary().getAllRolePresets();
     const auto rhythmicPresets = composerCore.getPresetLibrary().getAllRhythmicRelationshipPresets();
+    const auto motifPresets = composerCore.getPresetLibrary().getAllMotifPresets();
 
     currentProposal = BlueprintGenerator::generate(blueprintId, drivingArcName, composerCore.getArcSet(), baseScene,
-                                                     instances, rolePresets, rhythmicPresets);
+                                                     instances, rolePresets, rhythmicPresets, motifPresets);
 
     if (currentProposal.blueprint.id.empty())
     {
@@ -176,9 +177,14 @@ void GenerateView::generateClicked()
     previewGraph.refreshFromArcSet();
     refreshSummaryDisplay();
 
+    juce::String newPresetNote;
+    if (!currentProposal.newMotifPresets.empty())
+        newPresetNote = ", " + juce::String((int) currentProposal.newMotifPresets.size())
+                             + " factory motif preset(s) will be added";
+
     setStatus("Generated '" + juce::String(blueprintId) + "' ("
                   + juce::String((int) currentProposal.blueprint.sections.size())
-                  + " section(s)) - review below, then Commit or Discard");
+                  + " section(s)" + newPresetNote + ") - review below, then Commit or Discard");
 }
 
 void GenerateView::commitClicked()
@@ -193,6 +199,9 @@ void GenerateView::commitClicked()
 
     for (const auto& scene : currentProposal.newScenes)
         composerCore.getSceneLibrary().addOrReplaceScene(scene);
+
+    for (const auto& preset : currentProposal.newMotifPresets)
+        composerCore.getPresetLibrary().addOrReplaceMotifPreset(preset);
 
     // Persist the full generated 5-curve ArcSet onto the blueprint itself
     // (not just push it into the live evaluator) so this blueprint's real
@@ -225,9 +234,13 @@ void GenerateView::commitClicked()
     composerCore.getBlueprintLibrary().addOrReplaceBlueprint(currentProposal.blueprint);
     composerCore.setCurrentBlueprint(currentProposal.blueprint);
 
+    juce::String newPresetNote;
+    if (!currentProposal.newMotifPresets.empty())
+        newPresetNote = ", " + juce::String((int) currentProposal.newMotifPresets.size()) + " factory motif preset(s)";
+
     setStatus("Committed blueprint '" + juce::String(currentProposal.blueprint.id) + "' ("
                   + juce::String((int) currentProposal.blueprint.sections.size()) + " section(s), "
-                  + juce::String((int) currentProposal.newScenes.size()) + " scene(s)) - now active");
+                  + juce::String((int) currentProposal.newScenes.size()) + " scene(s)" + newPresetNote + ") - now active");
 }
 
 void GenerateView::discardClicked()

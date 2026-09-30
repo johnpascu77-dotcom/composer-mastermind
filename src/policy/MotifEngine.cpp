@@ -450,6 +450,18 @@ namespace
         // compares an earlier note against later notes still at their
         // placeholder duration - exactly "clamp to the distance until the
         // next active step."
+        //
+        // A rest (2026-09-21) still claims a slot in this same index-based
+        // spacing - it needs one, or every real note after it would shift
+        // into where the rest should have been - but pass 1 never writes a
+        // StepSnapshot for it (freshSteps stays disabled there), and pass 2
+        // has nothing to grow. MonophonicOverlap's own scan only stops a
+        // note's growth at the next *enabled* step, which would happily
+        // bleed a long note straight through an unwritten rest slot and
+        // into whatever comes after it - so pass 2 also clamps against the
+        // next entry's target index directly (rest or note, whichever is
+        // closer), independent of MonophonicOverlap, to make a rest an
+        // actual silence rather than just an unclaimed step.
         std::vector<size_t> targetIndices(noteCount, stepCount);
 
         for (size_t i = 0; i < noteCount; ++i)
@@ -460,6 +472,10 @@ namespace
                 continue;
 
             targetIndices[i] = targetStepIndex;
+
+            if (motifNote.isRest)
+                continue; // claims the slot (for spacing/boundary purposes) but writes nothing
+
             const int newNote = clampToCenter(clampNote(centerNote + motifNote.semitoneOffset), centerNote);
             const int newVelocity = clampVelocity(static_cast<int>(std::lround(100.0 * motifNote.relativeVelocity)));
 
@@ -468,14 +484,30 @@ namespace
 
         for (size_t i = 0; i < noteCount; ++i)
         {
-            if (targetIndices[i] >= stepCount)
+            if (targetIndices[i] >= stepCount || shapeNotes[i].isRest)
                 continue;
 
             const auto& motifNote = shapeNotes[i];
             const int targetStepIndex = static_cast<int>(targetIndices[i]);
             const int requestedDuration = clampDuration(static_cast<int>(std::lround(1.0 * motifNote.relativeDuration)));
-            freshSteps[(size_t) targetStepIndex].duration = MonophonicOverlap::maxNonOverlappingDuration(
+
+            size_t nextBoundary = static_cast<size_t>(effectiveSteps);
+            for (size_t j = i + 1; j < noteCount; ++j)
+            {
+                if (targetIndices[j] < stepCount)
+                {
+                    nextBoundary = targetIndices[j];
+                    break;
+                }
+            }
+
+            const int monoResult = MonophonicOverlap::maxNonOverlappingDuration(
                 freshSteps, targetStepIndex, requestedDuration, targetStepIndex, effectiveSteps);
+            const int boundaryLimit = (nextBoundary > targetIndices[i])
+                                           ? static_cast<int>(nextBoundary - targetIndices[i])
+                                           : 1;
+
+            freshSteps[(size_t) targetStepIndex].duration = std::max(1, std::min(monoResult, boundaryLimit));
         }
 
         // Locked steps (Setup mode) keep whatever the cache already had at
@@ -849,5 +881,49 @@ namespace MotifEngine
         const int patternCenter = boundedHomeCenter(patternCenterNote(cached.snapshot, enabledStepIndices));
         const int boundedCombinedTarget = boundedHomeCenter(patternCenter + rawTranspose);
         return boundedCombinedTarget - patternCenter;
+    }
+
+    MotifPreset deriveMotifPresetFromPattern(const std::string& id, const std::vector<std::string>& tags,
+                                              const std::vector<StepSnapshot>& steps)
+    {
+        MotifPreset preset;
+        preset.id = id;
+        preset.name = id;
+        preset.tags = tags;
+
+        int firstEnabledNote = 0;
+        bool haveFirstEnabledNote = false;
+        for (const auto& step : steps)
+        {
+            if (step.enabled)
+            {
+                firstEnabledNote = step.note;
+                haveFirstEnabledNote = true;
+                break;
+            }
+        }
+
+        if (!haveFirstEnabledNote)
+            return preset; // nothing enabled anywhere - notes stays empty, caller treats as "nothing to capture"
+
+        for (const auto& step : steps)
+        {
+            MotifNote note;
+            if (step.enabled)
+            {
+                note.semitoneOffset = step.note - firstEnabledNote;
+                note.relativeDuration = static_cast<float>(std::max(1, step.duration));
+                note.relativeVelocity = static_cast<float>(step.velocity) / 100.0f;
+            }
+            else
+            {
+                note.isRest = true;
+                note.relativeDuration = 1.0f;
+            }
+
+            preset.notes.push_back(note);
+        }
+
+        return preset;
     }
 }

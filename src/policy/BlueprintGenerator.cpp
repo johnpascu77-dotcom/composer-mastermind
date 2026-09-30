@@ -1,6 +1,7 @@
 #include "BlueprintGenerator.h"
 #include "PresetResolver.h"
 #include "NarrativeLaneSuggester.h"
+#include "FactoryMotifPresets.h"
 #include <algorithm>
 
 namespace
@@ -402,7 +403,8 @@ namespace BlueprintGenerator
                                          const Scene& baseScene,
                                          const std::vector<Instance>& allInstances,
                                          const std::vector<RolePreset>& rolePresets,
-                                         const std::vector<RhythmicRelationshipPreset>& rhythmicPresets)
+                                         const std::vector<RhythmicRelationshipPreset>& rhythmicPresets,
+                                         const std::vector<MotifPreset>& motifPresets)
     {
         GeneratedBlueprintProposal proposal;
         proposal.candidateArcSet = liveArcSet; // seed with a full copy so untouched dimensions/context survive
@@ -417,6 +419,12 @@ namespace BlueprintGenerator
 
         proposal.blueprint.id = blueprintId;
         proposal.blueprint.name = blueprintId;
+
+        // Which archetype tags this proposal actually uses and already has
+        // library coverage for - checked once per unique tag, not once per
+        // section, so a multi-section Build doesn't queue the same factory
+        // preset for minting twice.
+        std::vector<std::string> mintedTags;
 
         for (size_t i = 0; i < plans.size(); ++i)
         {
@@ -441,6 +449,18 @@ namespace BlueprintGenerator
                 buildSectionScene(section.sceneId, baseScene, tag, allInstances, rolePresets, rhythmicPresets));
 
             proposal.blueprint.sections.push_back(section);
+
+            const bool alreadyCovered = std::any_of(motifPresets.begin(), motifPresets.end(),
+                [&tag](const MotifPreset& preset) { return presetMatchesArchetype(preset.id, preset.tags, tag); });
+            const bool alreadyQueued =
+                std::find(mintedTags.begin(), mintedTags.end(), tag) != mintedTags.end();
+
+            if (!alreadyCovered && !alreadyQueued)
+            {
+                if (const auto* factoryPreset = FactoryMotifPresets::findForArchetype(tag))
+                    proposal.newMotifPresets.push_back(*factoryPreset);
+                mintedTags.push_back(tag);
+            }
         }
 
         bakeDerivedArcs(plans, archetypes, proposal.blueprint.sections, drivingArcName, allInstances,

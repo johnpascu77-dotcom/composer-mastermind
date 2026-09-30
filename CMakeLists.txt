@@ -102,6 +102,7 @@ target_sources(ComposerMastermind PRIVATE
     src/policy/DurationCalculator.cpp
     src/policy/ArcShapeLibrary.cpp
     src/policy/NarrativeLaneSuggester.cpp
+    src/policy/FactoryMotifPresets.cpp
 
     src/state/SceneLibrary.cpp
     src/state/BlueprintLibrary.cpp
@@ -210,6 +211,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "Source Files" FILES
     src/policy/DurationCalculator.cpp
     src/policy/ArcShapeLibrary.cpp
     src/policy/NarrativeLaneSuggester.cpp
+    src/policy/FactoryMotifPresets.cpp
     src/state/SceneLibrary.cpp
     src/state/BlueprintLibrary.cpp
     src/state/PresetLibrary.cpp

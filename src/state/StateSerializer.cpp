@@ -693,6 +693,7 @@ namespace StateSerializer
         obj->setProperty("semitoneOffset", note.semitoneOffset);
         obj->setProperty("relativeDuration", note.relativeDuration);
         obj->setProperty("relativeVelocity", note.relativeVelocity);
+        obj->setProperty("isRest", note.isRest);
         return juce::var(obj);
     }
 
@@ -702,6 +703,7 @@ namespace StateSerializer
         note.semitoneOffset = JsonHelpers::getInt(value, "semitoneOffset", 0);
         note.relativeDuration = JsonHelpers::getFloat(value, "relativeDuration", 1.0f);
         note.relativeVelocity = JsonHelpers::getFloat(value, "relativeVelocity", 1.0f);
+        note.isRest = JsonHelpers::getBool(value, "isRest", false);
         return note;
     }
 

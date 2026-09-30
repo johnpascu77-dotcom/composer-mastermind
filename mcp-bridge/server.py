@@ -196,14 +196,23 @@ def write_pattern(instance_id: str, pattern_index: int, steps: list) -> dict:
     """Writes a full 16-step pattern directly into one instance's real
     storage over IPC - the same write Setup mode's piano roll uses when you
     click Commit there (dragging notes by hand produces exactly this shape
-    of call). Bypasses MIDI/CC entirely; instant, no parameter polling.
-    steps is a list of up to 16 {"enabled": bool, "note": int (0-127),
-    "velocity": int (0-127), "duration": int (0-16, in grid steps)} objects,
-    index = step position; any positions past the end of the list, or past
-    16, stay disabled. Requires the instance to already have a live IPC
-    connection (it must be open in MPL) - fails with a clear error
-    otherwise, never writes blind. Call get_awareness a moment after this
-    to confirm the write actually landed."""
+    of call). steps is a list of up to 16 {"enabled": bool, "note": int
+    (0-127), "velocity": int (0-127), "duration": int (0-16, in grid steps)}
+    objects, index = step position; any positions past the end of the list,
+    or past 16, stay disabled. Requires the instance to already have a live
+    IPC connection (it must be open in MPL) - fails with a clear error
+    otherwise, never writes blind.
+
+    REFUSES (with a clear error) if pattern_index is the instance's
+    currently-active/playing pattern - writing to a live pattern can orphan
+    a sounding note (a stop/resume-around-the-write fix was tried and
+    reverted 2026-09-21 after it caused real stuck notes live; MPL only
+    applies a pattern stop, and its note-off safety net, at the next bar
+    boundary during real playback, so a same-call stop+resume races past
+    that gate and never actually triggers it). If you need to overwrite the
+    active pattern, switch the instance off it first (set_scene or a
+    mutation that changes activePattern to a different pattern), write,
+    then switch back once resync_instance/get_awareness confirms it landed."""
     return _call_bridge("writePattern", instanceId=instance_id, patternIndex=pattern_index, steps=steps)
 
 
@@ -363,14 +372,49 @@ def create_motif_preset(preset: dict) -> dict:
     cell the motif engine applies during build/peak/release passes. Shape:
     {
       "id": str, "name": str, "tags": [archetype-name, ...],
-      "notes": [{"semitoneOffset": int, "relativeDuration": float, "relativeVelocity": float}, ...]
+      "notes": [{"semitoneOffset": int, "relativeDuration": float, "relativeVelocity": float, "isRest": bool}, ...]
     }
     A preset is only actually used by a section if the section's archetype
     matches one of this preset's tags (or equals its id, as a fallback) -
     tag it explicitly rather than relying on the id match. notes order
     matters (it's a melodic cell, not a set) and offsets are relative to
-    the cell's own first note, not absolute pitches."""
+    the cell's own first note, not absolute pitches. A note with
+    "isRest": true (default false) is silence for relativeDuration's worth
+    of steps - semitoneOffset/relativeVelocity are ignored for it. See also
+    capture_motif_preset for deriving a preset straight from a real pattern
+    instead of listing notes by hand."""
     return _call_bridge("createMotifPreset", preset=preset)
+
+
+@server.tool()
+def capture_motif_preset(instance_id: str, pattern_index: int, preset_id: str, tags: list | None = None) -> dict:
+    """Derives a MotifPreset straight from one instance's real, confirmed
+    pattern content - the "draw/play it for real in MPL, then capture it"
+    workflow, an alternative to listing notes by hand via create_motif_preset.
+    Requires a confirmed cache entry for this instance/pattern (call
+    resync_instance first, then get_awareness to confirm) - refuses to
+    capture blind, same restraint every other read in this bridge follows.
+
+    One MotifNote per raw grid step, not per enabled note: a disabled step
+    becomes a rest, an enabled step becomes a real note (semitoneOffset
+    relative to the pattern's own first enabled note, relativeDuration from
+    its raw step duration, relativeVelocity from its raw velocity/100). This
+    means the captured shape reproduces almost exactly when later restamped
+    onto a same-sized pattern window, and scales the same proportional way
+    any hand-built preset already does onto a different one - real rests
+    (gaps you actually left in the pattern) are preserved, not lost.
+
+    tags works the same as create_motif_preset's - typically an archetype
+    name ("presentation"/"build"/"peak"/"release") so the generative engine
+    actually picks this preset up. Fails if the pattern has no enabled
+    steps at all (nothing to capture)."""
+    return _call_bridge(
+        "captureMotifPreset",
+        instanceId=instance_id,
+        patternIndex=pattern_index,
+        presetId=preset_id,
+        tags=tags or [],
+    )
 
 
 @server.tool()
@@ -581,12 +625,18 @@ def generate_blueprint(blueprint_id: str, driving_arc_name: str, base_scene_id: 
     presentation/build/peak/release purely from its breakpoint values, and
     role/rhythmic-relationship presets tagged with that archetype get
     applied automatically. driving_arc_name must already have >=2
-    breakpoints (call set_arc first). With commit=False (default), this is
-    pure preview - nothing is saved, same as the UI's Generate button
-    before you click Commit; the response's "sections"/"newSceneCount"
-    tells you what *would* be created. With commit=True, it also saves the
-    generated scenes and blueprint to their libraries and makes the
-    blueprint active (same as clicking Commit) - real playback effect."""
+    breakpoints (call set_arc first). Also checks the live MotifPreset
+    library for each archetype this proposal actually uses - any archetype
+    with no matching preset gets one auto-minted from a small built-in
+    factory set (see "newMotifPresetCount" in the response), so a generated
+    blueprint always has something for MotifEngine to develop a section
+    from, not just structure. With commit=False (default), this is pure
+    preview - nothing is saved, same as the UI's Generate button before you
+    click Commit; the response's "sections"/"newSceneCount"/
+    "newMotifPresetCount" tells you what *would* be created. With
+    commit=True, it also saves the generated scenes, any new motif presets,
+    and the blueprint to their libraries and makes the blueprint active
+    (same as clicking Commit) - real playback effect."""
     return _call_bridge(
         "generateBlueprint",
         blueprintId=blueprint_id,

@@ -249,8 +249,12 @@ public:
     // Factory reset (2026-08-23, user's own request): clears every library
     // (instances, scenes, blueprints, all four preset categories, modulator
     // targets) and every "current scene/blueprint" tracking member back to a
-    // freshly-constructed ComposerCore's own starting state. Destructive and
-    // immediate - the UI's own reset button is responsible for confirming
+    // freshly-constructed ComposerCore's own starting state, then re-seeds
+    // the MotifPreset category with the small factory set (see
+    // seedFactoryMotifPresets/policy/FactoryMotifPresets.h, added
+    // 2026-09-21) - "reset" should leave a working starter kit, not a
+    // silent void the generative engine has nothing to develop from.
+    // Immediate - the UI's own reset button is responsible for confirming
     // with the user first; this method itself never asks. Session-local
     // state (locked steps, milestones, activity log) is deliberately left
     // alone - those aren't part of "the piece," they're this session's own
@@ -259,6 +263,16 @@ public:
     void resetToFactoryDefaults();
 
 private:
+    // Adds (or replaces) every policy/FactoryMotifPresets.h default into
+    // presetLibrary - shared by the constructor (cold-start: a brand new
+    // session with no project loaded yet) and resetToFactoryDefaults
+    // (explicit user reset), so both leave the same small, simple starter
+    // library rather than duplicating the preset definitions in two places.
+    // Harmless to call when a real project's own presets are about to
+    // replace presetLibrary wholesale (setStateInformation) - it never runs
+    // after that point, only before.
+    void seedFactoryMotifPresets();
+
     InstanceRegistry instanceRegistry;
     CCDispatcher ccDispatcher;
     PolicyEngine policyEngine;

@@ -244,11 +244,12 @@ void ProposeView::proposeClicked()
 
     const auto rolePresets = composerCore.getPresetLibrary().getAllRolePresets();
     const auto rhythmicPresets = composerCore.getPresetLibrary().getAllRhythmicRelationshipPresets();
+    const auto motifPresets = composerCore.getPresetLibrary().getAllMotifPresets();
 
     const auto seedScene = BlueprintGenerator::generateSeedScene(blueprintId + "_seed", instances, rolePresets);
 
     currentProposal = BlueprintGenerator::generate(blueprintId, "energy", workingArcSet, seedScene, instances,
-                                                     rolePresets, rhythmicPresets);
+                                                     rolePresets, rhythmicPresets, motifPresets);
 
     if (currentProposal.blueprint.id.empty())
     {
@@ -271,6 +272,9 @@ void ProposeView::populateLibraries()
 
     for (const auto& scene : currentProposal.newScenes)
         composerCore.getSceneLibrary().addOrReplaceScene(scene);
+
+    for (const auto& preset : currentProposal.newMotifPresets)
+        composerCore.getPresetLibrary().addOrReplaceMotifPreset(preset);
 
     // Same dangling-reference care as GenerateView::commitClicked - name
     // the Arc as a real local before iterating its breakpoints.

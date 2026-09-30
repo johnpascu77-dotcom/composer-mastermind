@@ -306,4 +306,27 @@ namespace MotifEngine
     // same "won't act blind" restraint as everything else in this file.
     int taperTransposeForPatternContent(PatternSyncServer& patternSync, const InstanceStateTracker& stateTracker,
                                          const Instance& instance, int patternIndex, int rawTranspose);
+
+    // The inverse of stampOnePattern (2026-09-21, user's own workflow: draw
+    // or play the idea for real in MPL - "easier to build and listen to"
+    // than the slider-based note-by-note builder - resync it, then capture
+    // it straight into the library instead of re-entering it by hand).
+    // Pure: takes the already-confirmed raw steps (caller is responsible for
+    // reading them from PatternSyncServer's cache and refusing if there's no
+    // confirmed entry yet - same "won't act blind" restraint every other
+    // capture path in this codebase already follows, e.g.
+    // BlueprintSectionsContent::captureContentClicked). One MotifNote per
+    // raw grid step, not per enabled note - a disabled step becomes a rest,
+    // an enabled step becomes a real note (semitoneOffset relative to the
+    // FIRST enabled step's own pitch; relativeDuration = its raw step
+    // duration; relativeVelocity = velocity/100, the same units
+    // stampOnePattern itself writes in, so a captured-then-restamped round
+    // trip is faithful). One entry per step means the shape reproduces
+    // almost exactly when restamped onto a same-sized window, and scales
+    // the same proportional way any hand-built preset already does onto a
+    // different one. preset.notes is left empty if steps has no enabled
+    // entries at all - caller should treat that as "nothing to capture",
+    // same as Validation::isValidMotifPreset would refuse it anyway.
+    MotifPreset deriveMotifPresetFromPattern(const std::string& id, const std::vector<std::string>& tags,
+                                              const std::vector<StepSnapshot>& steps);
 }

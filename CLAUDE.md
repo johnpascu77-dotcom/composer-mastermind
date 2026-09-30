@@ -28,6 +28,11 @@ Start here, in order:
 4. [docs/composition_bundle_format.md](docs/composition_bundle_format.md) — the "composing by numbers" JSON file
    format: one file (Blueprint + Scenes + Instances + Motif Presets + Modulator Targets) that fully reconfigures
    the plugin on import. Built and live; ships with a ready-to-import template.
+   [score-generator/](score-generator/generate_score.py) is a standalone Python tool (no live session/Bitwig
+   needed) that generates a full bundle offline — real per-section literal note content
+   (`capturedContent`, for deterministic Absolute-mode playback) plus matching `MotifPreset` coverage, not just
+   structure. Mirrors `ArcShapeLibrary`/`DurationCalculator`/`BlueprintGenerator`'s own C++ logic faithfully
+   (see its own module docstrings for exactly which files) rather than inventing a second vocabulary.
 5. [docs/atonal_phrase_engine_concepts.md](docs/atonal_phrase_engine_concepts.md) — mined concepts for future
    arc/governor work, not yet implemented.
 6. [docs/score_timeline_ui_concept.md](docs/score_timeline_ui_concept.md) — condensed-score piano roll, live sync,

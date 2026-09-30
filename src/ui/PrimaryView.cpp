@@ -182,6 +182,9 @@ PrimaryView::PrimaryView(ComposerMastermindAudioProcessor& processor)
     addAndMakeVisible(saveScoreButton);
     saveScoreButton.onClick = [this] { saveScoreClicked(); };
 
+    addAndMakeVisible(generateScoreButton);
+    generateScoreButton.onClick = [this] { generateScoreClicked(); };
+
     addAndMakeVisible(headerStatusLabel);
     headerStatusLabel.setFont(juce::Font(juce::FontOptions().withHeight(12.0f).withStyle("Italic")));
     headerStatusLabel.setMinimumHorizontalScale(1.0f);
@@ -240,6 +243,8 @@ void PrimaryView::resized()
     loadScoreButton.setBounds(scoreFileRow.removeFromLeft(110));
     scoreFileRow.removeFromLeft(6);
     saveScoreButton.setBounds(scoreFileRow.removeFromLeft(110));
+    scoreFileRow.removeFromLeft(6);
+    generateScoreButton.setBounds(scoreFileRow.removeFromLeft(130));
 
     area.removeFromTop(4);
     legendArea = area.removeFromTop(kLegendHeight);
@@ -797,6 +802,29 @@ void PrimaryView::saveScoreClicked()
         else
             headerStatusLabel.setText("Failed to write " + file.getFullPathName(), juce::dontSendNotification);
     });
+}
+
+void PrimaryView::generateScoreClicked()
+{
+    // Dev-machine-local path, same single-machine assumption every other
+    // hardcoded path in this repo already makes (CLAUDE.md itself is full
+    // of them) - this plugin and its source tree live on the same machine.
+    const juce::File htmlFile(
+        "C:\\Users\\Asus\\Documents\\JUCE\\Projects\\NewProject\\ComposerMastermind\\score-generator\\generate_score.html");
+
+    if (!htmlFile.existsAsFile())
+    {
+        headerStatusLabel.setText("Generate Score failed: " + htmlFile.getFullPathName() + " not found",
+                                   juce::dontSendNotification);
+        return;
+    }
+
+    if (htmlFile.startAsProcess())
+        headerStatusLabel.setText("Opened the score generator in your browser - Generate, then Load Score the download",
+                                   juce::dontSendNotification);
+    else
+        headerStatusLabel.setText("Generate Score failed: couldn't open " + htmlFile.getFullPathName(),
+                                   juce::dontSendNotification);
 }
 
 void PrimaryView::refreshHeaderControls()

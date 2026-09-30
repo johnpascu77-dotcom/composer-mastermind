@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Composer Mastermind — Score Generator</title>
+<style>
+  :root {
+    --bg: #14161c;
+    --panel: #1c1f28;
+    --border: #2c3040;
+    --text: #e8e9ee;
+    --muted: #9aa0b4;
+    --accent: #7dd3c8;
+    --accent-dim: #4d7a74;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 32px 20px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 28px; line-height: 1.5; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 16px; font-weight: 600; }
+  .row { display: flex; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .field { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 6px; }
+  .field.wide { flex-basis: 100%; }
+  label { font-size: 12px; color: var(--muted); }
+  input, select {
+    background: #10121a;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent-dim); }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  button {
+    background: var(--accent);
+    color: #0d1210;
+    border: none;
+    border-radius: 6px;
+    padding: 11px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { background: #8fe0d6; }
+  button:active { transform: translateY(1px); }
+  #status { margin-top: 14px; font-size: 13px; white-space: pre-wrap; line-height: 1.5; }
+  #status.ok { color: var(--accent); }
+  #status.err { color: #e88; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  .summary-table td { padding: 3px 8px 3px 0; color: var(--text); }
+  .summary-table td.k { color: var(--muted); white-space: nowrap; }
+  footer { color: var(--muted); font-size: 11px; margin-top: 24px; line-height: 1.6; }
+  code { background: #10121a; padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Composer Mastermind — Score Generator</h1>
+  <p class="subtitle">
+    Offline, no server — generates a full composition-bundle JSON
+    (<code>ComposerMastermindComposition.v3</code>) entirely in this page,
+    with real literal note content per section (ready for Absolute-mode
+    playback) and matching MotifPreset coverage. JS port of
+    <code>score-generator/generate_score.py</code> — same algorithms, same
+    determinism for a given seed.
+  </p>
+
+  <div class="panel">
+    <h2>Piece</h2>
+    <div class="row">
+      <div class="field wide">
+        <label>Title</label>
+        <input id="title" type="text" value="New Piece">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Length (minutes)</label>
+        <input id="minutes" type="number" value="4" min="0.5" step="0.5">
+      </div>
+      <div class="field">
+        <label>Tempo (BPM)</label>
+        <input id="bpm" type="number" value="100" min="20" max="300">
+      </div>
+      <div class="field">
+        <label>Beats / bar</label>
+        <input id="beatsPerBar" type="number" value="4" min="1" max="12">
+      </div>
+      <div class="field">
+        <label>Sections</label>
+        <input id="sections" type="number" value="6" min="2" max="16">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Shape &amp; Material</h2>
+    <div class="row">
+      <div class="field">
+        <label>Arc shape</label>
+        <select id="shape"></select>
+      </div>
+      <div class="field">
+        <label>Scale</label>
+        <select id="scale"></select>
+      </div>
+      <div class="field">
+        <label>Root note (MIDI)</label>
+        <input id="root" type="number" value="57" min="24" max="96">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Restlessness (0–1)</label>
+        <input id="restlessness" type="number" value="0.35" min="0" max="1" step="0.05">
+      </div>
+      <div class="field">
+        <label>Seed (blank = random)</label>
+        <input id="seed" type="text" placeholder="e.g. 2026">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Instances</h2>
+    <div class="row">
+      <div class="field wide">
+        <label>id:role:channel, comma-separated</label>
+        <input id="instances" type="text" value="MPL1:anchor:1,MPL2:motif:2,MPL3:counterpoint:3">
+        <div class="hint">role is "anchor" / "motif" / "counterpoint" (or a custom string, treated as generic). channel is the MPL instance's own External Control MIDI channel (1-16).</div>
+      </div>
+    </div>
+  </div>
+
+  <button id="generateBtn">Generate &amp; Download</button>
+  <div id="status"></div>
+
+  <footer>
+    Downloads a <code>.json</code> file. Load it via Score View's <b>Load Score...</b>,
+    set Content Mode to <b>Absolute</b>, then Prime for Playback or press Play —
+    every section's notes are captured verbatim, so it plays back identically
+    every time, no live generative dependency required.
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ===================================================================
+ * theory.js — port of score-generator/theory.py
+ * =================================================================== */
+
+const SCALES = {
+  natural_minor: [0, 2, 3, 5, 7, 8, 10],
+  harmonic_minor: [0, 2, 3, 5, 7, 8, 11],
+  dorian: [0, 2, 3, 5, 7, 9, 10],
+  phrygian: [0, 1, 3, 5, 7, 8, 10],
+  whole_tone: [0, 2, 4, 6, 8, 10],
+  octatonic: [0, 2, 3, 5, 6, 8, 9, 11],
+  pentatonic_minor: [0, 3, 5, 7, 10],
+};
+const DEFAULT_SCALE = "phrygian";
+
+function scaleDegreeToMidi(root, scaleName, degree) {
+  const scale = SCALES[scaleName] || SCALES[DEFAULT_SCALE];
+  const n = scale.length;
+  const octave = Math.floor(degree / n);
+  const index = ((degree % n) + n) % n;
+  const midi = root + scale[index] + 12 * octave;
+  return Math.max(0, Math.min(127, midi));
+}
+
+function nearestDegreeForMidi(root, scaleName, midiNote, searchRange = 24) {
+  let bestDegree = 0;
+  let bestDistance = null;
+  for (let degree = -searchRange; degree <= searchRange; degree++) {
+    const candidate = scaleDegreeToMidi(root, scaleName, degree);
+    const distance = Math.abs(candidate - midiNote);
+    if (bestDistance === null || distance < bestDistance) {
+      bestDistance = distance;
+      bestDegree = degree;
+    }
+  }
+  return bestDegree;
+}
+
+/* ===================================================================
+ * arc.js — port of score-generator/arc.py
+ * Faithful port of src/policy/ArcShapeLibrary.cpp / DurationCalculator.cpp
+ * (flat-tempo case) / BlueprintGenerator.cpp's classification+baselines -
+ * same shapes, same formulas, same discipline (deterministic per seed).
+ * =================================================================== */
+
+const PI = Math.PI;
+
+const SHAPES = [
+  "organic_build", "arch_rise_fall", "long_fade", "terraced_blocks",
+  "surging_waves", "heroic_journey", "suspense_release", "mosaic_episodic",
+  "catastrophe_collapse", "pastoral_plateau",
+];
+
+function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+
+function sampleShape(shape, t) {
+  switch (shape) {
+    case "organic_build": return clamp01(Math.pow(t, 1.6));
+    case "arch_rise_fall": return clamp01(Math.sin(t * PI));
+    case "long_fade": return clamp01(Math.pow(1 - t, 1.3));
+    case "terraced_blocks": {
+      const step = Math.max(0, Math.min(3, Math.floor(t * 3.999)));
+      return [0.2, 0.5, 0.35, 0.9][step];
+    }
+    case "surging_waves": {
+      const base = 0.12 + 0.5 * t;
+      const swell = 0.32 * (0.5 - 0.5 * Math.cos(t * 6.0 * PI));
+      return clamp01(base + swell);
+    }
+    case "heroic_journey": {
+      if (t < 0.28) return clamp01(0.42 + 0.06 * Math.sin(t * 12.0));
+      if (t < 0.52) { const u = (t - 0.28) / 0.24; return clamp01(0.4 - 0.24 * u); }
+      const u = (t - 0.52) / 0.48;
+      return clamp01(0.18 + 0.82 * Math.pow(u, 1.2));
+    }
+    case "suspense_release": {
+      if (t < 0.72) return clamp01(0.16 + 0.14 * t);
+      if (t < 0.84) { const u = (t - 0.72) / 0.12; return clamp01(0.24 + 0.7 * u); }
+      const u = (t - 0.84) / 0.16;
+      return clamp01(0.94 - 0.5 * u);
+    }
+    case "mosaic_episodic": return clamp01(0.5 + 0.42 * Math.sin(t * 7.3 + 1.1));
+    case "catastrophe_collapse": {
+      if (t < 0.56) return clamp01(0.82 * Math.pow(t / 0.56, 1.3));
+      if (t < 0.63) { const u = (t - 0.56) / 0.07; return clamp01(0.82 - 0.74 * u); }
+      const u = (t - 0.63) / 0.37;
+      return clamp01(0.08 + 0.4 * u);
+    }
+    case "pastoral_plateau": {
+      if (t < 0.22) return clamp01((t / 0.22) * 0.5);
+      if (t < 0.85) return clamp01(0.5 + 0.06 * Math.sin(t * 8.0 * PI));
+      const u = (t - 0.85) / 0.15;
+      return clamp01(0.5 + u * 0.22);
+    }
+    default: return clamp01(t);
+  }
+}
+
+// Deterministic seeded PRNG (mulberry32) - JS has no seedable Math.random,
+// and this codebase's own rule is "no raw/unseeded randomness" anywhere in
+// generative code. Not bit-identical to the C++ side's std::mt19937 (a
+// different algorithm) - determinism is only guaranteed WITHIN this page
+// for a repeated seed, not cross-language, which is all that's promised.
+function makeRng(seed) {
+  let a = seed >>> 0;
+  return function next() {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function rngUniform(rng, min, max) { return min + rng() * (max - min); }
+function rngRandInt(rng, min, maxInclusive) { return min + Math.floor(rng() * (maxInclusive - min + 1)); }
+
+function generateBreakpoints(shape, sectionBoundaries, restlessness, rng) {
+  if (sectionBoundaries.length < 2) return [];
+  restlessness = clamp01(restlessness);
+  const totalBars = sectionBoundaries[sectionBoundaries.length - 1];
+
+  return sectionBoundaries.map((bar) => {
+    const t = totalBars > 0 ? bar / totalBars : 0;
+    let value = sampleShape(shape, t);
+    if (restlessness > 0) value = clamp01(value + rngUniform(rng, -0.08, 0.08) * restlessness);
+    return { bar, value };
+  });
+}
+
+function durationPlan(targetMinutes, beatsPerBar, bpm, desiredSectionCount) {
+  beatsPerBar = Math.max(1, beatsPerBar);
+  desiredSectionCount = Math.max(1, desiredSectionCount);
+  targetMinutes = Math.max(0, targetMinutes);
+
+  const beats = bpm * targetMinutes;
+  const totalBars = Math.max(1, Math.round(beats / beatsPerBar));
+
+  const boundaries = [0];
+  for (let i = 1; i < desiredSectionCount; i++) {
+    const boundary = Math.round((totalBars * i) / desiredSectionCount);
+    if (boundary > boundaries[boundaries.length - 1]) boundaries.push(boundary);
+  }
+  if (boundaries[boundaries.length - 1] !== totalBars) boundaries.push(totalBars);
+
+  return { totalBars, sectionBoundaries: boundaries };
+}
+
+function classifyArchetypes(breakpoints) {
+  if (breakpoints.length < 2) return [];
+  const riseThreshold = 0.05;
+
+  const plans = [];
+  for (let i = 0; i < breakpoints.length - 1; i++) {
+    plans.push({
+      startBar: breakpoints[i].bar, endBar: breakpoints[i + 1].bar,
+      startValue: breakpoints[i].value, endValue: breakpoints[i + 1].value,
+    });
+  }
+
+  let peakIndex = 0;
+  let peakValue = plans[0].endValue;
+  plans.forEach((p, i) => { if (p.endValue > peakValue) { peakValue = p.endValue; peakIndex = i; } });
+
+  return plans.map((p, i) => {
+    let archetype;
+    if (i === peakIndex) archetype = "peak";
+    else if (i < peakIndex) archetype = (p.endValue - p.startValue) > riseThreshold ? "build" : "presentation";
+    else archetype = "release";
+    return { startBar: p.startBar, endBar: p.endBar, archetype };
+  });
+}
+
+const ARCHETYPE_BASELINES = {
+  presentation: { tension: 0.2, complexity: 0.2, coherence: 0.6, density: 0.3, energy: 0.3 },
+  build:        { tension: 0.5, complexity: 0.5, coherence: 0.5, density: 0.5, energy: 0.6 },
+  peak:         { tension: 0.9, complexity: 0.8, coherence: 0.8, density: 0.9, energy: 1.0 },
+  release:      { tension: 0.35, complexity: 0.3, coherence: 0.45, density: 0.4, energy: 0.3 },
+};
+
+/* ===================================================================
+ * generate_score.js — port of score-generator/generate_score.py
+ * =================================================================== */
+
+const PATTERN_STEPS = 16;
+
+const ARCHETYPE_CHARACTER = {
+  presentation: { density: 0.45, stepBias: 0.0, stepMax: 2,
+                  durations: [[4, 0.35], [8, 0.25], [2, 0.30], [1, 0.10]],
+                  velocity: [55, 82], gridMode: 0, swing: 0.0 },
+  build: { density: 0.60, stepBias: 0.35, stepMax: 3,
+           durations: [[2, 0.35], [1, 0.25], [4, 0.30], [8, 0.10]],
+           velocity: [65, 100], gridMode: 0, swing: 0.0 },
+  peak: { density: 0.80, stepBias: 0.10, stepMax: 5,
+          durations: [[1, 0.35], [2, 0.35], [4, 0.20], [8, 0.10]],
+          velocity: [90, 122], gridMode: 1, swing: 66.67 },
+  release: { density: 0.35, stepBias: -0.35, stepMax: 2,
+             durations: [[8, 0.35], [4, 0.35], [2, 0.20], [1, 0.10]],
+             velocity: [45, 76], gridMode: 0, swing: 0.0 },
+};
+
+const ROLE_PROFILE = {
+  anchor: { registerOffset: -22, registerSpan: 10, densityMult: 0.6, stepMaxMult: 0.6, phase: 0 },
+  motif: { registerOffset: 17, registerSpan: 14, densityMult: 1.0, stepMaxMult: 1.0, phase: 0 },
+  counterpoint: { registerOffset: -2, registerSpan: 16, densityMult: 0.85, stepMaxMult: 0.85, phase: 2 },
+};
+const DEFAULT_ROLE_PROFILE = { registerOffset: 0, registerSpan: 14, densityMult: 0.85, stepMaxMult: 0.85, phase: 0 };
+
+function weightedChoice(rng, weighted) {
+  const total = weighted.reduce((sum, [, w]) => sum + w, 0);
+  const r = rngUniform(rng, 0, total);
+  let upto = 0;
+  for (const [value, weight] of weighted) {
+    upto += weight;
+    if (r <= upto) return value;
+  }
+  return weighted[weighted.length - 1][0];
+}
+
+function generatePatternSteps(rng, scaleName, root, archetype, role, startDegree, gridSteps) {
+  const character = ARCHETYPE_CHARACTER[archetype];
+  const roleProfile = ROLE_PROFILE[role] || DEFAULT_ROLE_PROFILE;
+
+  const density = character.density * roleProfile.densityMult;
+  const stepMax = Math.max(0, Math.round(character.stepMax * roleProfile.stepMaxMult));
+  const pUp = Math.max(0.05, Math.min(0.95, 0.5 + character.stepBias / 2));
+
+  const registerCenterDegree = nearestDegreeForMidi(root, scaleName, root + roleProfile.registerOffset);
+  const span = roleProfile.registerSpan;
+  const degreeMin = registerCenterDegree - span;
+  const degreeMax = registerCenterDegree + span;
+
+  let degree = startDegree;
+  const steps = [];
+  let busyUntil = roleProfile.phase % Math.max(1, gridSteps);
+
+  for (let i = 0; i < busyUntil; i++) steps.push({ enabled: false, note: 0, velocity: 0, duration: 0 });
+
+  let stepIndex = busyUntil;
+  while (stepIndex < gridSteps) {
+    if (rng() < density) {
+      const magnitude = stepMax > 0 ? rngRandInt(rng, 0, stepMax) : 0;
+      const direction = rng() < pUp ? 1 : -1;
+      degree = Math.max(degreeMin, Math.min(degreeMax, degree + direction * magnitude));
+
+      const note = scaleDegreeToMidi(root, scaleName, degree);
+      let duration = weightedChoice(rng, character.durations);
+      duration = Math.max(1, Math.min(duration, gridSteps - stepIndex));
+      const [vMin, vMax] = character.velocity;
+      const velocity = Math.max(1, Math.min(127, rngRandInt(rng, vMin, vMax)));
+
+      steps.push({ enabled: true, note, velocity, duration });
+      stepIndex += 1;
+      for (let k = 0; k < duration - 1 && stepIndex < gridSteps; k++, stepIndex++) {
+        steps.push({ enabled: false, note: 0, velocity: 0, duration: 0 });
+      }
+    } else {
+      steps.push({ enabled: false, note: 0, velocity: 0, duration: 0 });
+      stepIndex += 1;
+    }
+  }
+
+  while (steps.length < PATTERN_STEPS) steps.push({ enabled: false, note: 0, velocity: 0, duration: 0 });
+  return { steps: steps.slice(0, PATTERN_STEPS), degree };
+}
+
+// Circular rotation of the raw step array (P2 variant, base/rotated/
+// inverted cycle) - capturedContent writes literal steps directly,
+// bypassing MPL's own playback-time Rotation CC entirely, so getting a
+// rotated *sound* out of a captured pattern means rotating the step data
+// here, not leaning on MPL's own Rotation parameter.
+function rotateSteps(steps, amount) {
+  const n = steps.length;
+  if (n === 0) return [];
+  amount = ((amount % n) + n) % n;
+  return steps.slice(amount).concat(steps.slice(0, amount)).map((s) => ({ ...s }));
+}
+
+// Mirrors every enabled note's pitch around the pattern's own mean pitch
+// (2*center - note, clamped) - the P3 variant. Rests pass through
+// unchanged; MotifEngine.cpp's own invert() does the equivalent thing to a
+// relative MotifNote cell (negate semitoneOffset), just applied here to
+// absolute captured pitches instead.
+function invertSteps(steps) {
+  const enabledNotes = steps.filter((s) => s.enabled).map((s) => s.note);
+  if (enabledNotes.length === 0) return steps.map((s) => ({ ...s }));
+  const center = enabledNotes.reduce((a, b) => a + b, 0) / enabledNotes.length;
+
+  return steps.map((s) => {
+    if (!s.enabled) return { ...s };
+    const newNote = Math.max(0, Math.min(127, Math.round(2 * center - s.note)));
+    return { enabled: true, note: newNote, velocity: s.velocity, duration: s.duration };
+  });
+}
+
+// Minimum bars a macro-section needs before it's worth splitting into a
+// base/rotated/inverted mini-section cycle at all - below this it stays
+// whole (P1/base only, the old behavior) rather than producing mini-
+// sections too short to read as real phrases.
+const MIN_BARS_FOR_VARIATION_CYCLE = 6;
+
+function splitIntoMiniSections(startBar, endBar) {
+  const total = endBar - startBar;
+  if (total < MIN_BARS_FOR_VARIATION_CYCLE) return [[startBar, endBar]];
+
+  const chunk = Math.floor(total / 3);
+  const bounds = [startBar, startBar + chunk, startBar + 2 * chunk, endBar];
+  return [[bounds[0], bounds[1]], [bounds[1], bounds[2]], [bounds[2], bounds[3]]];
+}
+
+function deriveMotifPreset(presetId, tags, steps) {
+  let firstNote = null;
+  for (const step of steps) { if (step.enabled) { firstNote = step.note; break; } }
+
+  const notes = [];
+  if (firstNote !== null) {
+    for (const step of steps) {
+      if (step.enabled) {
+        notes.push({
+          semitoneOffset: step.note - firstNote,
+          relativeDuration: Math.max(1, step.duration) * 1.0,
+          relativeVelocity: step.velocity / 100.0,
+          isRest: false,
+        });
+      } else {
+        notes.push({ semitoneOffset: 0, relativeDuration: 1.0, relativeVelocity: 1.0, isRest: true });
+      }
+    }
+  }
+  return { id: presetId, name: presetId, tags, notes };
+}
+
+function parseInstances(spec) {
+  if (!spec || !spec.trim()) {
+    return [{ id: "MPL1", role: "anchor", channel: 1 }, { id: "MPL2", role: "motif", channel: 2 },
+             { id: "MPL3", role: "counterpoint", channel: 3 }];
+  }
+  return spec.split(",").map((entry) => {
+    const parts = entry.trim().split(":");
+    if (parts.length !== 3) throw new Error(`Bad instances entry "${entry}" - expected id:role:channel`);
+    return { id: parts[0].trim(), role: parts[1].trim(), channel: parseInt(parts[2], 10) };
+  });
+}
+
+function generatePiece(opts) {
+  const rng = makeRng(opts.seed);
+
+  const plan = durationPlan(opts.minutes, opts.beatsPerBar, opts.bpm, opts.sectionCount);
+  const breakpoints = generateBreakpoints(opts.shape, plan.sectionBoundaries, opts.restlessness, rng);
+  const sectionsPlan = classifyArchetypes(breakpoints);
+
+  if (sectionsPlan.length === 0) {
+    throw new Error("Could not derive sections - need at least 2 section boundaries (raise minutes or sections)");
+  }
+
+  const instanceDegrees = {};
+  for (const instance of opts.instances) {
+    const roleProfile = ROLE_PROFILE[instance.role] || DEFAULT_ROLE_PROFILE;
+    instanceDegrees[instance.id] = nearestDegreeForMidi(opts.root, opts.scale, opts.root + roleProfile.registerOffset);
+  }
+
+  const motifPresetsByArchetype = {};
+  const scenes = [];
+  const blueprintSections = [];
+
+  // Base/rotated/inverted cycle: each macro-section's underlying idea is
+  // generated ONCE, then a long-enough macro-section is split into up to 3
+  // mini-BlueprintSections that each target a different patternIndex
+  // (0/1/2) with a related variant of that same idea - P1=base,
+  // P2=rotated, P3=inverted, the exact convention
+  // MotifEngine::seedPhraseChainPatterns already uses for the live
+  // generative engine, just applied here to literal captured content.
+  const variantFns = [(s) => s.map((x) => ({ ...x })), (s) => rotateSteps(s, Math.floor(s.length / 4)), invertSteps];
+
+  sectionsPlan.forEach((sectionPlan, i) => {
+    const archetype = sectionPlan.archetype;
+    const character = ARCHETYPE_CHARACTER[archetype];
+    const gridSteps = character.gridMode === 1 ? 12 : 16;
+
+    const baseStepsByInstance = {};
+    for (const instance of opts.instances) {
+      const { steps, degree } = generatePatternSteps(
+        rng, opts.scale, opts.root, archetype, instance.role, instanceDegrees[instance.id], gridSteps);
+      instanceDegrees[instance.id] = degree;
+      baseStepsByInstance[instance.id] = steps;
+    }
+
+    if (!motifPresetsByArchetype[archetype]) {
+      const motifInstance = opts.instances.find((i) => i.role === "motif") || opts.instances[0];
+      const candidates = [baseStepsByInstance[motifInstance.id]].concat(
+        opts.instances.filter((i) => i.id !== motifInstance.id).map((i) => baseStepsByInstance[i.id]));
+      const representativeSteps = candidates.find((steps) => steps.some((s) => s.enabled)) || candidates[0];
+      motifPresetsByArchetype[archetype] = deriveMotifPreset(
+        `${opts.title}_${archetype}_motif`, [archetype], representativeSteps);
+    }
+
+    const layerRoles = [];
+    const reservedValues = [];
+    if (archetype === "peak") {
+      for (const instance of opts.instances) {
+        layerRoles.push({ targetInstance: instance.id, layerRole: "foreground" });
+        reservedValues.push({ targetInstance: instance.id, patternIndex: 0, type: "inversion", value: 1 });
+      }
+    } else if (archetype === "release") {
+      for (const instance of opts.instances) {
+        if (instance.role === "counterpoint") layerRoles.push({ targetInstance: instance.id, layerRole: "background" });
+      }
+    }
+
+    const miniChunks = splitIntoMiniSections(sectionPlan.startBar, sectionPlan.endBar);
+    miniChunks.forEach(([miniStart, miniEnd], variantIndex) => {
+      const patternIndex = variantIndex % 3;
+      const variantFn = variantFns[patternIndex];
+
+      const sectionId = miniChunks.length === 1
+        ? `${opts.title}_section${i + 1}`
+        : `${opts.title}_section${i + 1}_${variantIndex + 1}`;
+      const sceneId = `${sectionId}_scene`;
+      const durationBars = miniEnd - miniStart;
+
+      const capturedContent = opts.instances.map((instance) => ({
+        targetInstance: instance.id, patternIndex, steps: variantFn(baseStepsByInstance[instance.id]),
+      }));
+
+      scenes.push({
+        id: sceneId, name: sceneId, durationBars, quantize: "bar",
+        targets: opts.instances.map((inst) => inst.id),
+        global: { activePattern: patternIndex + 1, gridMode: character.gridMode, swing: character.swing, rate: 1 },
+        instanceOverrides: [], patterns: [], mutations: [], nextSceneId: "", transitionStyle: "hard", rampBars: 0,
+      });
+
+      blueprintSections.push({
+        id: sectionId, name: `${sectionId}_${archetype}`, sceneId,
+        startBar: miniStart, durationBars, archetype,
+        layerRoles, budgetOverrides: [], reservedValues, modulatorValues: [],
+        capturedContent,
+      });
+    });
+  });
+
+  const arcCurves = [{ dimension: "energy", points: breakpoints }];
+  for (const dimension of ["tension", "density", "complexity", "coherence"]) {
+    const points = sectionsPlan.map((s) => ({ bar: s.startBar, value: ARCHETYPE_BASELINES[s.archetype][dimension] }));
+    const last = sectionsPlan[sectionsPlan.length - 1];
+    points.push({ bar: last.endBar, value: ARCHETYPE_BASELINES[last.archetype][dimension] });
+    arcCurves.push({ dimension, points });
+  }
+
+  return {
+    schema: "ComposerMastermindComposition.v3",
+    blueprint: { id: opts.title, name: opts.title, sections: blueprintSections, arcCurves },
+    scenes,
+    instances: opts.instances.map((i) => ({ id: i.id, name: i.id, midiChannel: i.channel, role: i.role, enabled: true, lastKnownScene: "" })),
+    motifPresets: Object.values(motifPresetsByArchetype),
+    modulatorTargets: [],
+    modulationRoutes: [],
+  };
+}
+
+/* ===================================================================
+ * UI wiring
+ * =================================================================== */
+
+const shapeSelect = document.getElementById("shape");
+SHAPES.forEach((s) => {
+  const opt = document.createElement("option");
+  opt.value = s;
+  opt.textContent = s.replace(/_/g, " ");
+  shapeSelect.appendChild(opt);
+});
+shapeSelect.value = "arch_rise_fall";
+
+const scaleSelect = document.getElementById("scale");
+Object.keys(SCALES).forEach((s) => {
+  const opt = document.createElement("option");
+  opt.value = s;
+  opt.textContent = s.replace(/_/g, " ");
+  scaleSelect.appendChild(opt);
+});
+scaleSelect.value = DEFAULT_SCALE;
+
+function setStatus(message, isError) {
+  const el = document.getElementById("status");
+  el.textContent = message;
+  el.className = isError ? "err" : "ok";
+}
+
+document.getElementById("generateBtn").addEventListener("click", () => {
+  try {
+    const title = document.getElementById("title").value.trim() || "Untitled";
+    const seedField = document.getElementById("seed").value.trim();
+    const seed = seedField ? (parseInt(seedField, 10) >>> 0) : (Math.floor(Math.random() * 2147483647) >>> 0);
+
+    const opts = {
+      title,
+      minutes: parseFloat(document.getElementById("minutes").value) || 4,
+      bpm: parseFloat(document.getElementById("bpm").value) || 100,
+      beatsPerBar: parseInt(document.getElementById("beatsPerBar").value, 10) || 4,
+      sectionCount: parseInt(document.getElementById("sections").value, 10) || 6,
+      shape: shapeSelect.value,
+      scale: scaleSelect.value,
+      root: parseInt(document.getElementById("root").value, 10) || 57,
+      restlessness: parseFloat(document.getElementById("restlessness").value),
+      seed,
+      instances: parseInstances(document.getElementById("instances").value),
+    };
+
+    const bundle = generatePiece(opts);
+
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = title.replace(/[^\w\-]+/g, "_") + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    const totalBars = bundle.blueprint.sections.reduce(
+      (max, s) => Math.max(max, s.startBar + s.durationBars), 0);
+    const archetypesUsed = [...new Set(bundle.blueprint.sections.map((s) => s.archetype))];
+
+    setStatus(
+      `Generated "${title}" — ${bundle.blueprint.sections.length} sections, ${totalBars} bars, ` +
+      `${bundle.motifPresets.length} motif preset(s) covering [${archetypesUsed.join(", ")}], seed=${seed}.\n` +
+      `Downloaded as ${a.download} — Load Score it in Composer Mastermind.`,
+      false
+    );
+  } catch (err) {
+    setStatus("Failed: " + err.message, true);
+  }
+});
+</script>
+</body>
+</html>

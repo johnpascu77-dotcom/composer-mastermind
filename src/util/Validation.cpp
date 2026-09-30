@@ -410,7 +410,10 @@ namespace Validation
                 return false;
             }
 
-            if (note.relativeVelocity <= 0.0f)
+            // A rest's relativeVelocity is unused (nothing sounds there) -
+            // don't reject a rest just because it carries whatever default/
+            // leftover velocity value it happened to be built with.
+            if (!note.isRest && note.relativeVelocity <= 0.0f)
             {
                 errorMessage = "Preset '" + preset.id + "' has a note with a non-positive relative velocity";
                 return false;

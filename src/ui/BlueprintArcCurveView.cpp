@@ -410,9 +410,10 @@ void BlueprintArcCurveView::generateClicked()
 
     const auto rolePresets = composerCore.getPresetLibrary().getAllRolePresets();
     const auto rhythmicPresets = composerCore.getPresetLibrary().getAllRhythmicRelationshipPresets();
+    const auto motifPresets = composerCore.getPresetLibrary().getAllMotifPresets();
 
     auto proposal = BlueprintGenerator::generate(newId, drivingArcName, scratchArcSet, baseScene, instances,
-                                                   rolePresets, rhythmicPresets);
+                                                   rolePresets, rhythmicPresets, motifPresets);
 
     if (proposal.blueprint.id.empty())
     {
@@ -426,6 +427,9 @@ void BlueprintArcCurveView::generateClicked()
     // BlueprintGenerator::generate - so only those need adding.
     for (const auto& scene : proposal.newScenes)
         composerCore.getSceneLibrary().addOrReplaceScene(scene);
+
+    for (const auto& preset : proposal.newMotifPresets)
+        composerCore.getPresetLibrary().addOrReplaceMotifPreset(preset);
 
     // Persist the full generated 5-curve ArcSet onto the blueprint itself,
     // same reasoning as ui/GenerateView::commitClicked - so this blueprint's

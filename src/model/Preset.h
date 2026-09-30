@@ -101,6 +101,15 @@ struct MotifNote
     int semitoneOffset = 0;
     float relativeDuration = 1.0f;
     float relativeVelocity = 1.0f;
+
+    // A rest (2026-09-21): occupies its own slot in the sequence - same
+    // index-based spacing as any other entry (policy/MotifEngine.cpp's
+    // stampOnePattern) - but writes no note there, just silence for
+    // relativeDuration's worth of steps. semitoneOffset/relativeVelocity
+    // are unused when true (kept at their defaults, ignored by the stamp
+    // algorithm and skipped by Validation's velocity check). Default false
+    // so every preset saved before this field existed round-trips unchanged.
+    bool isRest = false;
 };
 
 // The fourth preset category, added for v0.6's motif/rule engine: a short

@@ -1,0 +1,47 @@
+{
+  "schema": "ComposerMastermindComposition.v2",
+  "blueprint": {
+    "id": "swam_4tet_orchdelay_transport",
+    "name": "SWAM 4tet OrchDelay - Transport Companion",
+    "sections": [
+      {
+        "id": "section_1",
+        "name": "Whole piece (silent - Transport Companion only)",
+        "sceneId": "silent_scene",
+        "startBar": 0,
+        "durationBars": 72,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": []
+      }
+    ],
+    "arcCurves": []
+  },
+  "scenes": [
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "silent_scene",
+      "name": "Silent Scene",
+      "durationBars": 72,
+      "quantize": "bar",
+      "targets": [],
+      "global": {
+        "activePattern": 0,
+        "gridMode": 0,
+        "swing": 0.0
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [],
+  "motifPresets": [],
+  "modulatorTargets": []
+}

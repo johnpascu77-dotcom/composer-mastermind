@@ -28,3 +28,9 @@ Thumbs.db
 *.log
 __pycache__/
 *.pyc
+
+# OrchCapture live-testing session dumps (scratch output, not project content)
+docs/OrchCapture_session_*.mid
+
+# Local machine-specific MCP server config (hardcoded absolute paths)
+.mcp.json

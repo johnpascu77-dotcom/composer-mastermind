@@ -3,6 +3,7 @@
 #include "../policy/CoherenceEvaluator.h"
 #include "../policy/BlueprintGenerator.h"
 #include "../policy/PresetResolver.h"
+#include "../policy/FactoryMotifPresets.h"
 #include "../midi/CCMapping.h"
 #include "../scheduling/StepClock.h"
 #include "../util/Validation.h"
@@ -47,6 +48,21 @@ ComposerCore::ComposerCore()
     {
         return handleMcpBridgeRequest(request);
     });
+
+    // Cold-start (2026-09-21): a genuinely fresh instance (no project state
+    // loaded yet) otherwise starts with an empty PresetLibrary, so the
+    // generative engine has nothing to develop a section from until the
+    // user hand-authors a MotifPreset for every archetype. setStateInformation
+    // (PluginProcessor.cpp) replaces presetLibrary wholesale via
+    // StateSnapshotStore when a real project loads, so this only ever
+    // matters for a blank session - it never overwrites real project data.
+    seedFactoryMotifPresets();
+}
+
+void ComposerCore::seedFactoryMotifPresets()
+{
+    for (const auto& preset : FactoryMotifPresets::getAll())
+        presetLibrary.addOrReplaceMotifPreset(preset);
 }
 
 InstanceRegistry& ComposerCore::getInstanceRegistry()
@@ -704,6 +720,8 @@ void ComposerCore::resetToFactoryDefaults()
     presetLibrary.clear();
     modulatorTargetLibrary.clear();
     modulationRouteLibrary.clear();
+
+    seedFactoryMotifPresets();
 
     {
         std::lock_guard<std::mutex> lock(sceneMutex);
@@ -1937,6 +1955,42 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
             return mcpError("writePattern: '" + juce::String(instanceId)
                 + "' has no IPC channel connected yet - open it in MPL first");
 
+        // Found live 2026-09-21 (composing "Tidal" through the bridge):
+        // writing to an instance's currently-active/playing pattern doesn't
+        // reliably stick - get_awareness "confirmed" a write that had
+        // actually been silently reverted moments later. Patterns that
+        // aren't the active one wrote fine every time.
+        //
+        // A first attempt at a fix wrapped the write in a CC20 stop/resume
+        // (same idiom MotifEngine::applyForSection uses around its own
+        // step-content passes, see its comment above) - REVERTED same day
+        // after it caused real stuck notes live. Root cause, confirmed by
+        // reading MPL's own PluginProcessor.cpp: a pattern switch there is
+        // only ever *applied* (and its note-off safety net,
+        // sendAllNotesOffNow, only ever fires) at the next bar boundary
+        // during real playback (see the "4b. Apply queued launch/stop"
+        // comment in its processBlock). Sending stop then resume back-to-
+        // back races past that gate - the resume overwrites the pending
+        // stop request before any bar boundary ever applies it, so the
+        // safety net never fires, while this function's own IPC content
+        // write proceeds on a completely separate, uncoordinated channel
+        // and can silently swap the step data out from under a note that's
+        // still sounding. Two independent mechanisms (CC-driven pattern
+        // switching, bar-boundary-gated; IPC content writes, immediate)
+        // with no coordination between them - not safe to paper over with a
+        // quick CC toggle. A real fix would need to synchronize with MPL's
+        // own bar-boundary timing, which is a bigger change than belongs
+        // here; until then, refuse outright rather than risk orphaning a
+        // note again.
+        InstanceParameterState trackedState;
+        const bool hadTrackedState = instanceStateTracker.getState(instanceId, trackedState);
+        const int currentActivePattern = hadTrackedState ? trackedState.activePattern : 1; // matches InstanceParameterState's own default
+        if (currentActivePattern - 1 == patternIndex)
+            return mcpError("writePattern: '" + juce::String(instanceId) + "' pattern " + juce::String(patternIndex)
+                + " is its currently-active/playing pattern - writing to it live can orphan a sounding note. "
+                + "Switch the instance off this pattern first (setScene/sendMutation to a different activePattern), "
+                + "write, then switch back.");
+
         patternSyncServer.sendWriteFullPattern(instance.midiChannel, patternIndex, steps);
         patternSyncServer.requestSync(instance.midiChannel, patternIndex);
 
@@ -2085,6 +2139,47 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
         auto* result = new juce::DynamicObject();
         result->setProperty("presetId", juce::String(preset.id));
         result->setProperty("noteCount", static_cast<int>(preset.notes.size()));
+        return mcpOk(result);
+    }
+
+    if (action == "captureMotifPreset")
+    {
+        const auto instanceId = request["instanceId"].toString().toStdString();
+        const int patternIndex = static_cast<int>(request["patternIndex"]);
+        const auto presetId = request["presetId"].toString().toStdString();
+
+        if (presetId.empty())
+            return mcpError("captureMotifPreset: 'presetId' is required");
+
+        CachedPattern cached;
+        if (!patternSyncServer.getCache().get(instanceId, patternIndex, cached))
+            return mcpError("captureMotifPreset: no confirmed content for '" + juce::String(instanceId) + "' pattern "
+                + juce::String(patternIndex) + " yet - call resync_instance first, then get_awareness to confirm");
+
+        std::vector<std::string> tags;
+        if (auto* tagsArray = request["tags"].getArray())
+            for (const auto& tag : *tagsArray)
+                tags.push_back(tag.toString().toStdString());
+
+        MotifPreset preset = MotifEngine::deriveMotifPresetFromPattern(presetId, tags, cached.snapshot.steps);
+        preset.name = presetId;
+
+        std::string errorMessage;
+        if (!Validation::isValidMotifPreset(preset, errorMessage))
+            return mcpError("captureMotifPreset: " + juce::String(errorMessage));
+
+        presetLibrary.addOrReplaceMotifPreset(preset);
+
+        auto* result = new juce::DynamicObject();
+        result->setProperty("presetId", juce::String(preset.id));
+        result->setProperty("noteCount", static_cast<int>(preset.notes.size()));
+
+        int restCount = 0;
+        for (const auto& note : preset.notes)
+            if (note.isRest)
+                ++restCount;
+        result->setProperty("restCount", restCount);
+
         return mcpOk(result);
     }
 
@@ -2314,7 +2409,7 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
 
         auto proposal = BlueprintGenerator::generate(blueprintId, drivingArcName, arcSet, baseScene,
             instanceRegistry.getAllInstances(), presetLibrary.getAllRolePresets(),
-            presetLibrary.getAllRhythmicRelationshipPresets());
+            presetLibrary.getAllRhythmicRelationshipPresets(), presetLibrary.getAllMotifPresets());
 
         if (proposal.blueprint.id.empty())
             return mcpError("generateBlueprint: '" + juce::String(drivingArcName)
@@ -2337,11 +2432,15 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
         }
         result->setProperty("sections", sectionsArray);
         result->setProperty("newSceneCount", static_cast<int>(proposal.newScenes.size()));
+        result->setProperty("newMotifPresetCount", static_cast<int>(proposal.newMotifPresets.size()));
 
         if (commit)
         {
             for (const auto& scene : proposal.newScenes)
                 sceneLibrary.addOrReplaceScene(scene);
+
+            for (const auto& preset : proposal.newMotifPresets)
+                presetLibrary.addOrReplaceMotifPreset(preset);
 
             proposal.blueprint.arcCurves.clear();
             for (const auto& dimensionName : proposal.candidateArcSet.getArcNames())
