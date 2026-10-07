@@ -1,0 +1,1121 @@
+{
+  "schema": "ComposerMastermindComposition.v3",
+  "blueprint": {
+    "id": "slice_trigger_test",
+    "name": "Slice Trigger Test",
+    "sections": [
+      {
+        "id": "slicetest_01",
+        "name": "slicetest_01",
+        "sceneId": "slicetest_01_scene",
+        "startBar": 1,
+        "durationBars": 1,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 24,
+                "velocity": 100,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slicetest_02",
+        "name": "slicetest_02",
+        "sceneId": "slicetest_02_scene",
+        "startBar": 2,
+        "durationBars": 2,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 1,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slicetest_03",
+        "name": "slicetest_03",
+        "sceneId": "slicetest_03_scene",
+        "startBar": 4,
+        "durationBars": 1,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 2,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 24,
+                "velocity": 100,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 26,
+                "velocity": 100,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slicetest_04",
+        "name": "slicetest_04",
+        "sceneId": "slicetest_04_scene",
+        "startBar": 5,
+        "durationBars": 2,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slicetest_05",
+        "name": "slicetest_05",
+        "sceneId": "slicetest_05_scene",
+        "startBar": 7,
+        "durationBars": 1,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 1,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 26,
+                "velocity": 100,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": true,
+                "note": 27,
+                "velocity": 100,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slicetest_06",
+        "name": "slicetest_06",
+        "sceneId": "slicetest_06_scene",
+        "startBar": 8,
+        "durationBars": 1,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 2,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slicetest_07",
+        "name": "slicetest_07",
+        "sceneId": "slicetest_07_scene",
+        "startBar": 9,
+        "durationBars": 1,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 0,
+            "steps": [
+              {
+                "enabled": true,
+                "note": 23,
+                "velocity": 100,
+                "duration": 1
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "slicetest_08",
+        "name": "slicetest_08",
+        "sceneId": "slicetest_08_scene",
+        "startBar": 10,
+        "durationBars": 2,
+        "archetype": "",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [],
+        "capturedContent": [
+          {
+            "targetInstance": "SHOOT1",
+            "patternIndex": 1,
+            "steps": [
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              },
+              {
+                "enabled": false,
+                "note": 0,
+                "velocity": 0,
+                "duration": 0
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "arcCurves": []
+  },
+  "scenes": [
+    {
+      "id": "slicetest_01_scene",
+      "name": "slicetest_01_scene",
+      "durationBars": 1,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "slicetest_02_scene",
+      "name": "slicetest_02_scene",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "slicetest_03_scene",
+      "name": "slicetest_03_scene",
+      "durationBars": 1,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 3,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "slicetest_04_scene",
+      "name": "slicetest_04_scene",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "slicetest_05_scene",
+      "name": "slicetest_05_scene",
+      "durationBars": 1,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "slicetest_06_scene",
+      "name": "slicetest_06_scene",
+      "durationBars": 1,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 3,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "slicetest_07_scene",
+      "name": "slicetest_07_scene",
+      "durationBars": 1,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 1,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "id": "slicetest_08_scene",
+      "name": "slicetest_08_scene",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "SHOOT1"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0,
+        "rate": 1
+      },
+      "instanceOverrides": [],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [
+    {
+      "id": "SHOOT1",
+      "name": "SHOOT1",
+      "midiChannel": 1,
+      "role": "trigger",
+      "enabled": true,
+      "lastKnownScene": ""
+    }
+  ],
+  "motifPresets": [],
+  "modulatorTargets": [],
+  "modulationRoutes": []
+}

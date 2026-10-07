@@ -33,6 +33,8 @@ Start here, in order:
    (`capturedContent`, for deterministic Absolute-mode playback) plus matching `MotifPreset` coverage, not just
    structure. Mirrors `ArcShapeLibrary`/`DurationCalculator`/`BlueprintGenerator`'s own C++ logic faithfully
    (see its own module docstrings for exactly which files) rather than inventing a second vocabulary.
+   [slice_score.py](score-generator/slice_score.py) is the sibling generator for "composing by slices" (MPL as trigger shooter driving the
+   MidiSampler plugin); concept, measured 2-bar lag and checks in [docs/composing_by_slices_concept.md](docs/composing_by_slices_concept.md).
 5. [docs/atonal_phrase_engine_concepts.md](docs/atonal_phrase_engine_concepts.md) — mined concepts for future
    arc/governor work, not yet implemented.
 6. [docs/score_timeline_ui_concept.md](docs/score_timeline_ui_concept.md) — condensed-score piano roll, live sync,

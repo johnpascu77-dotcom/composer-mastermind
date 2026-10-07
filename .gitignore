@@ -34,3 +34,6 @@ docs/OrchCapture_session_*.mid
 
 # Local machine-specific MCP server config (hardcoded absolute paths)
 .mcp.json
+
+# score-generator window: the user's own remembered settings
+score-generator/slice_score_gui_settings.json
