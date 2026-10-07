@@ -75,5 +75,6 @@ loaded, this fails with a file-lock error (not a permissions error) — close Bi
 ## Version control
 
 Public GitHub remote: https://github.com/johnpascu77-dotcom/composer-mastermind (`origin/main`). `external/JUCE/`
-is gitignored (vendored, has its own nested `.git` — see the comment in `.gitignore`). Commit at phase milestones
-when asked; don't push without being asked each time.
+is gitignored (vendored, has its own nested `.git` — see the comment in `.gitignore`). **Standing instruction from the user
+(2026-10-08): commit and push every change by default, in this repo and in every plugin repo — no need to ask each time.**
+Force-pushes and rewriting pushed history still need an explicit yes.
