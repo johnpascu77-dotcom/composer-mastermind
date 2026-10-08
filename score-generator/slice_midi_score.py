@@ -508,7 +508,7 @@ def cloud_stats(cfg: mm.SetupConfig, events: list, checks: list, exe: str, tmp: 
         problems.append(f"after the clip the plugin still holds {end[0]} output notes / {end[1]} voices (a looping zone on a later stage in Start only mode can only be "
                         f"ended by the Stop key; use Gate there, or set a Stop key)")
     stages = cfg.active_stages()
-    if len(stages) > 1 or not cfg.stages[stages[0]].is_neutral():
+    if len(stages) > 1 or not cfg.stages[stages[0]].is_neutral() or any(z.enabled and z.note_chance < 100.0 for z in cfg.zones):
         if ons:
             pitches = [p for _, p in ons]
             span = max(b for b, _ in ons) - min(b for b, _ in ons)

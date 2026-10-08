@@ -45,7 +45,7 @@ def make_setup_json(zones, voices=4, stop_key=-1, speed=100.0, sources=None, cas
         d = dict(enabled=False, key_lo=0, key_hi=127, source=0, root=60, start01=0.0, end01=1.0, loop_start01=0.0, loop_end01=1.0,
                  mode="forward", playback="gate", play_mode=0, slice_by="beat", grid=1.0, count=8, min_beats=0.25, slice_thru=False,
                  slice_base_key=24, out_channel=0, invert=False, axis=60, ratio=1.0, key_map_set=False, key_step=1, pc_mask=4095,
-                 delay=0.0, phase=0.0, warp_curve=0, warp_depth=0.0, warp_cycle=4.0, warp_phase=0.0, slice_index=0, base_shift=0, stage=0)
+                 delay=0.0, phase=0.0, warp_curve=0, warp_depth=0.0, warp_cycle=4.0, warp_phase=0.0, slice_index=0, base_shift=0, stage=0, note_chance=100.0, chance_seed=i + 1)
         if i < len(zones):
             d.update(zones[i])
             d["enabled"] = zones[i].get("enabled", True)
@@ -62,6 +62,7 @@ def make_setup_json(zones, voices=4, stop_key=-1, speed=100.0, sources=None, cas
             (f"z{z}_wcurve", d["warp_curve"]), (f"z{z}_wdepth", d["warp_depth"]),
             (f"z{z}_wcycle", min(range(8), key=lambda k: abs(mm.CYCLES[k] - d["warp_cycle"]))), (f"z{z}_wphase", d["warp_phase"]),
             (f"z{z}_sliceIdx", d["slice_index"] + 1), (f"z{z}_shift", d["base_shift"]), (f"z{z}_stage", d["stage"]),
+            (f"z{z}_chance", d["note_chance"]), (f"z{z}_cseed", d["chance_seed"]),
         ]
     return dict(format="MidiSamplerSetup", version=1, parameters=[dict(id=k, value=v) for k, v in params],
                 manualSlices=[[] for _ in range(8)], sources=sources or [])
@@ -96,6 +97,8 @@ def synthetic_setups(rng):
         ("stage 1 conditioning: pass 55 %, range, snap, stop key", make_setup_json(
             [slice_zone(i, i * 2, mode="loop_forward", playback="gate") for i in range(4)], voices=5, stop_key=23, sources=src,
             stages=[dict(pass_pct=55.0, seed=9, range_lo=40, range_hi=90, snap=True, snap_mask=0b101010110101)])),
+        ("note chance 40 % per zone (voices unchanged, only the notes thin)", make_setup_json(
+            [slice_zone(i, i * 2, mode="loop_bidir", playback="gate", note_chance=40.0, chance_seed=7 + i) for i in range(4)], voices=4, sources=src)),
         ("stage 1 grid 1/16 and a different seed", make_setup_json(
             [slice_zone(i, i, mode="loop_bidir", playback="start_only") for i in range(3)], voices=4, stop_key=23, sources=src,
             stages=[dict(pass_pct=30.0, seed=4321, grid_beats=0.25)])),
@@ -145,6 +148,7 @@ def write_replay2(path, cfg, events, checks, dump=False, all_stage_keys=False):
             int(z.key_map_set), z.key_step, z.pc_mask, int(z.invert), z.axis, z.out_channel, z.delay, z.phase, z.warp_curve,
             z.warp_depth, z.warp_cycle, z.warp_phase, len(z.manual), *z.manual]))
         lines.append(f"zonestage {z.index} {z.stage}")
+        lines.append(f"zonechance {z.index} {z.note_chance} {z.chance_seed}")
     lines.append(f"events {len(events)}")
     lines += [f"{t!r} {int(on)} {key} {vel}" for t, on, key, vel in events]
     lines.append(f"checksb {len(checks)}")

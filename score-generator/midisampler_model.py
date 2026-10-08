@@ -72,6 +72,8 @@ class ZoneCfg:
     slice_index: int = 0
     base_shift: int = 0
     stage: int = 0                     # cascade stage (0-based); only used when the setup's cascade is on
+    note_chance: float = 100.0         # per-zone probability that an emitted note sounds (seeded). Voices keep their keys either way, so the model ignores it
+    chance_seed: int = 1
 
     def as_slice_zone(self) -> ss.Zone:
         """The subset of fields slice_score's mirror of computeRanges / computeSliceBoundaries needs."""
@@ -173,6 +175,7 @@ def load_setup(path: str) -> SetupConfig:
             warp_cycle=CYCLES[max(0, min(7, int(round(v(f"z{z}_wcycle", 3)))))], warp_phase=v(f"z{z}_wphase"),
             slice_index=int(round(v(f"z{z}_sliceIdx", 1))) - 1, base_shift=int(round(v(f"z{z}_shift"))),
             stage=max(0, min(2, int(round(v(f"z{z}_stage"))))),
+            note_chance=max(0.0, min(100.0, v(f"z{z}_chance", 100.0))), chance_seed=max(1, int(round(v(f"z{z}_cseed", z)))),
         )
         if cfg.key_hi < cfg.key_lo:
             cfg.key_lo, cfg.key_hi = cfg.key_hi, cfg.key_lo
@@ -212,6 +215,8 @@ def load_setup(path: str) -> SetupConfig:
     if cfg.cascade and len(cfg.active_stages()) > 1:
         cfg.approximations.append("The cascade has several stages: the model predicts stage 1 exactly; what the later stages play is only known from the real-engine replay")
     for z in zones:
+        if z.enabled and z.note_chance < 100.0:
+            cfg.approximations.append(f"Zone {z.index + 1} thins its notes to {z.note_chance:g} % (the output is predicted by the real-engine replay, not the model)")
         if z.enabled and z.warp_curve > 0 and z.warp_depth > 0:
             cfg.approximations.append(f"Zone {z.index + 1} uses a time curve: when its voices end by themselves is approximate")
         if z.enabled and z.delay > 0:
