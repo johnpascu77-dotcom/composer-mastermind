@@ -1,0 +1,76 @@
+Clip for MidiSampler setup: MidiSampler setup1.json
+
+50 bars of 4/4 at 100 BPM (tempo only labels the file), seed 23644, shape arch_rise_fall, strategy arch
+Voice limit in the setup: 4   Stop key: 23   Phrase mode (start-only loops): yes
+
+Zones used:
+  Z1: keys 24-35  slice zone, slice 1  start_only  loop_bidir  ratio 0.5  12 keys usable
+  Z2: keys 48-59  slice zone, slice 16  start_only  loop_bidir  ratio 0.5  12 keys usable
+  Z3: keys 60-71  slice zone, slice 10  start_only  loop_bidir  ratio 0.333333  12 keys usable
+  Z4: keys 72-83  slice zone, slice 3  gate  loop_bidir  ratio 0.5  12 keys usable
+  Z5: keys 84-95  slice zone, slice 6  start_only  loop_bidir  ratio 0.5  12 keys usable
+  Z6: keys 96-107  slice zone, slice 2  start_only  loop_bidir  ratio 0.5  12 keys usable
+  Z7: keys 108-119  slice zone, slice 18  start_only  loop_bidir  ratio 0.5  12 keys usable
+  Z8: keys 36-47  slice zone, slice 16  start_only  loop_bidir  ratio 0.5  12 keys usable
+
+Setup the clip assumes (check these in MidiSampler before playing it):
+  - burg_quelle_format0.mid loaded, the zones exactly as in the saved setup, Voices = 4, Speed 100 %
+  - play the clip INTO MidiSampler (clip on the track before the plugin), host tempo anything: durations are in beats
+
+Checks:
+  OK  model replay of the file: up to 4 voices at once (limit 4), nothing left sounding at the end
+  OK  REAL ENGINE replay of the file: sounding keys agree at all 832 checkpoints, nothing left sounding
+
+29 layer notes, 108 accent notes, 11 stop-all presses, 15 presses skipped (voice limit)
+
+ bar energy  what happens
+   1   0.03  + layer Z2 #16 key 57 (+13 st)
+   2   0.15    accent Z4 #3 key 83 (+16 st) 1/16
+   3   0.20    accent Z4 #3 key 79 (+11 st) 4/16
+   4   0.17    accent Z4 #3 key 79 (+11 st) 1/16
+   5   0.32    accent Z4 #3 key 77 (+7 st) 1/16
+   6   0.33    accent Z4 #3 key 78 (+9 st) 4/16;   accent Z4 #3 key 83 (+16 st) 3/16
+   7   0.37  STOP-ALL; + layer Z4 #3 key 82 (+15 st); + layer Z3 #10 key 68 (+7 st)
+   8   0.49  -
+   9   0.50    accent Z4 #3 key 77 (+7 st) 1/16;   accent Z4 #3 key 77 (+7 st) 4/16;   accent Z4 #3 key 72 (+0 st) 2/16;   accent Z4 #3 key 72 (+0 st) 3/16
+  10   0.57    accent Z4 #3 key 73 (+1 st) 1/16;   accent Z4 #3 key 72 (+0 st) 3/16;   accent Z4 #3 key 74 (+3 st) 3/16;   accent Z4 #3 key 80 (+12 st) 1/16;   accent Z4 #3 key 80 (+12 st) 3/16;   accent Z4 #3 key 79 (+11 st) 1/16
+  11   0.68    accent Z4 #3 key 79 (+11 st) 4/16
+  12   0.66    accent Z4 #3 key 78 (+9 st) 1/16
+  13   0.70    accent Z4 #3 key 78 (+9 st) 4/16;   accent Z4 #3 key 78 (+9 st) 1/16
+  14   0.75    accent Z4 #3 key 77 (+7 st) 3/16;   accent Z4 #3 key 78 (+9 st) 3/16;   accent Z4 #3 key 81 (+13 st) 3/16
+  15   0.80  + layer Z7 #18 key 113 (+7 st);   accent Z4 #3 key 77 (+7 st) 1/16;   accent Z4 #3 key 76 (+6 st) 1/16;   accent Z4 #3 key 76 (+6 st) 4/16
+  16   0.89    accent Z4 #3 key 73 (+1 st) 1/16;   accent Z4 #3 key 74 (+3 st) 4/16
+  17   0.93    accent Z4 #3 key 73 (+1 st) 1/16;   accent Z4 #3 key 78 (+9 st) 1/16;   accent Z4 #3 key 78 (+9 st) 1/16;   accent Z4 #3 key 80 (+12 st) 1/16;   accent Z4 #3 key 78 (+9 st) 4/16;   accent Z4 #3 key 81 (+13 st) 1/16
+  18   0.90  STOP-ALL; + layer Z7 #18 key 117 (+13 st); + layer Z8 #16 key 39 (+9 st); + layer Z6 #2 key 99 (+4 st);   accent Z4 #3 key 77 (+7 st) 1/16;   accent Z4 #3 key 78 (+9 st) 1/16;   accent Z4 #3 key 80 (+12 st) 1/16
+  19   0.93    accent Z4 #3 key 80 (+12 st) 1/16;   accent Z4 #3 key 77 (+7 st) 1/16;   accent Z4 #3 key 77 (+7 st) 1/16
+  20   0.94  STOP-ALL; + layer Z8 #16 key 42 (+18 st);   accent Z4 #3 key 80 (+12 st) 2/16;   accent Z4 #3 key 79 (+11 st) 1/16; + layer Z7 #18 key 118 (+15 st); + layer Z6 #2 key 99 (+4 st);   accent Z4 #3 key 79 (+11 st) 1/16
+  21   0.95    accent Z4 #3 key 75 (+4 st) 2/16;   accent Z4 #3 key 77 (+7 st) 4/16;   accent Z4 #3 key 77 (+7 st) 1/16;   accent Z4 #3 key 72 (+0 st) 4/16
+  22   0.95  STOP-ALL;   accent Z4 #3 key 78 (+9 st) 2/16; + layer Z8 #16 key 43 (+21 st); + layer Z7 #18 key 109 (+1 st); + layer Z6 #2 key 101 (+7 st);   accent Z4 #3 key 74 (+3 st) 4/16
+  23   1.00    accent Z4 #3 key 72 (+0 st) 1/16;   accent Z4 #3 key 77 (+7 st) 1/16;   accent Z4 #3 key 76 (+6 st) 2/16;   accent Z4 #3 key 74 (+3 st) 2/16
+  24   0.96  STOP-ALL; + layer Z8 #16 key 47 (+33 st); + layer Z7 #18 key 111 (+4 st);   accent Z4 #3 key 77 (+7 st) 1/16;   accent Z4 #3 key 77 (+7 st) 4/16;   accent Z4 #3 key 80 (+12 st) 4/16; + layer Z6 #2 key 107 (+16 st);   accent Z4 #3 key 74 (+3 st) 2/16
+  25   0.98    accent Z4 #3 key 74 (+3 st) 2/16;   accent Z4 #3 key 76 (+6 st) 3/16
+  26   1.00  STOP-ALL; + layer Z8 #16 key 47 (+33 st);   accent Z4 #3 key 80 (+12 st) 2/16; + layer Z7 #18 key 111 (+4 st); + layer Z6 #2 key 105 (+13 st);   accent Z4 #3 key 83 (+16 st) 3/16
+  27   1.00    accent Z4 #3 key 78 (+9 st) 2/16;   accent Z4 #3 key 82 (+15 st) 3/16
+  28   1.00    accent Z4 #3 key 73 (+1 st) 1/16;   accent Z4 #3 key 72 (+0 st) 1/16;   accent Z4 #3 key 73 (+1 st) 4/16;   accent Z4 #3 key 81 (+13 st) 3/16
+  29   0.91    accent Z4 #3 key 74 (+3 st) 2/16
+  30   0.96    accent Z4 #3 key 83 (+16 st) 4/16;   accent Z4 #3 key 82 (+15 st) 1/16;   accent Z4 #3 key 75 (+4 st) 1/16;   accent Z4 #3 key 82 (+15 st) 3/16
+  31   0.93    accent Z4 #3 key 83 (+16 st) 1/16;   accent Z4 #3 key 83 (+16 st) 2/16;   accent Z4 #3 key 74 (+3 st) 3/16;   accent Z4 #3 key 79 (+11 st) 1/16;   accent Z4 #3 key 80 (+12 st) 4/16
+  32   0.93  STOP-ALL; + layer Z8 #16 key 45 (+27 st);   accent Z4 #3 key 72 (+0 st) 2/16; + layer Z7 #18 key 110 (+3 st);   accent Z4 #3 key 74 (+3 st) 1/16;   accent Z4 #3 key 73 (+1 st) 3/16; + layer Z6 #2 key 103 (+11 st);   accent Z4 #3 key 74 (+3 st) 1/16;   accent Z4 #3 key 73 (+1 st) 1/16
+  33   0.85    accent Z4 #3 key 81 (+13 st) 3/16;   accent Z4 #3 key 81 (+13 st) 2/16
+  34   0.83  STOP-ALL; + layer Z8 #16 key 43 (+21 st); + layer Z6 #2 key 105 (+13 st);   accent Z4 #3 key 83 (+16 st) 1/16;   accent Z4 #3 key 83 (+16 st) 3/16; + layer Z7 #18 key 111 (+4 st)
+  35   0.80    accent Z4 #3 key 81 (+13 st) 1/16;   accent Z4 #3 key 75 (+4 st) 4/16
+  36   0.71    accent Z4 #3 key 72 (+0 st) 1/16;   accent Z4 #3 key 74 (+3 st) 4/16;   accent Z4 #3 key 73 (+1 st) 1/16
+  37   0.66  STOP-ALL;   accent Z4 #3 key 73 (+1 st) 3/16; + layer Z5 #6 key 91 (+11 st);   accent Z4 #3 key 73 (+1 st) 3/16; + layer Z6 #2 key 99 (+4 st);   accent Z4 #3 key 75 (+4 st) 3/16;   accent Z4 #3 key 79 (+11 st) 1/16
+  38   0.66    accent Z4 #3 key 75 (+4 st) 3/16;   accent Z4 #3 key 75 (+4 st) 2/16
+  39   0.55    accent Z4 #3 key 79 (+11 st) 3/16;   accent Z4 #3 key 78 (+9 st) 3/16;   accent Z4 #3 key 77 (+7 st) 1/16
+  40   0.51  STOP-ALL; + layer Z5 #6 key 92 (+12 st); + layer Z4 #3 key 75 (+4 st);   accent Z4 #3 key 74 (+3 st) 1/16
+  41   0.47  -
+  42   0.41    accent Z4 #3 key 74 (+3 st) 4/16
+  43   0.37    accent Z4 #3 key 73 (+1 st) 1/16;   accent Z4 #3 key 72 (+0 st) 3/16
+  44   0.34    accent Z4 #3 key 72 (+0 st) 2/16;   accent Z4 #3 key 72 (+0 st) 4/16
+  45   0.25    accent Z4 #3 key 72 (+0 st) 1/16
+  46   0.15    accent Z4 #3 key 74 (+3 st) 1/16
+  47   0.12  -
+  48   0.07  -
+  49   0.00  STOP-ALL
+  50   0.00  -

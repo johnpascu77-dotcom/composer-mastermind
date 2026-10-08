@@ -81,7 +81,7 @@ class Plan:
 def collect_targets(cfg: mm.SetupConfig, model: mm.EngineModel, zone_filter, max_degrees: int) -> dict:
     """zone index -> list of Targets (the keys a clip may use for that zone)."""
     out = {}
-    for z in cfg.zones:
+    for z in model.zones:                                                  # the zones of the stage the host's notes go to
         if not z.enabled or (zone_filter and (z.index + 1) not in zone_filter):
             continue
         keys = []
@@ -97,8 +97,8 @@ def collect_targets(cfg: mm.SetupConfig, model: mm.EngineModel, zone_filter, max
             if info is None:
                 continue
             label = f"#{z.slice_index + 1}" if z.play_mode == 2 else (f"slice {key - z.slice_base_key + 1}" if z.play_mode == 1 else "whole")
-            n_voices = sum(1 for other in cfg.zones if model._zone_matches(other, key) and model.start_info(other, key) is not None)
-            targets.append(Target(key, [o.index for o in cfg.zones if model._zone_matches(o, key)], info[1], label, n_voices))
+            n_voices = sum(1 for other in model.zones if model._zone_matches(other, key) and model.start_info(other, key) is not None)
+            targets.append(Target(key, [o.index for o in model.zones if model._zone_matches(o, key)], info[1], label, n_voices))
         if targets:
             out[z.index] = targets
     return out
@@ -109,7 +109,8 @@ class Planner:
     def __init__(self, cfg: mm.SetupConfig, args, rng: random.Random):
         self.cfg, self.args, self.rng = cfg, args, rng
         self.model = mm.EngineModel(cfg)
-        self.tick = args.grid_beats
+        self.cond = cfg.stages[cfg.host_stage()]
+        self.tick = max(args.grid_beats, self.cond.grid_beats)      # a stage-1 Grid delays notes that are off its lines: stay on them
         self.bpb = args.beats_per_bar
         self.cap = cfg.voices
         zone_filter = {int(x) for x in args.zones.split(",")} if args.zones else None
@@ -117,7 +118,7 @@ class Planner:
         if not self.targets:
             raise SystemExit("No usable zones: enable at least one zone with a loaded source in the setup (and check --zones).")
 
-        for z in cfg.zones:
+        for z in self.model.zones:
             if z.enabled and z.index in self.targets and z.playback == "latch":
                 raise SystemExit(f"Zone {z.index + 1} is set to Trigger (latch): a latch zone toggles on every press, which a clip cannot plan "
                                  f"safely. Set it to Gate or Start only in MidiSampler and save the setup again.")
@@ -274,8 +275,8 @@ class Planner:
         for n in list(self.layers):
             if n.end == math.inf and self._note_alive(n, end_t):
                 self._release(n, end_t)
-        if self.reset_mode or self.model.active_count(end_t + EPS) > 0:
-            if stop_key >= 0 and self.model.active_count(end_t + EPS) > 0:
+        if self.reset_mode or self.model.active_count(end_t + EPS) > 0 or len(self.cfg.active_stages()) > 1:
+            if stop_key >= 0 and (self.model.active_count(end_t + EPS) > 0 or len(self.cfg.active_stages()) > 1):
                 self._stop_all(end_t, final=True)
         return Plan(self.notes, energy, bars, self.log, self.steals, self.skipped)
 
@@ -418,7 +419,12 @@ def verify(cfg: mm.SetupConfig, clip_path: str, total_beats: float, exe: str | N
     events.sort(key=lambda e: (e[0], e[1], 0 if e[2] == cfg.stop_key else 1))
 
     model = mm.EngineModel(cfg)
-    checks = [(k + 0.5) * 0.25 for k in range(int((total_beats + 8.0) / 0.25))]
+    tail = 8.0
+    if len(cfg.active_stages()) > 1:                         # later stages may ring on after the clip: wait for their longest natural ending
+        longest = max((cfg.sources[z.source].length_beats / max(0.01, cfg.speed / 100.0 * z.ratio) + z.delay
+                       for z in cfg.zones if z.enabled and z.source in cfg.sources), default=0.0)
+        tail += longest + 4.0
+    checks = [(k + 0.5) * 0.25 for k in range(int((total_beats + tail) / 0.25))]
     expected = []
     i = 0
     max_voices = 0
@@ -445,7 +451,7 @@ def verify(cfg: mm.SetupConfig, clip_path: str, total_beats: float, exe: str | N
             problems.append("the real-engine replay failed: " + result.stderr.strip())
         else:
             lines = result.stdout.strip().splitlines()
-            real = [[int(x) for x in ln.split()[1:]] for ln in lines if not ln.startswith(("END", "FIRSTPITCH"))]
+            real = [[int(x) for x in ln.split()[1:]] for ln in lines if not ln.startswith(("END", "FIRSTPITCH", "MAXV", "OUT"))]
             end_line = next((ln for ln in lines if ln.startswith("END")), "END ? ?")
             mism = 0
             model2 = mm.EngineModel(cfg)
@@ -464,10 +470,59 @@ def verify(cfg: mm.SetupConfig, clip_path: str, total_beats: float, exe: str | N
             if len(outstanding) >= 3 and (outstanding[1] != "0" or outstanding[2] != "0"):
                 problems.append(f"the real engine still has {outstanding[1]} notes / {outstanding[2]} voices sounding at the end")
             if not mism:
-                info.append(f"REAL ENGINE replay of the file: sounding keys agree at all {len(checks)} checkpoints, nothing left sounding")
+                info.append(f"REAL ENGINE replay of the file: sounding keys agree at all {len(checks)} checkpoints, nothing left sounding"
+                            + (" (stage 1 compared; later stages checked below)" if len(cfg.active_stages()) > 1 else ""))
+            cloud = cloud_stats(cfg, events, checks, exe, tmp)
+            if cloud is not None:
+                info.extend(cloud[0])
+                problems.extend(cloud[1])
     else:
         info.append("real-engine replay skipped (MidiSamplerReplay.exe not found)")
     return problems, info
+
+
+def cloud_stats(cfg: mm.SetupConfig, events: list, checks: list, exe: str, tmp: str):
+    """Replays the clip through the real cascade and describes what actually leaves the plugin. Returns (info lines, problems)."""
+    import midi_score_crosscheck as cc
+    replay = os.path.join(tmp, "cloud_replay.txt")
+    cc.write_replay2(replay, cfg, events, checks, dump=True, all_stage_keys=True)
+    result = subprocess.run([exe, replay], capture_output=True, text=True)
+    if result.returncode != 0:
+        return [], ["the cascade replay failed: " + result.stderr.strip()]
+    ons, offs = [], []
+    maxv = [0, 0, 0]
+    end = None
+    for ln in result.stdout.splitlines():
+        parts = ln.split()
+        if not parts:
+            continue
+        if parts[0] == "OUT":
+            beat, on, _ch, pitch = float(parts[1]), int(parts[2]), int(parts[3]), int(parts[4])
+            (ons if on else offs).append((beat, pitch))
+        elif parts[0] == "MAXV":
+            maxv = [int(x) for x in parts[1:4]]
+        elif parts[0] == "END":
+            end = (int(parts[1]), int(parts[2]))
+    info, problems = [], []
+    if end is not None and (end[0] != 0 or end[1] != 0):
+        problems.append(f"after the clip the plugin still holds {end[0]} output notes / {end[1]} voices (a looping zone on a later stage in Start only mode can only be "
+                        f"ended by the Stop key; use Gate there, or set a Stop key)")
+    stages = cfg.active_stages()
+    if len(stages) > 1 or not cfg.stages[stages[0]].is_neutral():
+        if ons:
+            pitches = [p for _, p in ons]
+            span = max(b for b, _ in ons) - min(b for b, _ in ons)
+            bars = max(1.0, span / 4.0)
+            events_sorted = sorted([(b, 1) for b, _ in ons] + [(b, -1) for b, _ in offs], key=lambda e: (e[0], e[1]))
+            sounding = peak = 0
+            for _, d in events_sorted:
+                sounding += d
+                peak = max(peak, sounding)
+            info.append(f"what leaves the plugin (real engine): {len(ons)} notes, pitches {min(pitches)}-{max(pitches)}, about {len(ons) / bars:.0f} notes per bar, "
+                        f"at most {peak} sounding at once; most voices busy per stage: " + ", ".join(f"stage {k + 1}: {maxv[k]}" for k in stages))
+        else:
+            info.append("what leaves the plugin (real engine): nothing (every trigger was dropped by the conditioning, or no zone answers)")
+    return info, problems
 
 
 # ======================================================================================== reporting
@@ -476,6 +531,22 @@ def write_report(path: str, args, cfg: mm.SetupConfig, plan: Plan, planner: Plan
              f"{plan.bars} bars of {args.beats_per_bar}/4 at {args.bpm:g} BPM (tempo only labels the file), seed {args.seed}, shape {args.shape}, strategy {args.strategy}",
              f"Voice limit in the setup: {cfg.voices}   Stop key: {cfg.stop_key if cfg.stop_key >= 0 else 'off'}   "
              f"Phrase mode (start-only loops): {'yes' if planner.reset_mode else 'no'}", ""]
+    cond = planner.cond
+    if cfg.cascade and len(cfg.active_stages()) > 1:
+        lines.append(f"Cascade ON: the clip drives stage {cfg.host_stage() + 1}; later stages are played by what it emits.")
+        for k in cfg.active_stages():
+            names = ", ".join(f"Z{z.index + 1}" for z in cfg.zones if z.enabled and cfg.zone_stage(z) == k)
+            sg = cfg.stages[k]
+            how = "host notes" if k == cfg.host_stage() else ("one trigger per voice" if sg.triggers else "every note") + " of the previous stage"
+            lines.append(f"  stage {k + 1}: {names}  (input: {how}{', tapped to the output' if sg.tap else ''})")
+        lines.append("")
+    if not cond.is_neutral():
+        bits = []
+        if cond.pass_pct < 100.0: bits.append(f"{cond.pass_pct:g} % of the notes pass (seed {cond.seed}; the clip is planned with the same thinning)")
+        if cond.grid_beats > 0: bits.append(f"notes wait for a {cond.grid_beats:g}-beat grid (the clip is written on it)")
+        if cond.range_lo > 0 or cond.range_hi < 127: bits.append(f"range {cond.range_lo}-{cond.range_hi}")
+        if cond.snap: bits.append(f"snap to pitch classes {[i for i in range(12) if cond.snap_mask >> i & 1]}")
+        lines += ["Input conditioning of the host's notes (stage " + str(cfg.host_stage() + 1) + "): " + "; ".join(bits), ""]
     lines.append("Zones used:")
     for zi in sorted(planner.targets):
         z = cfg.zones[zi]

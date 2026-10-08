@@ -29,15 +29,23 @@ def _idx(options, value):
     return options.index(value)
 
 
-def make_setup_json(zones, voices=4, stop_key=-1, speed=100.0, sources=None):
-    """zones: list of dicts using the human-level names of ZoneCfg (only what differs from the defaults)."""
-    params = [("speed", speed), ("sync", 1), ("tempo", 120.0), ("voices", voices), ("stopKey", stop_key)]
+def make_setup_json(zones, voices=4, stop_key=-1, speed=100.0, sources=None, cascade=False, stages=None):
+    """zones: list of dicts using the human-level names of ZoneCfg (only what differs from the defaults).
+    cascade / stages: the cascade switch and, per stage 1..3, a dict of StageCfg field names (pass_pct, seed, grid_beats, range_lo, range_hi, snap, snap_mask, triggers, tap)."""
+    params = [("speed", speed), ("sync", 1), ("tempo", 120.0), ("voices", voices), ("stopKey", stop_key), ("cascade", 1 if cascade else 0)]
+    for k in range(3):
+        sg = mm.StageCfg()
+        for name, value in ((stages or [{}, {}, {}])[k] if stages and k < len(stages) else {}).items():
+            setattr(sg, name, value)
+        params += [(f"s{k + 1}_tap", 1 if sg.tap else 0), (f"s{k + 1}_mode", 0 if sg.triggers else 1), (f"s{k + 1}_pass", sg.pass_pct),
+                   (f"s{k + 1}_seed", sg.seed), (f"s{k + 1}_grid", mm.GRID_BEATS.index(sg.grid_beats)), (f"s{k + 1}_lo", sg.range_lo),
+                   (f"s{k + 1}_hi", sg.range_hi), (f"s{k + 1}_snap", 1 if sg.snap else 0), (f"s{k + 1}_snapSet", sg.snap_mask)]
     for i in range(8):
         z = i + 1
         d = dict(enabled=False, key_lo=0, key_hi=127, source=0, root=60, start01=0.0, end01=1.0, loop_start01=0.0, loop_end01=1.0,
                  mode="forward", playback="gate", play_mode=0, slice_by="beat", grid=1.0, count=8, min_beats=0.25, slice_thru=False,
                  slice_base_key=24, out_channel=0, invert=False, axis=60, ratio=1.0, key_map_set=False, key_step=1, pc_mask=4095,
-                 delay=0.0, phase=0.0, warp_curve=0, warp_depth=0.0, warp_cycle=4.0, warp_phase=0.0, slice_index=0, base_shift=0)
+                 delay=0.0, phase=0.0, warp_curve=0, warp_depth=0.0, warp_cycle=4.0, warp_phase=0.0, slice_index=0, base_shift=0, stage=0)
         if i < len(zones):
             d.update(zones[i])
             d["enabled"] = zones[i].get("enabled", True)
@@ -53,7 +61,7 @@ def make_setup_json(zones, voices=4, stop_key=-1, speed=100.0, sources=None):
             (f"z{z}_step", d["key_step"]), (f"z{z}_pcset", d["pc_mask"]), (f"z{z}_delay", d["delay"]), (f"z{z}_phase", d["phase"]),
             (f"z{z}_wcurve", d["warp_curve"]), (f"z{z}_wdepth", d["warp_depth"]),
             (f"z{z}_wcycle", min(range(8), key=lambda k: abs(mm.CYCLES[k] - d["warp_cycle"]))), (f"z{z}_wphase", d["warp_phase"]),
-            (f"z{z}_sliceIdx", d["slice_index"] + 1), (f"z{z}_shift", d["base_shift"]),
+            (f"z{z}_sliceIdx", d["slice_index"] + 1), (f"z{z}_shift", d["base_shift"]), (f"z{z}_stage", d["stage"]),
         ]
     return dict(format="MidiSamplerSetup", version=1, parameters=[dict(id=k, value=v) for k, v in params],
                 manualSlices=[[] for _ in range(8)], sources=sources or [])
@@ -85,6 +93,17 @@ def synthetic_setups(rng):
                                                             slice_zone(1, 5, mode="forward", playback="gate", phase=0.25)], voices=6, speed=120.0, sources=src)),
         ("entry delay", make_setup_json([slice_zone(0, 2, mode="loop_forward", playback="gate", delay=0.75),
                                          slice_zone(1, 4, mode="forward", playback="start_only", delay=1.5)], voices=6, sources=src)),
+        ("stage 1 conditioning: pass 55 %, range, snap, stop key", make_setup_json(
+            [slice_zone(i, i * 2, mode="loop_forward", playback="gate") for i in range(4)], voices=5, stop_key=23, sources=src,
+            stages=[dict(pass_pct=55.0, seed=9, range_lo=40, range_hi=90, snap=True, snap_mask=0b101010110101)])),
+        ("stage 1 grid 1/16 and a different seed", make_setup_json(
+            [slice_zone(i, i, mode="loop_bidir", playback="start_only") for i in range(3)], voices=4, stop_key=23, sources=src,
+            stages=[dict(pass_pct=30.0, seed=4321, grid_beats=0.25)])),
+        ("cascade: zones on stages 2 and 3 (stage 1 predicted exactly)", make_setup_json(
+            [slice_zone(0, 1, mode="loop_forward", playback="gate"), slice_zone(1, 2, mode="loop_bidir", playback="gate"),
+             dict(key_lo=0, key_hi=127, root=60, mode="forward", playback="start_only", stage=1, source=1),
+             dict(key_lo=0, key_hi=127, root=60, mode="loop_forward", playback="gate", stage=2, ratio=2.0)], voices=4, sources=src,
+            cascade=True, stages=[dict(pass_pct=70.0, seed=5), dict(triggers=False, pass_pct=50.0, seed=2, snap=True, snap_mask=0b100010010001), dict(tap=True)])),
     ]
 
 
@@ -92,7 +111,7 @@ def synthetic_setups(rng):
 def random_events(rng, cfg, beats=64.0, density=0.9):
     keys = []
     for z in cfg.zones:
-        if z.enabled:
+        if z.enabled and cfg.zone_stage(z) == cfg.host_stage():
             keys += list(range(z.key_lo, min(z.key_hi, z.key_lo + 24) + 1))
     keys += [5, 100, 126]                                           # some keys no zone answers to
     if cfg.stop_key >= 0:
@@ -109,8 +128,12 @@ def random_events(rng, cfg, beats=64.0, density=0.9):
     return [e for e in events if e[0] <= beats]
 
 
-def write_replay2(path, cfg, events, checks):
-    lines = ["engine2", f"bpm {BPM}", f"sr {SAMPLE_RATE}", f"voices {cfg.voices}", f"speed {cfg.speed}", f"stopkey {cfg.stop_key}"]
+def write_replay2(path, cfg, events, checks, dump=False, all_stage_keys=False):
+    """all_stage_keys=False: checkpoint lines list only the stage the host's notes go to (what the model predicts)."""
+    lines = ["engine2", f"bpm {BPM}", f"sr {SAMPLE_RATE}", f"voices {cfg.voices}", f"speed {cfg.speed}", f"stopkey {cfg.stop_key}",
+             f"cascade {int(cfg.cascade)}", f"stagekeys {-1 if all_stage_keys else cfg.host_stage()}", f"dump {int(dump)}"]
+    for k, sg in enumerate(cfg.stages):
+        lines.append(f"stageparams {k} {int(sg.tap)} {int(sg.triggers)} {sg.pass_pct} {sg.seed} {sg.grid_beats} {sg.range_lo} {sg.range_hi} {int(sg.snap)} {sg.snap_mask}")
     for slot, seq in cfg.sources.items():
         lines.append(f"source {slot} {seq.length_beats!r} {len(seq.notes)}")
         lines += [f"{n.start!r} {n.length!r} {n.pitch}" for n in seq.notes]
@@ -121,6 +144,7 @@ def write_replay2(path, cfg, events, checks):
             mm.SLICE_BYS.index(z.slice_by), z.grid, z.count, z.min_beats, z.slice_base_key, int(z.slice_thru), z.slice_index, z.base_shift,
             int(z.key_map_set), z.key_step, z.pc_mask, int(z.invert), z.axis, z.out_channel, z.delay, z.phase, z.warp_curve,
             z.warp_depth, z.warp_cycle, z.warp_phase, len(z.manual), *z.manual]))
+        lines.append(f"zonestage {z.index} {z.stage}")
     lines.append(f"events {len(events)}")
     lines += [f"{t!r} {int(on)} {key} {vel}" for t, on, key, vel in events]
     lines.append(f"checksb {len(checks)}")
@@ -149,7 +173,7 @@ def run_one(exe, name, setup_path_or_dict, seeds, tmp):
             print(f"ERROR {name}: replay tool failed: {result.stderr.strip()}")
             return 1
         lines = result.stdout.strip().splitlines()
-        real = [[int(x) for x in ln.split()[1:]] for ln in lines if not ln.startswith("END")]
+        real = [[int(x) for x in ln.split()[1:]] for ln in lines if not ln.startswith(("END", "FIRSTPITCH", "MAXV", "OUT"))]
 
         model = mm.EngineModel(cfg)
         i = 0

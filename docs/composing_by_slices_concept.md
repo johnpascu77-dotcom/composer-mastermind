@@ -149,3 +149,11 @@ It reads the plugin's own **Save Setup** JSON (zones, voice limit, stop key, sou
 `MidiSamplerReplay.exe`. Options: `--allowed-transpositions 0,3,7`, `--avoid-clashes`, `--max-layers`, `--strategy`, `--shape`, `--accent-rate`.
 Start-only loop zones switch phrase-wise with the Stop key; Trigger (latch) zones are refused. Self-test: `python slice_midi_selftest.py`.
 Not verified by ear yet.
+
+### Cascade awareness (2026-10)
+`midisampler_model.py` reads the setup's cascade (`cascade`, each zone's `stage`, each stage's Pass % / seed / Grid / Range / Snap / Hand-over / Tap). The model
+is the stage the host's notes go to and mirrors that stage's input conditioning exactly (including the seeded pass % random sequence, reset by the Stop key),
+cross-checked against the real engine with negative controls. Later stages are not re-implemented in Python: the generator replays the finished clip through
+the real cascade (`MidiSamplerReplay`, `dump 1`) and reports what actually leaves the plugin (notes, pitch span, notes per bar, peak polyphony, busiest voices per
+stage) and fails if anything is left hanging. `slice_midi_score.py` therefore only targets zones of the host stage, writes its notes on the stage-1 Grid, plans with
+the same thinning the plugin will apply, and always ends with a Stop-key press when later stages exist.

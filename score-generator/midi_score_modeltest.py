@@ -115,6 +115,27 @@ def negative_controls(exe, tmp):
         mm.Voice.__init__ = init
         return lambda: setattr(mm.Voice, "__init__", original)
     detect("latch ignored", "latch one-shots", no_latch)
+    # 4. conditioning: pass % ignored (every note passes), and a wrong random sequence
+    def pass_ignored():
+        original = mm.EngineModel.conditioned_key
+        def conditioned_key(self, key):
+            saved = self.cond.pass_pct
+            self.cond.pass_pct = 100.0
+            try:
+                return original(self, key)
+            finally:
+                self.cond.pass_pct = saved
+        mm.EngineModel.conditioned_key = conditioned_key
+        return lambda: setattr(mm.EngineModel, "conditioned_key", original)
+    detect("pass % ignored", "stage 1 conditioning: pass 55 %, range, snap, stop key", pass_ignored)
+
+    def wrong_random():
+        original = mm.EngineModel._rand01
+        def rand01(self):
+            return 1.0 - original(self)
+        mm.EngineModel._rand01 = rand01
+        return lambda: setattr(mm.EngineModel, "_rand01", original)
+    detect("different random sequence", "stage 1 conditioning: pass 55 %, range, snap, stop key", wrong_random)
     return problems
 
 

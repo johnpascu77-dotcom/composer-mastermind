@@ -71,11 +71,32 @@ class ZoneCfg:
     warp_phase: float = 0.0
     slice_index: int = 0
     base_shift: int = 0
+    stage: int = 0                     # cascade stage (0-based); only used when the setup's cascade is on
 
     def as_slice_zone(self) -> ss.Zone:
         """The subset of fields slice_score's mirror of computeRanges / computeSliceBoundaries needs."""
         return ss.Zone(start01=self.start01, end01=self.end01, slice_by=self.slice_by, grid_beats=self.grid, count=self.count,
                        min_beats=self.min_beats, manual=list(self.manual), base_key=self.slice_base_key, thru=self.slice_thru)
+
+
+GRID_BEATS = [0.0, 0.25, 0.5, 1.0]        # the plugin's stage Grid choice: Off, 1/16, 1/8, 1/4
+
+
+@dataclass
+class StageCfg:
+    """One cascade stage's input conditioner (mirror of msmp::StageParams in Source/Cascade.h)."""
+    tap: bool = False
+    triggers: bool = True              # hand-over from the previous stage: one trigger per voice, or every note
+    pass_pct: float = 100.0
+    seed: int = 1
+    grid_beats: float = 0.0
+    range_lo: int = 0
+    range_hi: int = 127
+    snap: bool = False
+    snap_mask: int = 0xFFF
+
+    def is_neutral(self) -> bool:
+        return self.pass_pct >= 100.0 and self.grid_beats <= 0.0 and self.range_lo <= 0 and self.range_hi >= 127 and not self.snap
 
 
 @dataclass
@@ -89,6 +110,20 @@ class SetupConfig:
     voices: int = 4
     stop_key: int = -1
     approximations: list = field(default_factory=list)
+    cascade: bool = False
+    stages: list = field(default_factory=lambda: [StageCfg(), StageCfg(), StageCfg()])
+
+    def zone_stage(self, z: ZoneCfg) -> int:
+        return max(0, min(2, z.stage)) if self.cascade else 0
+
+    def active_stages(self) -> list:
+        """Stages that have an enabled zone with a loaded source, in order (stage 1 first); [0] when there are none."""
+        used = sorted({self.zone_stage(z) for z in self.zones if z.enabled})
+        return used or [0]
+
+    def host_stage(self) -> int:
+        """The stage the host's notes go to: the first active one."""
+        return self.active_stages()[0]
 
 
 def key_offset_from(z: ZoneCfg, key: int, base: int) -> int:
@@ -137,6 +172,7 @@ def load_setup(path: str) -> SetupConfig:
             delay=v(f"z{z}_delay"), phase=v(f"z{z}_phase"), warp_curve=int(round(v(f"z{z}_wcurve"))), warp_depth=v(f"z{z}_wdepth"),
             warp_cycle=CYCLES[max(0, min(7, int(round(v(f"z{z}_wcycle", 3)))))], warp_phase=v(f"z{z}_wphase"),
             slice_index=int(round(v(f"z{z}_sliceIdx", 1))) - 1, base_shift=int(round(v(f"z{z}_shift"))),
+            stage=max(0, min(2, int(round(v(f"z{z}_stage"))))),
         )
         if cfg.key_hi < cfg.key_lo:
             cfg.key_lo, cfg.key_hi = cfg.key_hi, cfg.key_lo
@@ -159,6 +195,22 @@ def load_setup(path: str) -> SetupConfig:
 
     cfg = SetupConfig(zones=zones, sources=sources, source_names=names, speed=v("speed", 100.0), sync=v("sync", 1.0) >= 0.5,
                       tempo=v("tempo", 120.0), voices=max(1, min(16, int(round(v("voices", 8))))), stop_key=int(round(v("stopKey", -1))))
+    cfg.cascade = v("cascade") >= 0.5
+    for k in range(3):
+        sg = cfg.stages[k]
+        sg.tap = v(f"s{k + 1}_tap") >= 0.5
+        sg.triggers = v(f"s{k + 1}_mode") < 0.5
+        sg.pass_pct = max(0.0, min(100.0, v(f"s{k + 1}_pass", 100.0)))
+        sg.seed = max(1, min(9999, int(round(v(f"s{k + 1}_seed", 1)))))
+        sg.grid_beats = GRID_BEATS[max(0, min(3, int(round(v(f"s{k + 1}_grid")))))]
+        sg.range_lo = max(0, min(127, int(round(v(f"s{k + 1}_lo", 0)))))
+        sg.range_hi = max(0, min(127, int(round(v(f"s{k + 1}_hi", 127)))))
+        if sg.range_hi < sg.range_lo:
+            sg.range_lo, sg.range_hi = sg.range_hi, sg.range_lo
+        sg.snap = v(f"s{k + 1}_snap") >= 0.5
+        sg.snap_mask = max(1, min(4095, int(round(v(f"s{k + 1}_snapSet", 4095)))))
+    if cfg.cascade and len(cfg.active_stages()) > 1:
+        cfg.approximations.append("The cascade has several stages: the model predicts stage 1 exactly; what the later stages play is only known from the real-engine replay")
     for z in zones:
         if z.enabled and z.warp_curve > 0 and z.warp_depth > 0:
             cfg.approximations.append(f"Zone {z.index + 1} uses a time curve: when its voices end by themselves is approximate")
@@ -191,12 +243,17 @@ class EngineModel:
         self.voices: list[Voice] = []
         self.age = 0
         self.rate_base = cfg.speed / 100.0              # source beats per host beat, before each zone's own ratio
+        self.stage = cfg.host_stage()                   # the model is the stage the host's notes go to
+        self.zones = [z for z in cfg.zones if cfg.zone_stage(z) == self.stage]
+        self.cond = cfg.stages[self.stage]
+        self.rng = 0                                    # xorshift state of the stage's seeded pass %, like Cascade::rand01
+        self.slots: dict = {}                           # (channel, host key) -> key actually pressed, or None when it was dropped
 
     # ---- zone queries
     def key_is_mapped(self, key: int) -> bool:
         if key == self.cfg.stop_key:
             return True
-        return any(self._zone_matches(z, key) for z in self.cfg.zones)
+        return any(self._zone_matches(z, key) for z in self.zones)
 
     def _zone_matches(self, z: ZoneCfg, key: int) -> bool:
         seq = self.cfg.sources.get(z.source)
@@ -232,13 +289,57 @@ class EngineModel:
         travel = (window[1] - pos) if direction > 0 else (pos - window[0])
         return z.delay + max(0.0, travel) / rate
 
+    # ---- input conditioning of the host's notes (range, seeded pass %, pitch-set snap); the grid is assumed to be met by the caller
+    def reset_random(self) -> None:
+        self.rng = 0
+
+    def _rand01(self) -> float:
+        if self.rng == 0:
+            self.rng = ((self.cond.seed * 2654435761) & 0xFFFFFFFF) | 1
+        s = self.rng
+        s ^= (s << 13) & 0xFFFFFFFF
+        s ^= s >> 17
+        s ^= (s << 5) & 0xFFFFFFFF
+        self.rng = s
+        return (s >> 8) / 16777216.0
+
+    @staticmethod
+    def snap_pitch(pitch: int, mask: int) -> int:
+        mask &= 0xFFF
+        if mask == 0:
+            return pitch
+        for d in range(12):
+            if mask >> ((pitch - d) % 12) & 1 and pitch - d >= 0:
+                return pitch - d
+            if mask >> ((pitch + d) % 12) & 1 and pitch + d <= 127:
+                return pitch + d
+        return pitch
+
+    def conditioned_key(self, key: int):
+        """What a host press of `key` becomes (None = dropped). Consumes one random number exactly when the C++ does."""
+        c = self.cond
+        if key < c.range_lo or key > c.range_hi:
+            return None
+        if c.pass_pct < 100.0 and self._rand01() * 100.0 >= c.pass_pct:
+            return None
+        return self.snap_pitch(key, c.snap_mask) if c.snap else key
+
     # ---- events
     def press(self, key: int, t: float, channel: int = 0) -> None:
         if not self.key_is_mapped(key):
             return
         if key == self.cfg.stop_key:
             self.stop_all(t)
+            self.reset_random()
+            self.slots.clear()
             return
+        used = self.conditioned_key(key)
+        self.slots[(channel, key)] = used
+        if used is None:
+            return
+        self._press_raw(used, t, channel)
+
+    def _press_raw(self, key: int, t: float, channel: int = 0) -> None:
         # a latch voice already running on this key: the press switches it off
         if any(v.active and v.latch and v.key == key and v.channel == channel and self._alive(v, t) for v in self.voices):
             for v in self.voices:
@@ -248,7 +349,7 @@ class EngineModel:
         for v in self.voices:                                        # a re-pressed key restarts cleanly
             if v.active and v.key == key and v.channel == channel and self._alive(v, t):
                 self._stop(v, t)
-        for z in self.cfg.zones:
+        for z in self.zones:
             if not self._zone_matches(z, key):
                 continue
             info = self.start_info(z, key)
@@ -264,6 +365,10 @@ class EngineModel:
                                      transpose, window))
 
     def release(self, key: int, t: float, channel: int = 0) -> None:
+        used = self.slots.pop((channel, key), None)         # a release without a press (or after a stop-all) does nothing, as in Cascade
+        if used is None:
+            return
+        key = used
         for v in self.voices:
             if v.active and not v.one_shot and v.key == key and v.channel == channel and self._alive(v, t):
                 self._stop(v, t)
@@ -272,6 +377,7 @@ class EngineModel:
         for v in self.voices:
             if v.active and self._alive(v, t):
                 self._stop(v, t)
+        self.slots.clear()
 
     @staticmethod
     def _alive(v: Voice, t: float) -> bool:
