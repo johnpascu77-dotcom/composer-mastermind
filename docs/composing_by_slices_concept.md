@@ -139,3 +139,13 @@ bar: what is pressed, which slices sound, and the Bitwig bar where you will hear
 
 **Not verified:** how it sounds, and that the 2-bar lag holds for a long piece with many 1-bar sections (it was measured on 8 sections). The first live run
 of `docs/slice_score_demo.json` is the real test.
+
+## Plain-clip route: `slice_midi_score.py` (no MPL)
+
+MPL turned out not to be a good match; hand-drawn MIDI clips played straight into MidiSampler sound better. `score-generator/slice_midi_score.py`
+writes such a clip: octave = zone (= slice), key inside the octave = transposition, note length = how long a Gate zone loops, velocity = dynamics.
+It reads the plugin's own **Save Setup** JSON (zones, voice limit, stop key, source), plans layers/accents against `midisampler_model.py`
+(validated against the real C++ engine), writes a `.mid` plus a `.report.txt`, and re-verifies the finished file through the model and
+`MidiSamplerReplay.exe`. Options: `--allowed-transpositions 0,3,7`, `--avoid-clashes`, `--max-layers`, `--strategy`, `--shape`, `--accent-rate`.
+Start-only loop zones switch phrase-wise with the Stop key; Trigger (latch) zones are refused. Self-test: `python slice_midi_selftest.py`.
+Not verified by ear yet.
