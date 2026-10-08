@@ -37,3 +37,4 @@ docs/OrchCapture_session_*.mid
 
 # score-generator window: the user's own remembered settings
 score-generator/slice_score_gui_settings.json
+score-generator/slice_midi_gui_settings.json
