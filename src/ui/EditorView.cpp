@@ -33,6 +33,7 @@ EditorView::EditorView(ComposerMastermindAudioProcessor& processor)
     tabs.addTab("Awareness", tabColour, &patternAwarenessView, false);
     tabs.addTab("Activity Log", tabColour, &activityLogView, false);
     tabs.addTab("Milestones", tabColour, &milestoneView, false);
+    tabs.applyHighlight(); // the selected tab is filled, the rest are dark
 
     addAndMakeVisible(statusLabel);
     statusLabel.setJustificationType(juce::Justification::centredLeft);

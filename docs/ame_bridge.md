@@ -20,6 +20,11 @@ merges with the notes (the same Bitwig lesson as OrchConductor).
 
 ## Recipes (Modulators tab, or `modulatorTargets[]` in a bundle)
 
+**Shortcut:** on the Modulators tab, set the MIDI channel slider to the one the AME bridge listens on, press
+**AME bridge...** and pick one of the five ready-made targets (`ame-stages`, `ame-preset`, `ame-scan`, `ame-mask`,
+`ame-tap`). It adds or replaces the target with the recipe below; for the `section` ones you then enter the value
+per section.
+
 - **More transformation as the piece grows more complex:** CC 87, mode `arc`, dimension `complexity` (or `tension`).
 - **A different chain per section:** CC 85, mode `section`; give each section a `modulatorValues` entry with the
   preset number.

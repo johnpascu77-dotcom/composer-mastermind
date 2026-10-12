@@ -51,6 +51,7 @@ public:
 
 private:
     void addTargetClicked();
+    void ameBridgeClicked();
     void removeTargetClicked();
     void sendForPairingClicked();
     void modeChanged();
@@ -96,6 +97,9 @@ private:
     juce::ComboBox arcDimensionCombo;
     juce::Label arcDimensionLabel { {}, "Arc Dimension" };
     juce::TextButton addTargetButton { "Add / Update" };
+    // Adds one of the Atonal Motive Transformer's bridge controls (CC 85-89) as a
+    // target on the channel currently set above (see docs/ame_bridge.md).
+    juce::TextButton ameBridgeButton { "AME bridge..." };
     juce::TextEditor targetListDisplay;
 
     juce::ComboBox existingTargetsCombo;

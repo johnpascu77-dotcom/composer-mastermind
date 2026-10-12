@@ -125,6 +125,9 @@ ModulatorTargetView::ModulatorTargetView(ComposerMastermindAudioProcessor& proce
     content.addAndMakeVisible(addTargetButton);
     addTargetButton.onClick = [this] { addTargetClicked(); };
 
+    content.addAndMakeVisible(ameBridgeButton);
+    ameBridgeButton.onClick = [this] { ameBridgeClicked(); };
+
     content.addAndMakeVisible(existingTargetsCombo);
     existingTargetsCombo.setTextWhenNothingSelected("(pick existing target)");
 
@@ -329,6 +332,8 @@ void ModulatorTargetView::resized()
 
     auto addRow = nextRow(kRowHeight);
     addTargetButton.setBounds(addRow.removeFromLeft(110));
+    addRow.removeFromLeft(kMargin);
+    ameBridgeButton.setBounds(addRow.removeFromLeft(150));
 
     auto existingRow = nextRow(kRowHeight);
     existingTargetsCombo.setBounds(existingRow.removeFromLeft(200));
@@ -489,6 +494,65 @@ void ModulatorTargetView::addTargetClicked()
                    + " ch " + juce::String(target.midiChannel) + " (" + juce::String(target.mode) + ")");
     targetIdInput.clear();
     refreshAll();
+}
+
+// One-click targets for the Atonal Motive Transformer's CC bridge. Each entry adds
+// (or replaces) a single target on the MIDI channel set in the form above, so
+// nothing is created that the user did not ask for: the arc-driven ones start
+// sending on the next bar, and CC 85 / CC 86 are alternatives, not a pair.
+void ModulatorTargetView::ameBridgeClicked()
+{
+    struct Entry
+    {
+        const char* label;
+        const char* id;
+        int cc;
+        const char* mode;
+        const char* dimension;
+    };
+    static const std::array<Entry, 5> entries { {
+        { "Active stages  (CC 87, follows complexity)", "ame-stages", 87, "arc", "complexity" },
+        { "Chain preset per section  (CC 85)", "ame-preset", 85, "section", "" },
+        { "Chain scan over the whole piece  (CC 86, narrative position)", "ame-scan", 86, "arc",
+          ComposerCore::kNarrativePositionDimension },
+        { "Stage mask per section  (CC 88)", "ame-mask", 88, "section", "" },
+        { "Output tap per section  (CC 89)", "ame-tap", 89, "section", "" },
+    } };
+
+    juce::PopupMenu menu;
+    menu.addSectionHeader("Add an Atonal Motive Transformer control");
+    for (size_t i = 0; i < entries.size(); ++i)
+        menu.addItem(static_cast<int>(i) + 1, entries[i].label);
+
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(&ameBridgeButton),
+                       [this](int choice)
+                       {
+                           if (choice <= 0 || choice > static_cast<int>(entries.size()))
+                               return;
+
+                           const auto& entry = entries[static_cast<size_t>(choice) - 1];
+                           ModulatorTarget target;
+                           target.id = entry.id;
+                           target.ccNumber = entry.cc;
+                           target.midiChannel = static_cast<int>(channelSlider.getValue());
+                           target.mode = entry.mode;
+                           target.arcDimension = entry.dimension;
+
+                           std::string errorMessage;
+                           if (!Validation::isValidModulatorTarget(target, errorMessage))
+                           {
+                               setStatus("AME bridge target failed: " + errorMessage);
+                               return;
+                           }
+
+                           processorRef.getComposerCore().getModulatorTargetLibrary().addOrReplaceTarget(target);
+                           setStatus("Set '" + juce::String(target.id) + "' -> CC " + juce::String(target.ccNumber)
+                                     + " ch " + juce::String(target.midiChannel) + " ("
+                                     + juce::String(target.mode)
+                                     + (target.mode == "arc" ? " " + juce::String(target.arcDimension) : juce::String())
+                                     + ") - route this channel to the AME track");
+                           refreshAll();
+                       });
 }
 
 void ModulatorTargetView::removeTargetClicked()

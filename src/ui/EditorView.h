@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include "HighlightedTabs.h"
 #include "InstanceView.h"
 #include "SceneListView.h"
 #include "DebugPanel.h"
@@ -43,7 +44,7 @@ private:
 
     ComposerMastermindAudioProcessor& processorRef;
 
-    juce::TabbedComponent tabs { juce::TabbedButtonBar::TabsAtTop };
+    HighlightedTabs tabs { juce::TabbedButtonBar::TabsAtTop };
     InstanceView instanceView;
     SceneListView sceneListView;
     DebugPanel debugPanel;

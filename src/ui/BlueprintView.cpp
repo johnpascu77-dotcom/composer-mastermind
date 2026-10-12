@@ -10,6 +10,7 @@ BlueprintView::BlueprintView(ComposerMastermindAudioProcessor& processor,
     const auto tabColour = juce::Colours::transparentBlack;
     innerTabs.addTab("Arcs", tabColour, &arcGraphView, false);
     innerTabs.addTab("Sections", tabColour, &sectionsView, false);
+    innerTabs.applyHighlight();
 }
 
 void BlueprintView::paint(juce::Graphics& g)

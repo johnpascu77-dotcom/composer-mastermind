@@ -3,6 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <functional>
 #include "ArcGraphView.h"
+#include "HighlightedTabs.h"
 #include "BlueprintSectionsView.h"
 
 class ComposerMastermindAudioProcessor;
@@ -25,7 +26,7 @@ public:
     void refreshAll();
 
 private:
-    juce::TabbedComponent innerTabs { juce::TabbedButtonBar::TabsAtTop };
+    HighlightedTabs innerTabs { juce::TabbedButtonBar::TabsAtTop };
     ArcGraphView arcGraphView;
     BlueprintSectionsView sectionsView;
 
