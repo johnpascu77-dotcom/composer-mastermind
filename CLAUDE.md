@@ -53,6 +53,10 @@ Start here, in order:
   Roadmap.md` — the original conceptual vision doc this whole project operationalizes.
 - **atonal_phrase_engine** — `C:\Users\Asus\Documents\atonal_phrase_engine\` — unrelated Python note-generator,
   mined once for transferable arc/governance concepts (see doc link above). Not otherwise connected to this repo.
+- **Atonal Motive Engine (AME)** — `C:\atonal-motive-engine\` (own repo, github.com/johnpascu77-dotcom/AtonalMotiveEngine).
+  CLAP motive transformer with a 4-stage operation chain and presets. MC steers it with ordinary Modulator Targets
+  on CC 85-89 (preset / scan / active stages / stage mask / output tap) — no MC code involved; recipes in
+  [docs/ame_bridge.md](docs/ame_bridge.md), contract in AME's `docs/MASTERMIND_BRIDGE.md`.
 - **Orch System** — `C:\AudioDev\Repos\` (own separate git repos per plugin: `OrchNoteMapper`, `OrchGate`,
   `OrchConductor`; roadmap at `ORCH_SYSTEM_ROADMAP.md` and `OrchConductor\Docs\OrchGate_OrchConductor_Roadmap.md`
   in that folder). A second, independent modular orchestral MIDI plugin family (per-instrument range/keyswitch
