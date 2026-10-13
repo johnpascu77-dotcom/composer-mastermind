@@ -59,7 +59,7 @@ Start here, in order:
   [docs/ame_bridge.md](docs/ame_bridge.md), contract in AME's `docs/MASTERMIND_BRIDGE.md`. Modulator targets can
   `sendAhead` (one bar early) so AME has a bar to prepare. **Style profiles** (a shared vocabulary of AME presets +
   an MC score + pitch field): first one is `romanian_shadow` — [docs/style_profile_romanian_shadow.md](docs/style_profile_romanian_shadow.md),
-  generator `score-generator/romanian_shadow.py`.
+  generator `score-generator/romanian_shadow.py` (one AME per voice, editable plan; `--help`).
 - **Orch System** — `C:\AudioDev\Repos\` (own separate git repos per plugin: `OrchNoteMapper`, `OrchGate`,
   `OrchConductor`; roadmap at `ORCH_SYSTEM_ROADMAP.md` and `OrchConductor\Docs\OrchGate_OrchConductor_Roadmap.md`
   in that folder). A second, independent modular orchestral MIDI plugin family (per-instrument range/keyswitch

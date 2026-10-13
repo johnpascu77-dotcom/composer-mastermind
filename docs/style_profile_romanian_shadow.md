@@ -1,61 +1,107 @@
 # The `romanian_shadow` style profile in Composer Mastermind
 
 A style profile (see AME's `docs/STYLE_PROFILES.md`) is a shared vocabulary: AME presets for *how* a motive is
-answered, a Mastermind score for *when and in what form*, and optionally a pitch field for the Orch filter. This is
-the first one: Romanian-flavoured atonal writing, built from the six sections of the Python quartet "Joc de Umbre".
+answered, a Mastermind score for *when, by whom, and in what form*, and optionally a pitch field for the Orch
+filter. This is the first one: Romanian-flavoured atonal writing, built from the six sections of the Python
+quartet "Joc de Umbre".
 
-## Set it up
+**One AME per voice.** Mastermind sends control changes; AME makes the notes. So a voice *is* one AME instance on
+its own MIDI channel, and the score decides, every two bars, what each voice does.
 
-1. Install the 24 chain presets into AME (once; existing files are kept):
+## Set it up (once)
+
+1. **Install the 24 presets** into AME (existing files are kept):
 
    ```
    python C:\atonal-motive-engine\profiles\romanian_shadow\make_presets.py --install
    ```
 
-   Open an AME editor: the preset dropdown now lists `RO 01 Joc strâmb` … `RO 24 Ecou` after the factory presets
-   and your own `01 …` presets, numbered as the bridge numbers them.
+2. **One track per voice in Bitwig.** For each voice add a track with an AME (and an OrchNoteFilter after it, if
+   you use the pitch field) and your instrument. Route Mastermind's MIDI output to each track, filtered to that
+   voice's channel: V1 = channel 1, V2 = 2, V3 = 3, V4 = 4. Capture the same (or different) motive in each AME.
+   Put each voice in its register with a Transpose note effect or your instrument's range (V1 high … V4 low):
+   the chains do not move a voice into its register.
 
-2. Build the score. It looks the preset *numbers* up from what is installed, so run it after step 1 and again if
-   you add or rename presets:
+3. **Build and load the score** (see *Using the generator* below), then in Mastermind's Score View press
+   **Load Score...** and pick `docs/example_score_ro_joc_de_umbre.json`. Its 16 targets (`v1-preset`,
+   `v1-retrigger`, `v1-field-lo`, `v1-field-hi`, `v2-…`) appear on the Modulators tab. Remove old targets that send
+   on the same CCs and channels (an earlier `ro-preset-scan`, `ame-scan`, `ame-preset`…): a stray arc-mode target
+   such as a scan keeps sending its CC 86 every bar and will fight a voice's chain.
+
+4. Rewind to bar 1 and play. Nothing needs MPL instances: the score has no MPL scenes.
+
+## What the default plan does
+
+42 bars, 21 two-bar steps in six movements; the voices follow the quartet's characters
+(V1 high and agile, V2 answers, V3 mediates, V4 low). `python romanian_shadow.py --list` prints it all:
+
+| Bars | Movement | Root | Idea |
+|---|---|---|---|
+| 1–6 | Joc strâmb | C | V1 alone, then V2 answers (a related motive), V3 enters in canon |
+| 7–12 | Strigături | D | calls and cries: V1 high call, V2 and V4 low answers, V3 joins |
+| 13–18 | Joc cu pedală | Eb | V4 holds drones (RO 09, 11); V1, V2, V3 dance over them |
+| 19–28 | Cântec de jale | Ab | the lament: one long line passed V2 → V3 → V4 → V1 → V2 |
+| 29–36 | Joc posedat | F# | all four voices, dense and diminished, graces everywhere |
+| 37–42 | Umbre | Bb | thinning out: slow low echoes, a narrowed ghost, then the last ones |
+
+A voice that rests in a step gets no retrigger, so it simply lets its last entrance finish.
+
+Every voice's preset (CC 85) and retrigger (CC 90) go out **one bar ahead**, so each new chain enters exactly on
+the bar line; the first step of the piece has no bar before it and enters a little late.
+
+## The pitch field (optional)
+
+On the first step of each movement every voice's channel also receives that movement's **pitch field**: Romanian
+minor on the section root (`C D Eb F# G A Bb` shifted to C, D, Eb, Ab, F#, Bb) as Mastermind's 12-bit
+pitch-class mask on **CC 110 / 111** (low 7 bits = pitch classes 0–6, high 5 bits = 7–11). An OrchNoteFilter with
+**CC Control** enabled pulls notes toward it (AME forwards these CCs to the next device in the chain). Mastermind's
+own *pitch-field broadcast* must stay off, or it overwrites the masks. Leave it out with `--no-field`.
+
+## Using the generator yourself
+
+The generator is `score-generator\romanian_shadow.py` (needs only Python). Open a PowerShell in the
+Mastermind folder (or double-click `score-generator\run_romanian_shadow.bat` for the same thing with arguments).
+
+1. **Look at the plan.** Each row is a voice, each cell is one two-bar step; `--` is a rest:
 
    ```
-   python score-generator\romanian_shadow.py            # -> docs/example_score_ro_joc_de_umbre.json
-   python score-generator\romanian_shadow.py --channel 15 --no-field   # other CC channel, no pitch field
+   python score-generator\romanian_shadow.py --list
    ```
 
-3. In Mastermind's Score View press **Load Score...** and pick `docs/example_score_ro_joc_de_umbre.json`, or
-   import it in the Expert UI's Sections tab. Route Mastermind's MIDI output to the track that hosts AME, as for any
-   AME bridge (docs/ame_bridge.md), and capture a motive in AME. Rewind to bar 1 and play.
+2. **Make your own copy of the plan** (the starting point for any change):
 
-## What the score does
+   ```
+   python score-generator\romanian_shadow.py --dump-plan my_plan.json
+   ```
 
-42 bars, 21 two-bar sections in six movements:
+   Open `my_plan.json` in any text editor. Per movement you can change the name, `archetype`, `root` (the pitch
+   class of the section's pitch field, 0 = C … 11 = B), and `voices`: for each of V1–V4 one entry per step.
+   An entry is a **number** (preset `RO 01`–`RO 24`), a **name** (`"16 Close"`, or the start of one such as
+   `"RO 13"`), or **0** for a rest. All voices of a movement must have the same number of entries. To lengthen a
+   movement, add an entry to every voice; to add a movement, copy a movement block and give it the next `firstBar`
+   (2 bars per step).
 
-| Bars | Movement | Chains (RO …) | Section root | Scene (MPL1–3) |
-|---|---|---|---|---|
-| 1–6 | Joc strâmb | 01 02 03 | C | MPL1 + MPL2 (a fifth up) |
-| 7–12 | Strigături | 05 06 07 | D | MPL1 + MPL3 (octave down), Diminished rate |
-| 13–18 | Joc cu pedală | 09 10 12 | Eb | all three; MPL3 low and Augmented (the pedal) |
-| 19–28 | Cântec de jale | 13 14 15 16 17 | Ab | MPL1 alone, Augmented — the lament, slow |
-| 29–36 | Joc posedat | 18 19 20 21 | F# | all three, ternary grid, MPL2 inverted and Diminished |
-| 37–42 | Umbre | 22 23 24 | Bb | MPL3 alone, low and Augmented |
+3. **Check, then build.**
 
-Every two bars each section sends, one bar early, **CC 85** (the chain) and **CC 90** (retrigger on the next bar
-line), so the new chain enters exactly on the downbeat; the first two bars have no bar before them and enter a
-little late. The six movements are the form; the 24 chains are the vocabulary; change a movement's preset list in
-`FORM` (top of the script) to re-orchestrate the piece.
+   ```
+   python score-generator\romanian_shadow.py --plan my_plan.json --list
+   python score-generator\romanian_shadow.py --plan my_plan.json --out docs\my_score.json
+   ```
 
-## The optional pitch field
+   The first line prints your plan back as names (a typo shows up as an error naming the movement, voice and
+   step). The second writes the score file.
 
-At the first section of each movement the score also sends that movement's **pitch field** — Romanian minor on the
-section root (`C D Eb F# G A Bb` shifted to C, D, Eb, Ab, F#, Bb) — as Mastermind's 12-bit pitch-class mask on
-**CC 110 / 111** (channel 1 by default: low 7 bits = pitch classes 0–6, high 5 bits = 7–11). An OrchNoteFilter in the
-chain, listening on those CCs, will pull notes toward the field. Nothing else uses them: AME and MPL ignore CC 110/111.
-Two cautions: Mastermind's own *pitch-field broadcast* (Mutations/Modulators tab) must stay off, or it will overwrite the
-profile's masks; and use `--no-field` if no OrchNoteFilter is in the chain.
+4. **Load it** in Mastermind (Score View → Load Score...) and play.
+
+Useful switches: `--voices 2` (fewer voices), `--channels 5,6,7,8` (other MIDI channels), `--no-field` (no pitch
+field), `--presets-dir` (another preset folder). The score always looks up preset numbers from the presets
+actually installed, so after adding or renaming presets simply run it again.
+
+Ideas to try: swap which voice carries the lament line; give V4 `"16 Close"` in the last step; put a movement's
+`root` on another pitch class; add a fifth step to *Joc posedat* by adding an entry to each voice; use your own
+presets by name (any preset in the folder works, not only `RO …`).
 
 ## Not part of it yet
 
-Rhythm cells (dotted, compound-meter), meter changes, and the quartet's texture modes (homorhythmic blocks, a long
-line migrating between instruments) are not profile data yet; the lament's travelling line in particular wants
-several AME instances, one per voice. See AME's `docs/STYLE_PROFILES.md` → *Not built yet*.
+Rhythm cells (dotted, compound-meter), meter changes, and homorhythmic blocks are not profile data yet; the voices'
+registers are set in Bitwig, not by the score. See AME's `docs/STYLE_PROFILES.md` → *Not built yet*.
