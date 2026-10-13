@@ -1,0 +1,829 @@
+{
+  "schema": "ComposerMastermindComposition.v3",
+  "blueprint": {
+    "id": "ro-joc-de-umbre",
+    "name": "Joc de Umbre (romanian_shadow, 42 bars)",
+    "sections": [
+      {
+        "id": "ro-01-ro-joc",
+        "name": "Joc strâmb 1",
+        "sceneId": "ro-joc",
+        "startBar": 0,
+        "durationBars": 2,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 23
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          },
+          {
+            "modulatorTargetId": "ro-field-lo",
+            "value": 77
+          },
+          {
+            "modulatorTargetId": "ro-field-hi",
+            "value": 13
+          }
+        ]
+      },
+      {
+        "id": "ro-02-ro-joc",
+        "name": "Joc strâmb 2",
+        "sceneId": "ro-joc",
+        "startBar": 2,
+        "durationBars": 2,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 24
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-03-ro-joc",
+        "name": "Joc strâmb 3",
+        "sceneId": "ro-joc",
+        "startBar": 4,
+        "durationBars": 2,
+        "archetype": "presentation",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 25
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-04-ro-strigaturi",
+        "name": "Strigături 1",
+        "sceneId": "ro-strigaturi",
+        "startBar": 6,
+        "durationBars": 2,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 27
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          },
+          {
+            "modulatorTargetId": "ro-field-lo",
+            "value": 53
+          },
+          {
+            "modulatorTargetId": "ro-field-hi",
+            "value": 22
+          }
+        ]
+      },
+      {
+        "id": "ro-05-ro-strigaturi",
+        "name": "Strigături 2",
+        "sceneId": "ro-strigaturi",
+        "startBar": 8,
+        "durationBars": 2,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 28
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-06-ro-strigaturi",
+        "name": "Strigături 3",
+        "sceneId": "ro-strigaturi",
+        "startBar": 10,
+        "durationBars": 2,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 29
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-07-ro-pedala",
+        "name": "Joc cu pedală 1",
+        "sceneId": "ro-pedala",
+        "startBar": 12,
+        "durationBars": 2,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 31
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          },
+          {
+            "modulatorTargetId": "ro-field-lo",
+            "value": 107
+          },
+          {
+            "modulatorTargetId": "ro-field-hi",
+            "value": 12
+          }
+        ]
+      },
+      {
+        "id": "ro-08-ro-pedala",
+        "name": "Joc cu pedală 2",
+        "sceneId": "ro-pedala",
+        "startBar": 14,
+        "durationBars": 2,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 32
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-09-ro-pedala",
+        "name": "Joc cu pedală 3",
+        "sceneId": "ro-pedala",
+        "startBar": 16,
+        "durationBars": 2,
+        "archetype": "build",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 34
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-10-ro-jale",
+        "name": "Cântec de jale 1",
+        "sceneId": "ro-jale",
+        "startBar": 18,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 35
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          },
+          {
+            "modulatorTargetId": "ro-field-lo",
+            "value": 108
+          },
+          {
+            "modulatorTargetId": "ro-field-hi",
+            "value": 26
+          }
+        ]
+      },
+      {
+        "id": "ro-11-ro-jale",
+        "name": "Cântec de jale 2",
+        "sceneId": "ro-jale",
+        "startBar": 20,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 36
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-12-ro-jale",
+        "name": "Cântec de jale 3",
+        "sceneId": "ro-jale",
+        "startBar": 22,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 37
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-13-ro-jale",
+        "name": "Cântec de jale 4",
+        "sceneId": "ro-jale",
+        "startBar": 24,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 38
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-14-ro-jale",
+        "name": "Cântec de jale 5",
+        "sceneId": "ro-jale",
+        "startBar": 26,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 39
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-15-ro-posedat",
+        "name": "Joc posedat 1",
+        "sceneId": "ro-posedat",
+        "startBar": 28,
+        "durationBars": 2,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 40
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          },
+          {
+            "modulatorTargetId": "ro-field-lo",
+            "value": 91
+          },
+          {
+            "modulatorTargetId": "ro-field-hi",
+            "value": 6
+          }
+        ]
+      },
+      {
+        "id": "ro-16-ro-posedat",
+        "name": "Joc posedat 2",
+        "sceneId": "ro-posedat",
+        "startBar": 30,
+        "durationBars": 2,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 41
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-17-ro-posedat",
+        "name": "Joc posedat 3",
+        "sceneId": "ro-posedat",
+        "startBar": 32,
+        "durationBars": 2,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 42
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-18-ro-posedat",
+        "name": "Joc posedat 4",
+        "sceneId": "ro-posedat",
+        "startBar": 34,
+        "durationBars": 2,
+        "archetype": "peak",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 43
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-19-ro-umbre",
+        "name": "Umbre 1",
+        "sceneId": "ro-umbre",
+        "startBar": 36,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 44
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          },
+          {
+            "modulatorTargetId": "ro-field-lo",
+            "value": 51
+          },
+          {
+            "modulatorTargetId": "ro-field-hi",
+            "value": 11
+          }
+        ]
+      },
+      {
+        "id": "ro-20-ro-umbre",
+        "name": "Umbre 2",
+        "sceneId": "ro-umbre",
+        "startBar": 38,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 45
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      },
+      {
+        "id": "ro-21-ro-umbre",
+        "name": "Umbre 3",
+        "sceneId": "ro-umbre",
+        "startBar": 40,
+        "durationBars": 2,
+        "archetype": "release",
+        "layerRoles": [],
+        "budgetOverrides": [],
+        "reservedValues": [],
+        "modulatorValues": [
+          {
+            "modulatorTargetId": "ame-preset",
+            "value": 46
+          },
+          {
+            "modulatorTargetId": "ame-retrigger",
+            "value": 127
+          }
+        ]
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "ro-joc",
+      "name": "Joc strâmb",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "MPL3",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": -1
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "MPL2",
+          "patternIndex": 1,
+          "transpose": 7,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "ro-strigaturi",
+      "name": "Strigături",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 2
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "MPL2",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": -1
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "MPL3",
+          "patternIndex": 1,
+          "transpose": -12,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "ro-pedala",
+      "name": "Joc cu pedală",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 1
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "MPL3",
+          "activePattern": -1,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": 0
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "MPL3",
+          "patternIndex": 1,
+          "transpose": -12,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false
+        },
+        {
+          "targetInstance": "MPL2",
+          "patternIndex": 1,
+          "transpose": 3,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "ro-jale",
+      "name": "Cântec de jale",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "MPL2",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": -1
+        },
+        {
+          "targetInstance": "MPL3",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": -1
+        }
+      ],
+      "patterns": [],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "ro-posedat",
+      "name": "Joc posedat",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 1,
+        "swing": 0.0,
+        "rate": 1
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "MPL2",
+          "activePattern": -1,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": 2
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "MPL2",
+          "patternIndex": 1,
+          "transpose": 6,
+          "rotation": 0,
+          "length": 16,
+          "inversion": true
+        },
+        {
+          "targetInstance": "MPL3",
+          "patternIndex": 1,
+          "transpose": -5,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    },
+    {
+      "schema": "ComposerMastermindScene.v1",
+      "id": "ro-umbre",
+      "name": "Umbre",
+      "durationBars": 2,
+      "quantize": "bar",
+      "targets": [
+        "MPL1",
+        "MPL2",
+        "MPL3"
+      ],
+      "global": {
+        "activePattern": 2,
+        "gridMode": 0,
+        "swing": 0.0,
+        "rate": 0
+      },
+      "instanceOverrides": [
+        {
+          "targetInstance": "MPL1",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": -1
+        },
+        {
+          "targetInstance": "MPL2",
+          "activePattern": 0,
+          "gridMode": -1,
+          "swing": -1.0,
+          "rate": -1
+        }
+      ],
+      "patterns": [
+        {
+          "targetInstance": "MPL3",
+          "patternIndex": 1,
+          "transpose": -12,
+          "rotation": 0,
+          "length": 16,
+          "inversion": false
+        }
+      ],
+      "mutations": [],
+      "nextSceneId": "",
+      "transitionStyle": "hard",
+      "rampBars": 0
+    }
+  ],
+  "instances": [
+    {
+      "id": "MPL1",
+      "name": "MPL1",
+      "midiChannel": 1,
+      "role": "anchor",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "MPL2",
+      "name": "MPL2",
+      "midiChannel": 2,
+      "role": "motif",
+      "enabled": true,
+      "lastKnownScene": ""
+    },
+    {
+      "id": "MPL3",
+      "name": "MPL3",
+      "midiChannel": 3,
+      "role": "counterpoint",
+      "enabled": true,
+      "lastKnownScene": ""
+    }
+  ],
+  "motifPresets": [],
+  "modulatorTargets": [
+    {
+      "id": "ame-preset",
+      "ccNumber": 85,
+      "midiChannel": 1,
+      "mode": "section",
+      "arcDimension": "",
+      "sendAhead": true
+    },
+    {
+      "id": "ame-retrigger",
+      "ccNumber": 90,
+      "midiChannel": 1,
+      "mode": "section",
+      "arcDimension": "",
+      "sendAhead": true
+    },
+    {
+      "id": "ro-field-lo",
+      "ccNumber": 110,
+      "midiChannel": 1,
+      "mode": "section",
+      "arcDimension": "",
+      "sendAhead": false
+    },
+    {
+      "id": "ro-field-hi",
+      "ccNumber": 111,
+      "midiChannel": 1,
+      "mode": "section",
+      "arcDimension": "",
+      "sendAhead": false
+    }
+  ],
+  "modulationRoutes": []
+}
