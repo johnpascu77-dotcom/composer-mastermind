@@ -527,6 +527,17 @@ void ComposerCore::advanceBlueprintIfNeeded(int currentBar, double barStartPpq)
 
     const std::string newSectionId = activeSection != nullptr ? activeSection->id : std::string();
 
+    // One bar before a section starts, send the values of its "sendAhead" targets
+    // (a receiver that needs a bar to prepare, acting on the bar line itself).
+    for (const auto& upcoming : blueprint.sections)
+    {
+        if (upcoming.startBar == currentBar + 1 && upcoming.id != newSectionId)
+        {
+            sendSectionModulatorValues(upcoming, true);
+            break;
+        }
+    }
+
     if (newSectionId == previousSectionId)
     {
         // Still in the same section (or still outside every section) -
@@ -1535,7 +1546,7 @@ void ComposerCore::processStepTick(double currentPpq)
     }
 }
 
-void ComposerCore::sendSectionModulatorValues(const BlueprintSection& section)
+void ComposerCore::sendSectionModulatorValues(const BlueprintSection& section, bool aheadPhase)
 {
     for (const auto& modulatorValue : section.modulatorValues)
     {
@@ -1543,8 +1554,21 @@ void ComposerCore::sendSectionModulatorValues(const BlueprintSection& section)
         if (!modulatorTargetLibrary.getTargetById(modulatorValue.modulatorTargetId, target))
             continue; // authored value references a target that no longer exists - skip, don't guess
 
+        if (aheadPhase)
+        {
+            if (!target.sendAhead)
+                continue; // this one goes out at the section's own first bar
+        }
+        else if (target.sendAhead && aheadSentSectionId == section.id)
+        {
+            continue; // already sent a bar early
+        }
+
         ccDispatcher.sendCC(target.midiChannel, target.ccNumber, modulatorValue.value);
     }
+
+    if (aheadPhase)
+        aheadSentSectionId = section.id;
 }
 
 float ComposerCore::getNarrativePositionAt(int currentBar) const
@@ -2368,6 +2392,7 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
             obj->setProperty("midiChannel", target.midiChannel);
             obj->setProperty("mode", juce::String(target.mode));
             obj->setProperty("arcDimension", juce::String(target.arcDimension));
+            obj->setProperty("sendAhead", target.sendAhead);
             targetsArray.add(juce::var(obj));
         }
         result->setProperty("targets", targetsArray);

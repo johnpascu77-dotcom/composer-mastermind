@@ -566,7 +566,10 @@ private:
     // once, alongside its scene (see model/Blueprint.h) - resolves each
     // entry's ModulatorTarget by id for its CC number/channel, and skips any
     // entry whose target id isn't registered.
-    void sendSectionModulatorValues(const BlueprintSection& section);
+    // aheadPhase=true: the bar before the section, only the "sendAhead" targets
+    // (and it records that, so entering the section does not send them again).
+    void sendSectionModulatorValues(const BlueprintSection& section, bool aheadPhase = false);
+    std::string aheadSentSectionId; // the section whose sendAhead values already went out
 
     // Fires the v0.6 motif/rule engine for the given section and pass
     // index - see policy/MotifEngine.h. Gathers registered instances,

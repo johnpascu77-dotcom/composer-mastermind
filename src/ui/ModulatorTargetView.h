@@ -100,6 +100,7 @@ private:
     // Adds one of the Atonal Motive Transformer's bridge controls (CC 85-89) as a
     // target on the channel currently set above (see docs/ame_bridge.md).
     juce::TextButton ameBridgeButton { "AME bridge..." };
+    juce::ToggleButton sendAheadToggle { "Send 1 bar ahead" };
     juce::TextEditor targetListDisplay;
 
     juce::ComboBox existingTargetsCombo;

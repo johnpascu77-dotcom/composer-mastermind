@@ -32,4 +32,12 @@ struct ModulatorTarget
     //   isn't sent, and keeps whatever value it last held.
     std::string mode = "arc";
     std::string arcDimension;
+
+    // "section" mode only: send each section's value one bar BEFORE the section
+    // starts (during the last bar of the previous section) instead of at its
+    // first bar. For a receiver that needs a bar to prepare (an AME preset
+    // change) and then acts on the bar line itself (AME's CC 90 retrigger).
+    // A section with nothing before it, or one entered by a jump, still gets
+    // its values at entry.
+    bool sendAhead = false;
 };

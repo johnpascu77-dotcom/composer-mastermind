@@ -13,7 +13,7 @@ Modulator Targets already send any CC on any channel. The full contract is AME's
 | 87 | active stages | 0-4: first N stages on |
 | 88 | stage mask | value / 8 = bit mask of stages on |
 | 89 | output tap | 0-4: final, or after stage k |
-| 90 | retrigger | 127 = fire one Retrigger (every message fires; waits for a chain changed in the same batch) |
+| 90 | retrigger | 127 = one Retrigger on the next bar line (every message counts; send it a bar early) |
 
 These avoid MPL's CC 20-64, OrchConductor's 20-54 / 102-105 and the field mask's 110-121. Put the targets on their
 own MIDI channel (AME accepts any) and route that channel to AME's track, with an empty second Note-FX layer so it
@@ -31,11 +31,12 @@ per section.
   preset number.
 - **Drift through the preset list over the whole piece:** CC 86, mode `arc`, dimension `narrative-position`.
 - **Stage pattern per section:** CC 88, mode `section`, value = 8 x mask (stages 1+3 = mask 5 = value 40).
-- **Enter the new chain at each section:** CC 90, mode `section`, value 127 in every section where AME should
-  re-enter (usually the same sections that change the preset). AME changes are Future-Only, so without a retrigger
-  a new preset only sounds at the next entrance. CC 90 waits until the chain changed by CC 85/87/88 in the same
-  batch has finished preparing, then fires; the entrance lands a little after the bar line (callback + preparation
-  time), not sample-accurately.
+- **Enter the new chain exactly on each section's downbeat:** CC 90 = 127, mode `section`, and turn on **Send 1 bar
+  ahead** for it and for the preset target (the "AME bridge..." menu does this for you). MC then sends the next
+  section's preset and retrigger during the last bar of the previous section; AME prepares the new chain in that
+  bar and fires the retrigger on the bar line itself, sample-accurately. Without "send ahead" the CC arrives on the
+  bar line and the entrance trails it by AME's preparation time (a short delay-like smear). The first section of a
+  piece has no bar before it, so its values go out at its start as usual.
 
 ```json
 "modulatorTargets": [

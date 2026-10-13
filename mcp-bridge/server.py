@@ -521,7 +521,8 @@ def create_modulator_target(target: dict) -> dict:
     Bitwig modulator's parameter. Shape:
     {
       "id": str, "ccNumber": int (default 70, deliberately outside MPL's 20-64 range),
-      "midiChannel": int, "mode": "arc" | "section", "arcDimension": str (required if mode="arc")
+      "midiChannel": int, "mode": "arc" | "section", "arcDimension": str (required if mode="arc"),
+      "sendAhead": bool (optional, section mode: send each section's value one bar BEFORE the section starts)
     }
     "arc" mode continuously sends that ArcSet dimension's current value
     every bar; "section" mode sends a fixed value once per section boundary,

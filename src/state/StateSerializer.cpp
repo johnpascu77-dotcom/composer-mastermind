@@ -768,6 +768,7 @@ namespace StateSerializer
         obj->setProperty("midiChannel", target.midiChannel);
         obj->setProperty("mode", juce::String(target.mode));
         obj->setProperty("arcDimension", juce::String(target.arcDimension));
+        obj->setProperty("sendAhead", target.sendAhead);
         return juce::var(obj);
     }
 
@@ -779,6 +780,7 @@ namespace StateSerializer
         target.midiChannel = JsonHelpers::getInt(value, "midiChannel", 1);
         target.mode = JsonHelpers::getString(value, "mode", "arc");
         target.arcDimension = JsonHelpers::getString(value, "arcDimension");
+        target.sendAhead = JsonHelpers::getBool(value, "sendAhead", false);
         return target;
     }
 
