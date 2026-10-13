@@ -33,11 +33,12 @@ struct ModulatorTarget
     std::string mode = "arc";
     std::string arcDimension;
 
-    // "section" mode only: send each section's value one bar BEFORE the section
-    // starts (during the last bar of the previous section) instead of at its
-    // first bar. For a receiver that needs a bar to prepare (an AME preset
-    // change) and then acts on the bar line itself (AME's CC 90 retrigger).
-    // A section with nothing before it, or one entered by a jump, still gets
-    // its values at entry.
+    // Send one bar EARLY, for a receiver that needs a bar to prepare (an AME
+    // preset change) and then acts on the bar line itself (AME's CC 90 retrigger).
+    //  - "section" mode: each section's value goes out during the last bar of the
+    //    previous section instead of at its first bar. A section with nothing
+    //    before it, or one entered by a jump, still gets its values at entry.
+    //  - "arc" mode: every bar sends the arc's value for the NEXT bar, so what the
+    //    receiver prepares is exactly what that next bar should be playing.
     bool sendAhead = false;
 };

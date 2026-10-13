@@ -29,7 +29,11 @@ per section.
 - **More transformation as the piece grows more complex:** CC 87, mode `arc`, dimension `complexity` (or `tension`).
 - **A different chain per section:** CC 85, mode `section`; give each section a `modulatorValues` entry with the
   preset number.
-- **Drift through the preset list over the whole piece:** CC 86, mode `arc`, dimension `narrative-position`.
+- **Drift through the preset list over the whole piece:** CC 86, mode `arc`, dimension `narrative-position`. Turn on
+  **Send 1 bar ahead** (the menu does) so each bar sends the position of the *next* bar: AME prepares that chain during
+  the bar, and a CC 90 retrigger at the next bar line enters exactly the preset the position calls for. Without it the
+  entrance plays the chain chosen one bar earlier. Scan changes only the chain; add CC 90 (section values) to hear
+  each new chain, and do not combine CC 86 with CC 85 on the same instance.
 - **Stage pattern per section:** CC 88, mode `section`, value = 8 x mask (stages 1+3 = mask 5 = value 40).
 - **Enter the new chain exactly on each section's downbeat:** CC 90 = 127, mode `section`, and turn on **Send 1 bar
   ahead** for it and for the preset target (the "AME bridge..." menu does this for you). MC then sends the next

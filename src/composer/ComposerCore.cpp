@@ -1724,9 +1724,10 @@ void ComposerCore::sendModulatorTargetUpdates(int currentBar)
         if (target.mode != "arc")
             continue; // "section" mode is driven by sendSectionModulatorValues instead
 
+        const int evaluationBar = target.sendAhead ? currentBar + 1 : currentBar;
         const float value = target.arcDimension == kNarrativePositionDimension
-            ? getNarrativePositionAt(currentBar)
-            : arcSet.getArc(target.arcDimension).evaluate(currentBar).value;
+            ? getNarrativePositionAt(evaluationBar)
+            : arcSet.getArc(target.arcDimension).evaluate(evaluationBar).value;
 
         const int ccValue = CCMapping::encodeFloat(value, 0.0f, 1.0f);
         ccDispatcher.sendCC(target.midiChannel, target.ccNumber, ccValue);

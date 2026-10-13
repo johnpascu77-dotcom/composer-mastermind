@@ -129,8 +129,9 @@ ModulatorTargetView::ModulatorTargetView(ComposerMastermindAudioProcessor& proce
     ameBridgeButton.onClick = [this] { ameBridgeClicked(); };
 
     content.addAndMakeVisible(sendAheadToggle);
-    sendAheadToggle.setTooltip("Section mode: send each section's value during the bar BEFORE the section starts, "
-                               "for a receiver that needs a bar to prepare (e.g. AME presets + CC 90 retrigger).");
+    sendAheadToggle.setTooltip("Send one bar early: section mode sends each section's value during the bar BEFORE the "
+                               "section starts; arc mode sends the arc's value for the NEXT bar. For a receiver that "
+                               "needs a bar to prepare (e.g. AME presets + CC 90 retrigger).");
 
     content.addAndMakeVisible(existingTargetsCombo);
     existingTargetsCombo.setTextWhenNothingSelected("(pick existing target)");
@@ -423,9 +424,6 @@ void ModulatorTargetView::modeChanged()
     const bool isArcMode = modeCombo.getSelectedId() == 1;
     arcDimensionCombo.setEnabled(isArcMode);
     arcDimensionLabel.setEnabled(isArcMode);
-    sendAheadToggle.setEnabled(!isArcMode); // only section-mode targets have a "next section"
-    if (isArcMode)
-        sendAheadToggle.setToggleState(false, juce::dontSendNotification);
 }
 
 void ModulatorTargetView::routeParameterChanged()
@@ -489,7 +487,7 @@ void ModulatorTargetView::addTargetClicked()
     target.midiChannel = static_cast<int>(channelSlider.getValue());
     target.mode = modeCombo.getSelectedId() == 1 ? "arc" : "section";
     target.arcDimension = target.mode == "arc" ? arcDimensionCombo.getText().toStdString() : std::string();
-    target.sendAhead = target.mode == "section" && sendAheadToggle.getToggleState();
+    target.sendAhead = sendAheadToggle.getToggleState();
 
     std::string errorMessage;
     if (!Validation::isValidModulatorTarget(target, errorMessage))
@@ -519,13 +517,13 @@ void ModulatorTargetView::ameBridgeClicked()
         int cc;
         const char* mode;
         const char* dimension;
-        bool sendAhead; // section targets: values go out one bar early, so AME has a bar to prepare
+        bool sendAhead; // values go out one bar early, so AME has a bar to prepare
     };
     static const std::array<Entry, 6> entries { {
         { "Active stages  (CC 87, follows complexity)", "ame-stages", 87, "arc", "complexity", false },
         { "Chain preset per section  (CC 85, one bar ahead)", "ame-preset", 85, "section", "", true },
-        { "Chain scan over the whole piece  (CC 86, narrative position)", "ame-scan", 86, "arc",
-          ComposerCore::kNarrativePositionDimension, false },
+        { "Chain scan over the whole piece  (CC 86, narrative position, one bar ahead)", "ame-scan", 86, "arc",
+          ComposerCore::kNarrativePositionDimension, true },
         { "Stage mask per section  (CC 88, one bar ahead)", "ame-mask", 88, "section", "", true },
         { "Output tap per section  (CC 89, one bar ahead)", "ame-tap", 89, "section", "", true },
         { "Retrigger on each section's bar line  (CC 90 = 127, one bar ahead)", "ame-retrigger", 90, "section", "",
