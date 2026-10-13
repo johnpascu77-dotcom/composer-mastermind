@@ -510,13 +510,14 @@ void ModulatorTargetView::ameBridgeClicked()
         const char* mode;
         const char* dimension;
     };
-    static const std::array<Entry, 5> entries { {
+    static const std::array<Entry, 6> entries { {
         { "Active stages  (CC 87, follows complexity)", "ame-stages", 87, "arc", "complexity" },
         { "Chain preset per section  (CC 85)", "ame-preset", 85, "section", "" },
         { "Chain scan over the whole piece  (CC 86, narrative position)", "ame-scan", 86, "arc",
           ComposerCore::kNarrativePositionDimension },
         { "Stage mask per section  (CC 88)", "ame-mask", 88, "section", "" },
         { "Output tap per section  (CC 89)", "ame-tap", 89, "section", "" },
+        { "Retrigger at each section  (CC 90, value 127)", "ame-retrigger", 90, "section", "" },
     } };
 
     juce::PopupMenu menu;

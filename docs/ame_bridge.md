@@ -13,6 +13,7 @@ Modulator Targets already send any CC on any channel. The full contract is AME's
 | 87 | active stages | 0-4: first N stages on |
 | 88 | stage mask | value / 8 = bit mask of stages on |
 | 89 | output tap | 0-4: final, or after stage k |
+| 90 | retrigger | 127 = fire one Retrigger (every message fires; waits for a chain changed in the same batch) |
 
 These avoid MPL's CC 20-64, OrchConductor's 20-54 / 102-105 and the field mask's 110-121. Put the targets on their
 own MIDI channel (AME accepts any) and route that channel to AME's track, with an empty second Note-FX layer so it
@@ -21,8 +22,8 @@ merges with the notes (the same Bitwig lesson as OrchConductor).
 ## Recipes (Modulators tab, or `modulatorTargets[]` in a bundle)
 
 **Shortcut:** on the Modulators tab, set the MIDI channel slider to the one the AME bridge listens on, press
-**AME bridge...** and pick one of the five ready-made targets (`ame-stages`, `ame-preset`, `ame-scan`, `ame-mask`,
-`ame-tap`). It adds or replaces the target with the recipe below; for the `section` ones you then enter the value
+**AME bridge...** and pick one of the six ready-made targets (`ame-stages`, `ame-preset`, `ame-scan`, `ame-mask`,
+`ame-tap`, `ame-retrigger`). It adds or replaces the target with the recipe below; for the `section` ones you then enter the value
 per section.
 
 - **More transformation as the piece grows more complex:** CC 87, mode `arc`, dimension `complexity` (or `tension`).
@@ -30,6 +31,11 @@ per section.
   preset number.
 - **Drift through the preset list over the whole piece:** CC 86, mode `arc`, dimension `narrative-position`.
 - **Stage pattern per section:** CC 88, mode `section`, value = 8 x mask (stages 1+3 = mask 5 = value 40).
+- **Enter the new chain at each section:** CC 90, mode `section`, value 127 in every section where AME should
+  re-enter (usually the same sections that change the preset). AME changes are Future-Only, so without a retrigger
+  a new preset only sounds at the next entrance. CC 90 waits until the chain changed by CC 85/87/88 in the same
+  batch has finished preparing, then fires; the entrance lands a little after the bar line (callback + preparation
+  time), not sample-accurately.
 
 ```json
 "modulatorTargets": [
