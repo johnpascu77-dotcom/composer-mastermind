@@ -522,7 +522,10 @@ def create_modulator_target(target: dict) -> dict:
     {
       "id": str, "ccNumber": int (default 70, deliberately outside MPL's 20-64 range),
       "midiChannel": int, "mode": "arc" | "section", "arcDimension": str (required if mode="arc"),
-      "sendAhead": bool (optional, section mode: send each section's value one bar BEFORE the section starts)
+      "sendAhead": bool (optional, section mode: send each section's value one bar BEFORE the section starts),
+      "rangeMin": int 0-127, "rangeMax": int 0-127 (optional, arc mode: the CC values the arc's 0..1 maps to;
+        default 0..127; min > max runs it backwards),
+      "holdBars": int 0-256 (optional, arc mode: after the sent value changes, hold it this many bars)
     }
     "arc" mode continuously sends that ArcSet dimension's current value
     every bar; "section" mode sends a fixed value once per section boundary,

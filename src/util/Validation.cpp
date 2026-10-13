@@ -455,6 +455,18 @@ namespace Validation
             return false;
         }
 
+        if (target.rangeMin < 0 || target.rangeMin > 127 || target.rangeMax < 0 || target.rangeMax > 127)
+        {
+            errorMessage = "Modulator target '" + target.id + "' has a range outside 0..127";
+            return false;
+        }
+
+        if (target.holdBars < 0 || target.holdBars > 256)
+        {
+            errorMessage = "Modulator target '" + target.id + "' has a hold outside 0..256 bars";
+            return false;
+        }
+
         return true;
     }
 

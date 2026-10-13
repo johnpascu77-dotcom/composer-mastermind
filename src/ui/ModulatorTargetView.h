@@ -101,6 +101,12 @@ private:
     // target on the channel currently set above (see docs/ame_bridge.md).
     juce::TextButton ameBridgeButton { "AME bridge..." };
     juce::ToggleButton sendAheadToggle { "Send 1 bar ahead" };
+    // Arc mode: hold a changed value for N bars, and map the arc onto a CC range.
+    juce::Label holdLabel { {}, "Hold (bars)" };
+    juce::Slider holdBarsSlider;
+    juce::Label rangeLabel { {}, "Range" };
+    juce::Slider rangeMinSlider;
+    juce::Slider rangeMaxSlider;
     juce::TextEditor targetListDisplay;
 
     juce::ComboBox existingTargetsCombo;

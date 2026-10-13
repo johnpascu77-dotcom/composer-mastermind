@@ -474,6 +474,15 @@ private:
     double currentSectionPpqAnchor = 0.0;
     std::map<std::string, int> sequenceRouteLastFiredIndex;
 
+    // Arc-mode ModulatorTarget "hold": the value last sent and the bar it last changed on.
+    struct ModulatorHoldState
+    {
+        int value = -1;
+        int lastChangeBar = 0;
+        int lastBar = -1;
+    };
+    std::map<std::string, ModulatorHoldState> modulatorHoldState;
+
     // BarCycle phrase-cadence support (2026-08-27) - see firePhraseCadenceIfDue's own
     // comment. Same "routeId|instanceId" -> last-fired-index shape as
     // sequenceRouteLastFiredIndex above, just counted in whole bars (phraseIndex =

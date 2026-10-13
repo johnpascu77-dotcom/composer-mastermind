@@ -128,6 +128,20 @@ ModulatorTargetView::ModulatorTargetView(ComposerMastermindAudioProcessor& proce
     content.addAndMakeVisible(ameBridgeButton);
     ameBridgeButton.onClick = [this] { ameBridgeClicked(); };
 
+    content.addAndMakeVisible(holdLabel);
+    content.addAndMakeVisible(holdBarsSlider);
+    styleSlider(holdBarsSlider, 0.0, 64.0, 1.0, 0.0);
+    holdBarsSlider.setTooltip("Arc mode: after the sent value changes, keep it for at least this many bars "
+                              "(0 = follow the curve every bar). Slows a receiver that reacts to every change.");
+    content.addAndMakeVisible(rangeLabel);
+    content.addAndMakeVisible(rangeMinSlider);
+    styleSlider(rangeMinSlider, 0.0, 127.0, 1.0, 0.0);
+    content.addAndMakeVisible(rangeMaxSlider);
+    styleSlider(rangeMaxSlider, 0.0, 127.0, 1.0, 127.0);
+    rangeMinSlider.setTooltip("Arc mode: the CC value sent when the arc is at 0 (default 0).");
+    rangeMaxSlider.setTooltip("Arc mode: the CC value sent when the arc is at 1 (default 127). "
+                              "Below the minimum runs the arc backwards.");
+
     content.addAndMakeVisible(sendAheadToggle);
     sendAheadToggle.setTooltip("Send one bar early: section mode sends each section's value during the bar BEFORE the "
                                "section starts; arc mode sends the arc's value for the NEXT bar. For a receiver that "
@@ -337,6 +351,14 @@ void ModulatorTargetView::resized()
     modeRow.removeFromLeft(kMargin);
     sendAheadToggle.setBounds(modeRow.removeFromLeft(150));
 
+    auto holdRow = nextRow(kRowHeight);
+    holdLabel.setBounds(holdRow.removeFromLeft(80));
+    holdBarsSlider.setBounds(holdRow.removeFromLeft(160));
+    holdRow.removeFromLeft(kMargin);
+    rangeLabel.setBounds(holdRow.removeFromLeft(48));
+    rangeMinSlider.setBounds(holdRow.removeFromLeft(130));
+    rangeMaxSlider.setBounds(holdRow.removeFromLeft(130));
+
     auto addRow = nextRow(kRowHeight);
     addTargetButton.setBounds(addRow.removeFromLeft(110));
     addRow.removeFromLeft(kMargin);
@@ -424,6 +446,10 @@ void ModulatorTargetView::modeChanged()
     const bool isArcMode = modeCombo.getSelectedId() == 1;
     arcDimensionCombo.setEnabled(isArcMode);
     arcDimensionLabel.setEnabled(isArcMode);
+    for (juce::Component* c : { static_cast<juce::Component*>(&holdBarsSlider), static_cast<juce::Component*>(&holdLabel),
+                                static_cast<juce::Component*>(&rangeMinSlider), static_cast<juce::Component*>(&rangeMaxSlider),
+                                static_cast<juce::Component*>(&rangeLabel) })
+        c->setEnabled(isArcMode); // hold and range shape an arc; a section value is already a literal CC value
 }
 
 void ModulatorTargetView::routeParameterChanged()
@@ -488,6 +514,12 @@ void ModulatorTargetView::addTargetClicked()
     target.mode = modeCombo.getSelectedId() == 1 ? "arc" : "section";
     target.arcDimension = target.mode == "arc" ? arcDimensionCombo.getText().toStdString() : std::string();
     target.sendAhead = sendAheadToggle.getToggleState();
+    if (target.mode == "arc")
+    {
+        target.holdBars = static_cast<int>(holdBarsSlider.getValue());
+        target.rangeMin = static_cast<int>(rangeMinSlider.getValue());
+        target.rangeMax = static_cast<int>(rangeMaxSlider.getValue());
+    }
 
     std::string errorMessage;
     if (!Validation::isValidModulatorTarget(target, errorMessage))
@@ -752,6 +784,10 @@ void ModulatorTargetView::refreshAll()
             targetsText << "  arc=" << (target.arcDimension.empty() ? "(none)" : target.arcDimension);
         if (target.sendAhead)
             targetsText << "  1 bar ahead";
+        if (target.mode == "arc" && (target.rangeMin != 0 || target.rangeMax != 127))
+            targetsText << "  range " << target.rangeMin << ".." << target.rangeMax;
+        if (target.mode == "arc" && target.holdBars > 0)
+            targetsText << "  hold " << target.holdBars << " bars";
         targetsText << "\n";
     }
 

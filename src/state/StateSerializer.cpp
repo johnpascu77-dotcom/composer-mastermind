@@ -769,6 +769,9 @@ namespace StateSerializer
         obj->setProperty("mode", juce::String(target.mode));
         obj->setProperty("arcDimension", juce::String(target.arcDimension));
         obj->setProperty("sendAhead", target.sendAhead);
+        obj->setProperty("rangeMin", target.rangeMin);
+        obj->setProperty("rangeMax", target.rangeMax);
+        obj->setProperty("holdBars", target.holdBars);
         return juce::var(obj);
     }
 
@@ -781,6 +784,9 @@ namespace StateSerializer
         target.mode = JsonHelpers::getString(value, "mode", "arc");
         target.arcDimension = JsonHelpers::getString(value, "arcDimension");
         target.sendAhead = JsonHelpers::getBool(value, "sendAhead", false);
+        target.rangeMin = JsonHelpers::getInt(value, "rangeMin", 0);
+        target.rangeMax = JsonHelpers::getInt(value, "rangeMax", 127);
+        target.holdBars = JsonHelpers::getInt(value, "holdBars", 0);
         return target;
     }
 

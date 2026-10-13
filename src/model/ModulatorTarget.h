@@ -41,4 +41,15 @@ struct ModulatorTarget
     //  - "arc" mode: every bar sends the arc's value for the NEXT bar, so what the
     //    receiver prepares is exactly what that next bar should be playing.
     bool sendAhead = false;
+
+    // "arc" mode only. Where the arc's 0..1 lands in CC values: rangeMin at 0, rangeMax at 1
+    // (default 0..127, the full CC). A narrow range makes a curve address only part of the
+    // receiver's scale, e.g. the middle third of AME's preset lane; min > max runs it backwards.
+    int rangeMin = 0;
+    int rangeMax = 127;
+
+    // "arc" mode only. Once the sent CC value has changed, hold it for at least this many bars
+    // before it may change again (0 = follow the curve every bar). The value after the hold is
+    // the curve's current one. Slows down a receiver that reacts to every change (an AME scan).
+    int holdBars = 0;
 };

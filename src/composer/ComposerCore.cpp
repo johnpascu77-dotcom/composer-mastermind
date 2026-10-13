@@ -1729,7 +1729,30 @@ void ComposerCore::sendModulatorTargetUpdates(int currentBar)
             ? getNarrativePositionAt(evaluationBar)
             : arcSet.getArc(target.arcDimension).evaluate(evaluationBar).value;
 
-        const int ccValue = CCMapping::encodeFloat(value, 0.0f, 1.0f);
+        int ccValue = CCMapping::encodeFloat(value, 0.0f, 1.0f);
+        if (target.rangeMin != 0 || target.rangeMax != 127)
+        {
+            const float clamped = std::clamp(value, 0.0f, 1.0f);
+            ccValue = std::clamp(static_cast<int>(std::lround(
+                                     static_cast<float>(target.rangeMin)
+                                     + clamped * static_cast<float>(target.rangeMax - target.rangeMin))),
+                                 0, 127);
+        }
+
+        // Hold: after a change, keep sending the same value for holdBars bars. Rewinding the
+        // transport starts the hold afresh.
+        auto& hold = modulatorHoldState[target.id];
+        if (currentBar < hold.lastBar)
+            hold = ModulatorHoldState {};
+        if (target.holdBars > 0 && hold.value >= 0 && currentBar - hold.lastChangeBar < target.holdBars)
+            ccValue = hold.value;
+        else if (ccValue != hold.value)
+        {
+            hold.value = ccValue;
+            hold.lastChangeBar = currentBar;
+        }
+        hold.lastBar = currentBar;
+
         ccDispatcher.sendCC(target.midiChannel, target.ccNumber, ccValue);
     }
 }
@@ -2394,6 +2417,9 @@ juce::var ComposerCore::handleMcpBridgeRequest(const juce::var& request)
             obj->setProperty("mode", juce::String(target.mode));
             obj->setProperty("arcDimension", juce::String(target.arcDimension));
             obj->setProperty("sendAhead", target.sendAhead);
+            obj->setProperty("rangeMin", target.rangeMin);
+            obj->setProperty("rangeMax", target.rangeMax);
+            obj->setProperty("holdBars", target.holdBars);
             targetsArray.add(juce::var(obj));
         }
         result->setProperty("targets", targetsArray);

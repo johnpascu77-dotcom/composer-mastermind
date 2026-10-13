@@ -125,7 +125,7 @@ Full detail and exact formulas: [arc_dimension_mapping_concept.md](arc_dimension
 
 ## `modulatorTargets[]` — optional, for driving external Bitwig modulators
 
-Only relevant if a section's `modulatorValues[]` references one. `{id, ccNumber, midiChannel, mode, arcDimension, sendAhead}` (`sendAhead`, optional, section mode: the value goes out one bar before the section starts) —
+Only relevant if a section's `modulatorValues[]` references one. `{id, ccNumber, midiChannel, mode, arcDimension, sendAhead}` (optional: `sendAhead`, section mode: the value goes out one bar before the section starts; `rangeMin`/`rangeMax` 0-127 and `holdBars` 0-256, arc mode: the CC range the arc maps to and a minimum number of bars between changes of the sent value) —
 `ccNumber` is deliberately outside MPL's own 20-64 protocol range (a virtual-MIDI-cable-routed CC paired to a
 Bitwig modulator's own "Learn CC", not anything MPL itself decodes); `mode` is `"arc"` (continuously tracks an
 `arcDimension` value every bar) or `"section"` (a fixed value per section, authored via `modulatorValues[]`

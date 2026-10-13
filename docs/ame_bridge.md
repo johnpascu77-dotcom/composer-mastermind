@@ -34,6 +34,10 @@ per section.
   the bar, and a CC 90 retrigger at the next bar line enters exactly the preset the position calls for. Without it the
   entrance plays the chain chosen one bar earlier. Scan changes only the chain; add CC 90 (section values) to hear
   each new chain, and do not combine CC 86 with CC 85 on the same instance.
+  **Slowing the scan:** give the target a **Hold** (minimum bars between changes of the sent value, e.g. 4) and/or a
+  **Range** (the CC values the arc maps to: a range of 40..100 makes the curve address only the middle of the lane;
+  min > max runs it backwards), both on the Modulators tab (arc mode), or `holdBars` / `rangeMin` / `rangeMax` in a
+  bundle. Or drive the target from a drawn arc dimension instead of narrative-position: plateaus in the curve are holds.
 - **Stage pattern per section:** CC 88, mode `section`, value = 8 x mask (stages 1+3 = mask 5 = value 40).
 - **Enter the new chain exactly on each section's downbeat:** CC 90 = 127, mode `section`, and turn on **Send 1 bar
   ahead** for it and for the preset target (the "AME bridge..." menu does this for you). MC then sends the next
