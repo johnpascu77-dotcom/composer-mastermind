@@ -53,6 +53,9 @@ private:
     void addTargetClicked();
     void ameBridgeClicked();
     void removeTargetClicked();
+    // Picking an existing target copies its settings into the form above, so it can be edited
+    // and stored again with Add / Update (same id = replace).
+    void loadSelectedTargetIntoForm();
     void sendForPairingClicked();
     void modeChanged();
 

@@ -149,6 +149,7 @@ ModulatorTargetView::ModulatorTargetView(ComposerMastermindAudioProcessor& proce
 
     content.addAndMakeVisible(existingTargetsCombo);
     existingTargetsCombo.setTextWhenNothingSelected("(pick existing target)");
+    existingTargetsCombo.onChange = [this] { loadSelectedTargetIntoForm(); };
 
     content.addAndMakeVisible(removeTargetButton);
     removeTargetButton.onClick = [this] { removeTargetClicked(); };
@@ -597,6 +598,30 @@ void ModulatorTargetView::ameBridgeClicked()
                                      + ") - route this channel to the AME track");
                            refreshAll();
                        });
+}
+
+void ModulatorTargetView::loadSelectedTargetIntoForm()
+{
+    if (existingTargetsCombo.getSelectedId() <= 0)
+        return;
+
+    ModulatorTarget target;
+    const auto id = existingTargetsCombo.getText().toStdString();
+    if (!processorRef.getComposerCore().getModulatorTargetLibrary().getTargetById(id, target))
+        return;
+
+    targetIdInput.setText(juce::String(target.id), false);
+    ccNumberSlider.setValue(target.ccNumber, juce::dontSendNotification);
+    channelSlider.setValue(target.midiChannel, juce::dontSendNotification);
+    modeCombo.setSelectedId(target.mode == "arc" ? 1 : 2, juce::dontSendNotification);
+    if (target.mode == "arc" && target.arcDimension.size() > 0)
+        arcDimensionCombo.setText(juce::String(target.arcDimension), juce::dontSendNotification);
+    sendAheadToggle.setToggleState(target.sendAhead, juce::dontSendNotification);
+    holdBarsSlider.setValue(target.holdBars, juce::dontSendNotification);
+    rangeMinSlider.setValue(target.rangeMin, juce::dontSendNotification);
+    rangeMaxSlider.setValue(target.rangeMax, juce::dontSendNotification);
+    modeChanged();
+    setStatus("Loaded '" + juce::String(target.id) + "' into the form - change what you need and press Add / Update");
 }
 
 void ModulatorTargetView::removeTargetClicked()
