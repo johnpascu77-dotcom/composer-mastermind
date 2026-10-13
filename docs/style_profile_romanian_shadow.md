@@ -57,7 +57,24 @@ pitch-class mask on **CC 110 / 111** (low 7 bits = pitch classes 0–6, high 5 b
 **CC Control** enabled pulls notes toward it (AME forwards these CCs to the next device in the chain). Mastermind's
 own *pitch-field broadcast* must stay off, or it overwrites the masks. Leave it out with `--no-field`.
 
-## Using the generator yourself
+## The AME Score page (the easy way)
+
+In Mastermind's **Score View**, the **AME Score...** button (next to *Generate Score...*) opens
+`score-generator/ame_score_generator.html` in your browser. It does everything the command-line generator does:
+
+1. **Read AME preset folder...** and pick `%APPDATA%\AtonalMotiveEngine\ChainPresets` (paste it into the folder
+   dialog's address bar). The page reads only the preset *names* and computes AME's lane numbers from them; it
+   remembers them for next time. (*Assume the standard lane* is only for trying the page out: the numbers are right
+   only if your folder holds nothing but `RO 01–24`.)
+2. **Voices**: how many (1–4) and each voice's MIDI channel; whether to send the pitch field (CC 110/111).
+3. **The plan**: one card per movement (name, character, pitch-field root, number of two-bar steps); in each card a
+   grid with a preset dropdown per voice and step (`— rest —` = the voice is silent in that step). `+ Movement`,
+   `Reset`, `Save plan...` / `Load plan...` (the same plan file the command-line generator reads with `--plan`).
+4. **Download score**, then *Score View → Load Score...*.
+
+The page and `romanian_shadow.py` produce byte-identical scores from the same plan and presets.
+
+## Using the command-line generator yourself
 
 The generator is `score-generator\romanian_shadow.py` (needs only Python). Open a PowerShell in the
 Mastermind folder (or double-click `score-generator\run_romanian_shadow.bat` for the same thing with arguments).

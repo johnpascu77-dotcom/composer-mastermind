@@ -94,6 +94,12 @@ private:
     // whole repo already makes (CLAUDE.md's own hardcoded paths).
     void generateScoreClicked();
 
+    // Opens score-generator/ame_score_generator.html: the browser page that builds a score for the
+    // Atonal Motive Transformer style profiles (one AME instance per voice, a plan you edit in a grid).
+    // Same offline, download-then-Load-Score flow as the generator above.
+    void ameScoreClicked();
+    void openGeneratorPage(const juce::String& fileName, const juce::String& what);
+
     ComposerMastermindAudioProcessor& processorRef;
 
     juce::TextButton liveSetupToggleButton { "Setup" };
@@ -110,6 +116,7 @@ private:
     juce::TextButton loadScoreButton { "Load Score..." };
     juce::TextButton saveScoreButton { "Save Score..." };
     juce::TextButton generateScoreButton { "Generate Score..." };
+    juce::TextButton ameScoreButton { "AME Score..." };
     std::unique_ptr<juce::FileChooser> fileChooser;
     juce::Label headerStatusLabel;
 

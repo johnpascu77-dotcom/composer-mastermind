@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Composer Mastermind — AME Score Generator</title>
+<style>
+  :root {
+    --bg: #14161c; --panel: #1c1f28; --border: #2c3040; --text: #e8e9ee; --muted: #9aa0b4;
+    --accent: #7dd3c8; --accent-dim: #4d7a74; --warn: #e8b86a; --bad: #e88a8a;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+         margin: 0; padding: 32px 20px 80px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin: 0 0 24px; line-height: 1.5; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px 22px; margin-bottom: 18px; }
+  .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 14px; font-weight: 600; }
+  .row { display: flex; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  label { font-size: 12px; color: var(--muted); }
+  input, select { background: #10121a; border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+                  padding: 7px 9px; font-size: 13px; font-family: inherit; }
+  input[type=number] { width: 70px; }
+  input:focus, select:focus { outline: none; border-color: var(--accent-dim); }
+  .hint { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .ok { color: var(--accent); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  button, .btn { background: var(--accent); color: #0d1210; border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px;
+                 font-weight: 600; cursor: pointer; display: inline-block; }
+  button.secondary, .btn.secondary { background: #262b38; color: var(--text); border: 1px solid var(--border); font-weight: 500; }
+  button.small { padding: 4px 10px; font-size: 12px; }
+  button:disabled { opacity: .45; cursor: default; }
+  .movement { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; background: #181b23; }
+  .movement .head { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
+  .movement .head .bars { color: var(--muted); font-size: 12px; margin-left: auto; padding-bottom: 8px; }
+  table.grid { border-collapse: collapse; width: 100%; }
+  table.grid td, table.grid th { padding: 3px 4px; vertical-align: middle; }
+  table.grid th { font-size: 11px; color: var(--muted); font-weight: 500; text-align: left; }
+  table.grid td.v { width: 54px; font-size: 12px; color: var(--muted); }
+  table.grid select { width: 100%; min-width: 120px; font-size: 12px; padding: 5px 6px; }
+  table.grid select.rest { color: var(--muted); }
+  pre { background: #10121a; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; line-height: 1.5;
+        overflow: auto; max-height: 280px; margin: 0; white-space: pre; }
+  .steps button { margin-left: 4px; }
+  details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AME Score Generator</h1>
+  <p class="subtitle">A Composer Mastermind score for the <b>romanian_shadow</b> style profile: one Atonal Motive Transformer per
+    voice, each on its own MIDI channel. Choose which chain each voice enters every two bars, then download the score and
+    open it in Mastermind (<i>Score View → Load Score...</i>). Everything happens in this page; nothing is uploaded.</p>
+
+  <div class="panel">
+    <h2>1 · Your AME presets</h2>
+    <div class="row">
+      <label class="btn secondary" for="folder">Read AME preset folder…</label>
+      <input id="folder" type="file" webkitdirectory multiple hidden>
+      <button class="secondary" id="useStandard">Assume the standard lane</button>
+      <span id="laneStatus" class="hint"></span>
+    </div>
+    <p class="hint">AME numbers its presets: the 7 factory ones, then every preset of your folder sorted by name. The score
+      needs those numbers, so point this at your AME preset folder — usually
+      <code>%APPDATA%\AtonalMotiveEngine\ChainPresets</code> (paste that into the folder dialog's address bar). The names are
+      remembered for next time. <b>Install the profile first</b> (<code>profiles\romanian_shadow\make_presets.py --install</code>).</p>
+  </div>
+
+  <div class="panel">
+    <h2>2 · Voices</h2>
+    <div class="row" id="voiceRow"></div>
+    <div class="row">
+      <label><input type="checkbox" id="field" checked> Also send each movement's pitch field (CC 110 / 111) for an OrchNoteFilter</label>
+    </div>
+    <div class="row">
+      <div class="field" style="flex:1"><label>Score title</label><input id="title" type="text"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>3 · The plan — what each voice plays, two bars at a time</h2>
+    <p class="hint">Each cell is one two-bar step: pick a preset, or <i>— rest —</i> (the voice gets no new entrance and lets its
+      last one finish). Chains and entrances are sent one bar ahead, so they land exactly on the bar line.</p>
+    <div id="movements"></div>
+    <div class="row">
+      <button class="secondary" id="addMovement">+ Movement</button>
+      <button class="secondary" id="resetPlan">Reset to the default plan</button>
+      <button class="secondary" id="savePlan">Save plan…</button>
+      <label class="btn secondary" for="loadPlan">Load plan…</label>
+      <input id="loadPlan" type="file" accept=".json,application/json" hidden>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>4 · Build</h2>
+    <div class="row">
+      <button id="build">Download score</button>
+      <span id="buildStatus" class="hint"></span>
+    </div>
+    <details open><summary>What will play</summary><pre id="preview"></pre></details>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ===================================================================
+ * Port of score-generator/romanian_shadow.py (same plan format, same output).
+ * =================================================================== */
+const FACTORY = ["Init", "Mirror", "Retrograde inversion", "Canon at the fifth", "Horn entrance", "Augmented echo", "Widen and drop"];
+const ROMANIAN_MINOR = [0, 2, 3, 6, 7, 9, 10];
+const NOTE_NAMES = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+const VOICES = [["V1", "high, agile"], ["V2", "answering"], ["V3", "mediator"], ["V4", "low"]];
+const ARCHETYPES = ["presentation", "build", "peak", "release"];
+const RO_NAMES = [
+  "RO 01 Joc strâmb", "RO 02 Joc strâmb, intrare", "RO 03 Joc cu răspuns", "RO 04 Joc în canon",
+  "RO 05 Strigătură", "RO 06 Strigătură dublă", "RO 07 Chemare sus", "RO 08 Răspuns jos",
+  "RO 09 Pedală", "RO 10 Joc peste pedală", "RO 11 Pedală mutată", "RO 12 Joc în trepte",
+  "RO 13 Jale", "RO 14 Jale întoarsă", "RO 15 Bocet", "RO 16 Jale în canon", "RO 17 Jale joasă",
+  "RO 18 Posedat", "RO 19 Posedat, oglindă", "RO 20 Posedat, urcare", "RO 21 Posedat, strigăt",
+  "RO 22 Umbră", "RO 23 Umbră îngustată", "RO 24 Ecou",
+];
+
+const DEFAULT_PLAN = {
+  title: "Joc de Umbre (romanian_shadow, 42 bars)",
+  movements: [
+    { name: "Joc strâmb", archetype: "presentation", root: 0, firstBar: 0,
+      voices: { V1: [1, 2, 1], V2: [0, 3, 3], V3: [0, 0, 4], V4: [0, 0, 0] } },
+    { name: "Strigături", archetype: "build", root: 2, firstBar: 6,
+      voices: { V1: [7, 5, 7], V2: [8, 6, 8], V3: [0, 5, 6], V4: [8, 0, 8] } },
+    { name: "Joc cu pedală", archetype: "build", root: 3, firstBar: 12,
+      voices: { V1: [10, 12, 10], V2: [12, 0, 12], V3: [0, 10, 0], V4: [9, 11, 9] } },
+    { name: "Cântec de jale", archetype: "release", root: 8, firstBar: 18,
+      voices: { V1: [0, 0, 0, 15, 0], V2: [13, 0, 0, 0, 16], V3: [0, 14, 0, 0, 0], V4: [0, 0, 17, 0, 0] } },
+    { name: "Joc posedat", archetype: "peak", root: 6, firstBar: 28,
+      voices: { V1: [18, 21, 18, 21], V2: [19, 19, 20, 19], V3: [20, 18, 19, 20], V4: [0, 12, 0, 12] } },
+    { name: "Umbre", archetype: "release", root: 10, firstBar: 36,
+      voices: { V1: [0, 0, 23], V2: [24, 0, 0], V3: [0, 23, 0], V4: [22, 0, 24] } },
+  ],
+};
+
+// exactly AME's ordering: '_' is a space, only a-z are upper-cased, everything else as it is
+function upperKey(text) {
+  let out = "";
+  for (const c of text) out += c === "_" ? " " : (c >= "a" && c <= "z" ? c.toUpperCase() : c);
+  return out;
+}
+function laneFromNames(names) {
+  const sorted = [...names].sort((a, b) => { const x = upperKey(a), y = upperKey(b); return x < y ? -1 : x > y ? 1 : 0; });
+  return FACTORY.concat(sorted);
+}
+function standardLane() { return laneFromNames(RO_NAMES); }
+
+// a plan entry -> {index, name}, or null for a rest
+function resolve(spec, lane, where) {
+  if (spec === 0 || spec === null || spec === "" || spec === "-" || spec === undefined) return null;
+  let matches;
+  if (typeof spec === "number") {
+    const prefix = "RO " + String(spec).padStart(2, "0") + " ";
+    matches = lane.map((n, i) => n.startsWith(prefix) ? i : -1).filter(i => i >= 0);
+  } else {
+    const s = String(spec).toLowerCase();
+    const exact = lane.map((n, i) => n.toLowerCase() === s ? i : -1).filter(i => i >= 0);
+    matches = exact.length ? exact : lane.map((n, i) => n.toLowerCase().startsWith(s) ? i : -1).filter(i => i >= 0);
+  }
+  if (matches.length !== 1) throw new Error(where + ': preset "' + spec + '" matches ' + matches.length +
+                                            " presets in your lane (need exactly one) - is the profile installed?");
+  return { index: matches[0], name: lane[matches[0]] };
+}
+
+function fieldValues(root) {
+  let mask = 0;
+  for (const pc of ROMANIAN_MINOR) mask |= 1 << ((pc + root) % 12);
+  return [mask & 0x7f, (mask >> 7) & 0x1f];
+}
+
+function makeScene(id, name) {
+  return { schema: "ComposerMastermindScene.v1", id, name, durationBars: 2, quantize: "bar", targets: [],
+           global: { activePattern: 1, gridMode: 0, swing: 0.0, rate: 1 }, instanceOverrides: [], patterns: [],
+           mutations: [], nextSceneId: "", transitionStyle: "hard", rampBars: 0 };
+}
+
+function buildBundle(plan, lane, voiceIds, channels, withField) {
+  const sections = [], scenes = [], used = new Set();
+  plan.movements.forEach((m, mi) => {
+    const sid = "ro-m" + (mi + 1);
+    scenes.push(makeScene(sid, m.name));
+    const subs = m.voices[voiceIds[0]].length;
+    for (const v of voiceIds)
+      if (m.voices[v].length !== subs) throw new Error('movement "' + m.name + '": every voice needs the same number of steps');
+    for (let k = 0; k < subs; k++) {
+      const values = [];
+      for (const v of voiceIds) {
+        const pick = resolve(m.voices[v][k], lane, 'movement "' + m.name + '", voice ' + v + ", step " + (k + 1));
+        if (pick) {
+          values.push({ modulatorTargetId: v.toLowerCase() + "-preset", value: pick.index });
+          values.push({ modulatorTargetId: v.toLowerCase() + "-retrigger", value: 127 });
+          used.add(pick.name);
+        }
+        if (k === 0 && withField) {
+          const [lo, hi] = fieldValues(m.root);
+          values.push({ modulatorTargetId: v.toLowerCase() + "-field-lo", value: lo });
+          values.push({ modulatorTargetId: v.toLowerCase() + "-field-hi", value: hi });
+        }
+      }
+      const n = sections.length + 1;
+      sections.push({ id: "ro-" + String(n).padStart(2, "0") + "-" + sid, name: m.name + " " + (k + 1), sceneId: sid,
+                      startBar: m.firstBar + 2 * k, durationBars: 2, archetype: m.archetype, layerRoles: [],
+                      budgetOverrides: [], reservedValues: [], modulatorValues: values });
+    }
+  });
+  const targets = [];
+  voiceIds.forEach((v, i) => {
+    const n = v.toLowerCase(), ch = channels[i];
+    targets.push({ id: n + "-preset", ccNumber: 85, midiChannel: ch, mode: "section", arcDimension: "", sendAhead: true });
+    targets.push({ id: n + "-retrigger", ccNumber: 90, midiChannel: ch, mode: "section", arcDimension: "", sendAhead: true });
+    if (withField) {
+      targets.push({ id: n + "-field-lo", ccNumber: 110, midiChannel: ch, mode: "section", arcDimension: "", sendAhead: false });
+      targets.push({ id: n + "-field-hi", ccNumber: 111, midiChannel: ch, mode: "section", arcDimension: "", sendAhead: false });
+    }
+  });
+  return { bundle: { schema: "ComposerMastermindComposition.v3",
+                     blueprint: { id: "ro-joc-de-umbre", name: plan.title || DEFAULT_PLAN.title, sections },
+                     scenes, instances: [], motifPresets: [], modulatorTargets: targets, modulationRoutes: [] },
+           used };
+}
+
+/* ===================================================================
+ * The page
+ * =================================================================== */
+const state = {
+  lane: standardLane(), laneKind: "standard", laneNote: "",
+  plan: JSON.parse(JSON.stringify(DEFAULT_PLAN)),
+  voiceCount: 4, channels: [1, 2, 3, 4], withField: true,
+};
+const $ = id => document.getElementById(id);
+
+function activeVoices() { return VOICES.slice(0, state.voiceCount).map(v => v[0]); }
+
+// make every movement carry a list for every active voice, all the same length; recompute first bars
+function normalizePlan() {
+  const ids = VOICES.map(v => v[0]);
+  let bar = 0;
+  for (const m of state.plan.movements) {
+    let subs = 0;
+    for (const v of ids) if (m.voices[v]) subs = Math.max(subs, m.voices[v].length);
+    subs = Math.max(subs, 1);
+    for (const v of ids) {
+      const list = m.voices[v] || [];
+      while (list.length < subs) list.push(0);
+      list.length = subs;
+      m.voices[v] = list;
+    }
+    m.firstBar = bar;
+    bar += 2 * subs;
+  }
+}
+
+// a cell's value as a lane name ("" = rest); numbers of a loaded plan are turned into names
+function cellName(spec) {
+  try {
+    const pick = resolve(spec, state.lane, "");
+    return pick ? pick.name : "";
+  } catch (e) { return typeof spec === "string" ? spec : ""; }
+}
+
+function renderLane() {
+  const ro = RO_NAMES.filter(n => state.lane.includes(n)).length;
+  const el = $("laneStatus");
+  el.className = "hint";
+  el.innerHTML = "Lane: <b>" + state.lane.length + "</b> presets (7 factory + " + (state.lane.length - 7) + " yours), " +
+    "<span class='" + (ro === 24 ? "ok" : "bad") + "'>RO 01–24: " + ro + " of 24 found</span>" +
+    (state.laneKind === "standard" ? " · <span class='warn'>assumed — read your folder so the numbers match your real lane</span>"
+                                    : " · read from your folder" + (state.laneNote ? " (" + state.laneNote + ")" : ""));
+}
+
+function renderVoices() {
+  const row = $("voiceRow");
+  row.innerHTML = "";
+  const count = document.createElement("div");
+  count.className = "field";
+  count.innerHTML = "<label>Voices</label>";
+  const sel = document.createElement("select");
+  for (let n = 1; n <= 4; n++) sel.add(new Option(String(n), String(n), false, n === state.voiceCount));
+  sel.onchange = () => { state.voiceCount = +sel.value; refresh(); };
+  count.appendChild(sel);
+  row.appendChild(count);
+  activeVoices().forEach((v, i) => {
+    const f = document.createElement("div");
+    f.className = "field";
+    f.innerHTML = "<label>" + v + " · " + VOICES[i][1] + " · MIDI channel</label>";
+    const inp = document.createElement("input");
+    inp.type = "number"; inp.min = 1; inp.max = 16; inp.value = state.channels[i];
+    inp.onchange = () => { state.channels[i] = Math.max(1, Math.min(16, +inp.value || 1)); refresh(); };
+    f.appendChild(inp);
+    row.appendChild(f);
+  });
+}
+
+function renderMovements() {
+  const host = $("movements");
+  host.innerHTML = "";
+  const voices = activeVoices();
+  const names = state.lane.slice(7);   // everything after the factory presets, in lane order
+  state.plan.movements.forEach((m, mi) => {
+    const subs = m.voices.V1.length;
+    const box = document.createElement("div");
+    box.className = "movement";
+    const head = document.createElement("div");
+    head.className = "head";
+    const nameF = document.createElement("div"); nameF.className = "field"; nameF.style.flex = "1";
+    nameF.innerHTML = "<label>Movement</label>";
+    const nameI = document.createElement("input"); nameI.type = "text"; nameI.value = m.name;
+    nameI.onchange = () => { m.name = nameI.value || "Movement " + (mi + 1); refresh(); };
+    nameF.appendChild(nameI); head.appendChild(nameF);
+    const arcF = document.createElement("div"); arcF.className = "field"; arcF.innerHTML = "<label>Character</label>";
+    const arcS = document.createElement("select");
+    ARCHETYPES.forEach(a => arcS.add(new Option(a, a, false, a === m.archetype)));
+    arcS.onchange = () => { m.archetype = arcS.value; refresh(); };
+    arcF.appendChild(arcS); head.appendChild(arcF);
+    const rootF = document.createElement("div"); rootF.className = "field"; rootF.innerHTML = "<label>Pitch field root</label>";
+    const rootS = document.createElement("select");
+    NOTE_NAMES.forEach((n, i) => rootS.add(new Option(n, String(i), false, i === m.root)));
+    rootS.onchange = () => { m.root = +rootS.value; refresh(); };
+    rootF.appendChild(rootS); head.appendChild(rootF);
+    const stepF = document.createElement("div"); stepF.className = "field steps"; stepF.innerHTML = "<label>Steps (2 bars each)</label>";
+    const stepRow = document.createElement("div");
+    const minus = document.createElement("button"); minus.className = "secondary small"; minus.textContent = "−";
+    minus.disabled = subs <= 1;
+    minus.onclick = () => { for (const v of VOICES.map(x => x[0])) m.voices[v].pop(); refresh(); };
+    const plus = document.createElement("button"); plus.className = "secondary small"; plus.textContent = "+";
+    plus.onclick = () => { for (const v of VOICES.map(x => x[0])) m.voices[v].push(0); refresh(); };
+    stepRow.append(String(subs) + " ", minus, plus);
+    stepF.appendChild(stepRow); head.appendChild(stepF);
+    const del = document.createElement("button"); del.className = "secondary small"; del.textContent = "Remove";
+    del.disabled = state.plan.movements.length <= 1;
+    del.onclick = () => { state.plan.movements.splice(mi, 1); refresh(); };
+    head.appendChild(del);
+    const bars = document.createElement("div"); bars.className = "bars";
+    bars.textContent = "bars " + (m.firstBar + 1) + "–" + (m.firstBar + 2 * subs);
+    head.appendChild(bars);
+    box.appendChild(head);
+
+    const table = document.createElement("table");
+    table.className = "grid";
+    const th = document.createElement("tr");
+    th.innerHTML = "<th></th>" + Array.from({ length: subs }, (_, k) => "<th>bars " + (m.firstBar + 2 * k + 1) + "–" +
+                                                                    (m.firstBar + 2 * k + 2) + "</th>").join("");
+    table.appendChild(th);
+    voices.forEach(v => {
+      const tr = document.createElement("tr");
+      const label = document.createElement("td"); label.className = "v"; label.textContent = v;
+      tr.appendChild(label);
+      m.voices[v].forEach((spec, k) => {
+        const td = document.createElement("td");
+        const s = document.createElement("select");
+        const current = cellName(spec);
+        s.className = current ? "" : "rest";
+        s.add(new Option("— rest —", "", false, !current));
+        const optgroup = (title, items) => {
+          if (!items.length) return;
+          const g = document.createElement("optgroup"); g.label = title;
+          items.forEach(n => g.appendChild(new Option(n, n, false, n === current)));
+          s.appendChild(g);
+        };
+        optgroup("Romanian shadow", names.filter(n => n.startsWith("RO ")));
+        optgroup("Other presets", names.filter(n => !n.startsWith("RO ")));
+        optgroup("Factory", FACTORY);
+        if (current && !state.lane.includes(current)) s.add(new Option(current + " (not in lane)", current, false, true));
+        s.onchange = () => { m.voices[v][k] = s.value; refresh(false); };
+        td.appendChild(s); tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+    box.appendChild(table);
+    host.appendChild(box);
+  });
+}
+
+function planAsText() {
+  const voices = activeVoices();
+  const lines = ["Voices: " + voices.map((v, i) => v + " = channel " + state.channels[i] + " (" + VOICES[i][1] + ")").join(", ")];
+  for (const m of state.plan.movements) {
+    const subs = m.voices.V1.length;
+    lines.push("", m.name + "  (bars " + (m.firstBar + 1) + "-" + (m.firstBar + 2 * subs) + ", root " +
+               NOTE_NAMES[m.root % 12] + ", " + m.archetype + ")");
+    for (const v of voices)
+      lines.push("  " + v + "  " + m.voices[v].map(s => cellName(s) || "--").join(" | "));
+  }
+  return lines.join("\n");
+}
+
+function renderPreview() {
+  $("preview").textContent = planAsText();
+  const status = $("buildStatus");
+  try {
+    const { bundle, used } = buildBundle(state.plan, state.lane, activeVoices(), state.channels.slice(0, state.voiceCount),
+                                         state.withField);
+    const last = bundle.blueprint.sections[bundle.blueprint.sections.length - 1];
+    status.className = "hint ok";
+    status.textContent = bundle.blueprint.sections.length + " sections, " + (last.startBar + last.durationBars) + " bars, " +
+      state.voiceCount + " voice" + (state.voiceCount > 1 ? "s" : "") + ", " + bundle.modulatorTargets.length + " targets, " +
+      used.size + " different presets.";
+    $("build").disabled = false;
+  } catch (e) {
+    status.className = "hint bad";
+    status.textContent = e.message;
+    $("build").disabled = true;
+  }
+}
+
+function refresh(full = true) {
+  normalizePlan();
+  if (full) { renderVoices(); renderMovements(); }
+  renderLane();
+  renderPreview();
+  $("title").value = state.plan.title || "";
+}
+
+function download(name, text) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ---- wiring ---- */
+$("folder").onchange = async ev => {
+  const files = [...ev.target.files].filter(f => f.name.toLowerCase().endsWith(".amechain"));
+  const names = [];
+  for (const f of files) {
+    try {
+      const data = JSON.parse(await f.text());
+      names.push(data.name || f.name.replace(/\.amechain$/i, ""));
+    } catch (e) { /* not a preset: AME skips it too */ }
+  }
+  if (!names.length) { $("laneStatus").className = "hint bad"; $("laneStatus").textContent = "No .amechain presets found in that folder."; return; }
+  state.lane = laneFromNames(names);
+  state.laneKind = "folder";
+  state.laneNote = new Date().toLocaleDateString();
+  try { localStorage.setItem("ameLane", JSON.stringify({ names, when: state.laneNote })); } catch (e) { /* private mode */ }
+  refresh();
+};
+$("useStandard").onclick = () => { state.lane = standardLane(); state.laneKind = "standard"; state.laneNote = ""; refresh(); };
+$("field").onchange = () => { state.withField = $("field").checked; refresh(false); };
+$("title").onchange = () => { state.plan.title = $("title").value || DEFAULT_PLAN.title; refresh(false); };
+$("addMovement").onclick = () => {
+  const ids = VOICES.map(v => v[0]);
+  const voices = {};
+  ids.forEach(v => voices[v] = [0, 0]);
+  state.plan.movements.push({ name: "Movement " + (state.plan.movements.length + 1), archetype: "build", root: 0, firstBar: 0, voices });
+  refresh();
+};
+$("resetPlan").onclick = () => { state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN)); refresh(); };
+$("savePlan").onclick = () => {
+  const out = JSON.parse(JSON.stringify(state.plan));
+  for (const m of out.movements) for (const v of Object.keys(m.voices)) m.voices[v] = m.voices[v].map(s => cellName(s) || 0);
+  download("my_plan.json", JSON.stringify(out, null, 2) + "\n");
+};
+$("loadPlan").onchange = async ev => {
+  const f = ev.target.files[0];
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!Array.isArray(data.movements) || !data.movements.length) throw new Error("no movements in that file");
+    state.plan = data;
+    refresh();
+  } catch (e) { $("buildStatus").className = "hint bad"; $("buildStatus").textContent = "Could not read that plan: " + e.message; }
+};
+$("build").onclick = () => {
+  try {
+    const { bundle } = buildBundle(state.plan, state.lane, activeVoices(), state.channels.slice(0, state.voiceCount), state.withField);
+    download("ro_joc_de_umbre.json", JSON.stringify(bundle, null, 2) + "\n");
+    $("buildStatus").className = "hint ok";
+    $("buildStatus").textContent = "Downloaded ro_joc_de_umbre.json — in Mastermind: Score View → Load Score…";
+  } catch (e) { $("buildStatus").className = "hint bad"; $("buildStatus").textContent = e.message; }
+};
+
+// remembered lane from the last visit
+try {
+  const saved = JSON.parse(localStorage.getItem("ameLane") || "null");
+  if (saved && Array.isArray(saved.names) && saved.names.length) {
+    state.lane = laneFromNames(saved.names); state.laneKind = "folder"; state.laneNote = (saved.when || "") + ", remembered";
+  }
+} catch (e) { /* ignore */ }
+
+window.AME = { state, buildBundle, laneFromNames, resolve, DEFAULT_PLAN, refresh };
+refresh();
+</script>
+</body>
+</html>

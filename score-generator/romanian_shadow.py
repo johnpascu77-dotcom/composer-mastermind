@@ -72,7 +72,9 @@ DEFAULT_PLAN = {
 
 
 def upper_key(text):
-    return ''.join(' ' if c == '_' else c.upper() for c in text)
+    # exactly AME's ordering: '_' is a space and only a-z are upper-cased (other characters,
+    # diacritics included, are compared as they are, by their UTF-8 / code point value)
+    return ''.join(' ' if c == '_' else (c.upper() if 'a' <= c <= 'z' else c) for c in text)
 
 
 def lane_names(directory):

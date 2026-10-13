@@ -184,6 +184,10 @@ PrimaryView::PrimaryView(ComposerMastermindAudioProcessor& processor)
 
     addAndMakeVisible(generateScoreButton);
     generateScoreButton.onClick = [this] { generateScoreClicked(); };
+    addAndMakeVisible(ameScoreButton);
+    ameScoreButton.onClick = [this] { ameScoreClicked(); };
+    ameScoreButton.setTooltip("Build a score for the Atonal Motive Transformer style profiles: one AME per voice, "
+                              "plan edited in a grid. Opens in your browser; Load Score the download.");
 
     addAndMakeVisible(headerStatusLabel);
     headerStatusLabel.setFont(juce::Font(juce::FontOptions().withHeight(12.0f).withStyle("Italic")));
@@ -245,6 +249,8 @@ void PrimaryView::resized()
     saveScoreButton.setBounds(scoreFileRow.removeFromLeft(110));
     scoreFileRow.removeFromLeft(6);
     generateScoreButton.setBounds(scoreFileRow.removeFromLeft(130));
+    scoreFileRow.removeFromLeft(6);
+    ameScoreButton.setBounds(scoreFileRow.removeFromLeft(110));
 
     area.removeFromTop(4);
     legendArea = area.removeFromTop(kLegendHeight);
@@ -806,24 +812,35 @@ void PrimaryView::saveScoreClicked()
 
 void PrimaryView::generateScoreClicked()
 {
+    openGeneratorPage("generate_score.html", "Generate Score");
+}
+
+void PrimaryView::ameScoreClicked()
+{
+    openGeneratorPage("ame_score_generator.html", "AME Score");
+}
+
+void PrimaryView::openGeneratorPage(const juce::String& fileName, const juce::String& what)
+{
     // Dev-machine-local path, same single-machine assumption every other
     // hardcoded path in this repo already makes (CLAUDE.md itself is full
     // of them) - this plugin and its source tree live on the same machine.
     const juce::File htmlFile(
-        "C:\\Users\\Asus\\Documents\\JUCE\\Projects\\NewProject\\ComposerMastermind\\score-generator\\generate_score.html");
+        juce::String("C:/Users/Asus/Documents/JUCE/Projects/NewProject/ComposerMastermind/score-generator/")
+        + fileName);
 
     if (!htmlFile.existsAsFile())
     {
-        headerStatusLabel.setText("Generate Score failed: " + htmlFile.getFullPathName() + " not found",
+        headerStatusLabel.setText(what + " failed: " + htmlFile.getFullPathName() + " not found",
                                    juce::dontSendNotification);
         return;
     }
 
     if (htmlFile.startAsProcess())
-        headerStatusLabel.setText("Opened the score generator in your browser - Generate, then Load Score the download",
+        headerStatusLabel.setText("Opened the " + what + " generator in your browser - build, then Load Score the download",
                                    juce::dontSendNotification);
     else
-        headerStatusLabel.setText("Generate Score failed: couldn't open " + htmlFile.getFullPathName(),
+        headerStatusLabel.setText(what + " failed: couldn't open " + htmlFile.getFullPathName(),
                                    juce::dontSendNotification);
 }
 
