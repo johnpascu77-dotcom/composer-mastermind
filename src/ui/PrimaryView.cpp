@@ -747,23 +747,57 @@ void PrimaryView::loadScoreClicked()
             return;
 
         auto& composerCore = processorRef.getComposerCore();
+        const auto nInstances = (int) composerCore.getInstanceRegistry().getAllInstances().size();
+        const auto nTargets = (int) composerCore.getModulatorTargetLibrary().getAllTargets().size();
+        const auto nRoutes = (int) composerCore.getModulationRouteLibrary().getAllRoutes().size();
 
-        std::string errorMessage;
-        if (!CompositionBundleStore::importBundle(file.loadFileAsString(), composerCore, errorMessage))
+        auto doLoad = [this, file](bool clearLeftovers)
         {
-            headerStatusLabel.setText("Load Score failed: " + juce::String(errorMessage), juce::dontSendNotification);
+            auto& core = processorRef.getComposerCore();
+            std::string errorMessage;
+            if (!CompositionBundleStore::importBundle(file.loadFileAsString(), core, errorMessage, clearLeftovers))
+            {
+                headerStatusLabel.setText("Load Score failed: " + juce::String(errorMessage),
+                                           juce::dontSendNotification);
+                return;
+            }
+
+            // importBundle already made this the current blueprint - prime
+            // immediately too, same "load = ready to hear" framing as
+            // loadBlueprintClicked above.
+            core.primeForPlayback();
+
+            headerStatusLabel.setText(juce::String(clearLeftovers ? "Cleared leftovers, loaded and primed score from "
+                                                                  : "Loaded and primed score from ")
+                                          + file.getFullPathName(),
+                                       juce::dontSendNotification);
+            refreshHeaderControls(true);
+            refreshFromCore();
+        };
+
+        if (nInstances + nTargets + nRoutes == 0)
+        {
+            doLoad(false);
             return;
         }
 
-        // importBundle already made this the current blueprint - prime
-        // immediately too, same "load = ready to hear" framing as
-        // loadBlueprintClicked above.
-        composerCore.primeForPlayback();
-
-        headerStatusLabel.setText("Loaded and primed score from " + file.getFullPathName(),
-                                   juce::dontSendNotification);
-        refreshHeaderControls(true);
-        refreshFromCore();
+        juce::MessageBoxOptions options = juce::MessageBoxOptions()
+            .withIconType(juce::MessageBoxIconType::QuestionIcon)
+            .withTitle("Load Score")
+            .withMessage("Mastermind currently holds " + juce::String(nInstances) + " instance(s), "
+                         + juce::String(nTargets) + " modulator target(s) and " + juce::String(nRoutes)
+                         + " modulation route(s) from earlier work.\n\nClear them first, so only what this "
+                           "score defines remains? (Scenes, presets and blueprints are kept.)")
+            .withButton("Clear and load")
+            .withButton("Load, keep existing")
+            .withButton("Cancel");
+        juce::AlertWindow::showAsync(options, [doLoad](int result)
+        {
+            if (result == 1)
+                doLoad(true);
+            else if (result == 2)
+                doLoad(false);
+        });
     });
 }
 

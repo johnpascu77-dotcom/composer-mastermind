@@ -64,5 +64,11 @@ namespace CompositionBundleStore
     // modulator targets, then the scenes, then the blueprint (overwriting
     // by id, same as every other Save/Load path here) and makes it the
     // active blueprint.
-    bool importBundle(const juce::String& json, ComposerCore& core, std::string& errorMessage);
+    //
+    // clearLeftovers: before adding, empty the instance registry, modulator targets and
+    // modulation routes, so only what the score itself defines remains (scenes, motif
+    // presets and blueprints are libraries and are never cleared). Validation runs
+    // first, so a bad file leaves everything untouched.
+    bool importBundle(const juce::String& json, ComposerCore& core, std::string& errorMessage,
+                      bool clearLeftovers = false);
 }

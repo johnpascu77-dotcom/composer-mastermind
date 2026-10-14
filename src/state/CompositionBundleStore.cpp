@@ -126,7 +126,7 @@ namespace CompositionBundleStore
         return juce::JSON::toString(juce::var(obj));
     }
 
-    bool importBundle(const juce::String& json, ComposerCore& core, std::string& errorMessage)
+    bool importBundle(const juce::String& json, ComposerCore& core, std::string& errorMessage, bool clearLeftovers)
     {
         juce::var parsed;
         const auto parseResult = juce::JSON::parse(json, parsed);
@@ -221,6 +221,13 @@ namespace CompositionBundleStore
                 errorMessage = "modulation route '" + route.id + "' invalid: " + routeError;
                 return false;
             }
+        }
+
+        if (clearLeftovers)
+        {
+            core.getInstanceRegistry().clear();
+            core.getModulatorTargetLibrary().clear();
+            core.getModulationRouteLibrary().clear();
         }
 
         for (const auto& instance : instances)

@@ -26,7 +26,8 @@ its own MIDI channel, and the score decides, every two bars, what each voice doe
    **Load Score...** and pick `docs/example_score_ro_joc_de_umbre.json`. Its 16 targets (`v1-preset`,
    `v1-retrigger`, `v1-field-lo`, `v1-field-hi`, `v2-…`) appear on the Modulators tab. Remove old targets that send
    on the same CCs and channels (an earlier `ro-preset-scan`, `ame-scan`, `ame-preset`…): a stray arc-mode target
-   such as a scan keeps sending its CC 86 every bar and will fight a voice's chain.
+   such as a scan keeps sending its CC 86 every bar and will fight a voice's chain. **Load Score now offers to clear these leftovers** (instances, modulator targets and modulation routes
+   already in Mastermind; scenes, presets and blueprints stay): answer *Clear and load* when switching to a different score.
 
 4. Rewind to bar 1 and play. Nothing needs MPL instances: the score has no MPL scenes.
 
