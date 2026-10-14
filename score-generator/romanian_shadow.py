@@ -122,7 +122,12 @@ def load_plan(path):
         return json.load(f)
 
 
+def step_bars(plan):
+    return int(plan.get('stepBars', 2))
+
+
 def check_plan(plan, voice_ids):
+    bar = 0
     for m in plan['movements']:
         subs = {len(m['voices'].get(v, [])) for v in voice_ids if v in m['voices']}
         if len(subs) != 1:
@@ -131,10 +136,12 @@ def check_plan(plan, voice_ids):
         for v in voice_ids:
             if v not in m['voices']:
                 m['voices'][v] = [0] * subs.copy().pop()
+        m['firstBar'] = bar
+        bar += step_bars(plan) * len(m['voices'][voice_ids[0]])
 
 
-def scene(sid, name):
-    return {'schema': 'ComposerMastermindScene.v1', 'id': sid, 'name': name, 'durationBars': 2,
+def scene(sid, name, bars=2):
+    return {'schema': 'ComposerMastermindScene.v1', 'id': sid, 'name': name, 'durationBars': bars,
             'quantize': 'bar', 'targets': [], 'global': {'activePattern': 1, 'gridMode': 0, 'swing': 0.0,
                                                           'rate': 1},
             'instanceOverrides': [], 'patterns': [], 'mutations': [], 'nextSceneId': '',
@@ -155,7 +162,7 @@ def build(plan, lane, voice_ids, channels, with_field):
     sections, scenes, used = [], [], set()
     for mi, m in enumerate(plan['movements']):
         sid = 'ro-m%d' % (mi + 1)
-        scenes.append(scene(sid, m['name']))
+        scenes.append(scene(sid, m['name'], step_bars(plan)))
         subs = len(m['voices'][voice_ids[0]])
         for k in range(subs):
             values = []
@@ -171,7 +178,7 @@ def build(plan, lane, voice_ids, channels, with_field):
                                {'modulatorTargetId': '%s-field-hi' % v.lower(), 'value': hi}]
             sections.append({
                 'id': 'ro-%02d-%s' % (len(sections) + 1, sid), 'name': '%s %d' % (m['name'], k + 1),
-                'sceneId': sid, 'startBar': m['firstBar'] + 2 * k, 'durationBars': 2,
+                'sceneId': sid, 'startBar': m['firstBar'] + step_bars(plan) * k, 'durationBars': step_bars(plan),
                 'archetype': m['archetype'], 'layerRoles': [], 'budgetOverrides': [], 'reservedValues': [],
                 'modulatorValues': values,
             })
@@ -207,7 +214,7 @@ def print_plan(plan, lane, voice_ids, channels):
                                   for v, ch in zip(voice_ids, channels)))
     for m in plan['movements']:
         subs = len(m['voices'][voice_ids[0]])
-        print('\n%s  (bars %d-%d, root %s, %s)' % (m['name'], m['firstBar'] + 1, m['firstBar'] + 2 * subs,
+        print('\n%s  (bars %d-%d, root %s, %s)' % (m['name'], m['firstBar'] + 1, m['firstBar'] + step_bars(plan) * subs,
                                                    NOTE_NAMES[m['root'] % 12], m['archetype']))
         for v in voice_ids:
             cells = []

@@ -68,7 +68,8 @@ In Mastermind's **Score View**, the **AME Score...** button (next to *Generate S
    remembers them for next time. (*Assume the standard lane* is only for trying the page out: the numbers are right
    only if your folder holds nothing but `RO 01–24`.)
 2. **Voices**: how many (1–4) and each voice's MIDI channel; whether to send the pitch field (CC 110/111).
-3. **The plan**: one card per movement (name, character, pitch-field root, number of two-bar steps); in each card a
+3. **The plan**: first the **step length** (2, 3, 4, 6 or 8 bars; default 2). Each cell lasts one step, and a motif longer
+   than a step overlaps the next entrance, because a later retrigger never cuts an earlier one. Then one card per movement (name, character, pitch-field root, number of two-bar steps); in each card a
    grid with a preset dropdown per voice and step (`— rest —` = the voice is silent in that step). `+ Movement`,
    `Reset`, `Save plan...` / `Load plan...`; and **Generate a plan**: pick a *form* (a sequence of preset families such as
    Joc de Umbre arc, Lament and dance, Possessed rush), a *seed* and a *restlessness* (0–1) and the page rolls a whole new plan
@@ -97,7 +98,7 @@ Mastermind folder (or double-click `score-generator\run_romanian_shadow.bat` for
 
    Open `my_plan.json` in any text editor. Per movement you can change the name, `archetype`, `root` (the pitch
    class of the section's pitch field, 0 = C … 11 = B), and `voices`: for each of V1–V4 one entry per step.
-   An entry is a **number** (preset `RO 01`–`RO 24`), a **name** (`"16 Close"`, or the start of one such as
+   Add `"stepBars": 4` at the top level for 4-bar steps (default 2); `firstBar` is then recomputed for you. An entry is a **number** (preset `RO 01`–`RO 24`), a **name** (`"16 Close"`, or the start of one such as
    `"RO 13"`), or **0** for a rest. All voices of a movement must have the same number of entries. To lengthen a
    movement, add an entry to every voice; to add a movement, copy a movement block and give it the next `firstBar`
    (2 bars per step).

@@ -50,7 +50,7 @@
 <div class="wrap">
   <h1>AME Score Generator</h1>
   <p class="subtitle">A Composer Mastermind score for the <b>romanian_shadow</b> style profile: one Atonal Motive Transformer per
-    voice, each on its own MIDI channel. Choose which chain each voice enters every two bars, then download the score and
+    voice, each on its own MIDI channel. Choose which chain each voice enters every step (two bars by default), then download the score and
     open it in Mastermind (<i>Score View → Load Score...</i>). Everything happens in this page; nothing is uploaded.</p>
 
   <div class="panel">
@@ -79,8 +79,10 @@
   </div>
 
   <div class="panel">
-    <h2>3 · The plan — what each voice plays, two bars at a time</h2>
-    <p class="hint">Each cell is one two-bar step: pick a preset, or <i>— rest —</i> (the voice gets no new entrance and lets its
+    <h2>3 · The plan — what each voice plays, one step at a time</h2>
+    <div class="row"><div class="field"><label>Step length</label><select id="stepBars"><option value="2">2 bars</option><option value="3">3 bars</option><option value="4">4 bars</option><option value="6">6 bars</option><option value="8">8 bars</option></select></div>
+      <span class="hint">How long each cell lasts. A motif longer than a step overlaps the next entrance, so a long motif wants a longer step (or rests).</span></div>
+    <p class="hint">Each cell is one step (the length you set above): pick a preset, or <i>— rest —</i> (the voice gets no new entrance and lets its
       last one finish). Chains and entrances are sent one bar ahead, so they land exactly on the bar line.</p>
     <div class="row" id="rollRow">
       <div class="field"><label>Form</label><select id="rollForm"></select></div>
@@ -186,8 +188,8 @@ function fieldValues(root) {
   return [mask & 0x7f, (mask >> 7) & 0x1f];
 }
 
-function makeScene(id, name) {
-  return { schema: "ComposerMastermindScene.v1", id, name, durationBars: 2, quantize: "bar", targets: [],
+function makeScene(id, name, bars) {
+  return { schema: "ComposerMastermindScene.v1", id, name, durationBars: bars, quantize: "bar", targets: [],
            global: { activePattern: 1, gridMode: 0, swing: 0.0, rate: 1 }, instanceOverrides: [], patterns: [],
            mutations: [], nextSceneId: "", transitionStyle: "hard", rampBars: 0 };
 }
@@ -201,7 +203,7 @@ function buildBundle(plan, lane, voiceIds, channels, withField) {
   const sections = [], scenes = [], used = new Set();
   plan.movements.forEach((m, mi) => {
     const sid = "ro-m" + (mi + 1);
-    scenes.push(makeScene(sid, m.name));
+    scenes.push(makeScene(sid, m.name, plan.stepBars || 2));
     const subs = m.voices[voiceIds[0]].length;
     for (const v of voiceIds)
       if (m.voices[v].length !== subs) throw new Error('movement "' + m.name + '": every voice needs the same number of steps');
@@ -222,7 +224,7 @@ function buildBundle(plan, lane, voiceIds, channels, withField) {
       }
       const n = sections.length + 1;
       sections.push({ id: "ro-" + String(n).padStart(2, "0") + "-" + sid, name: m.name + " " + (k + 1), sceneId: sid,
-                      startBar: m.firstBar + 2 * k, durationBars: 2, archetype: m.archetype, layerRoles: [],
+                      startBar: m.firstBar + (plan.stepBars || 2) * k, durationBars: plan.stepBars || 2, archetype: m.archetype, layerRoles: [],
                       budgetOverrides: [], reservedValues: [], modulatorValues: values });
     }
   });
@@ -269,7 +271,7 @@ function normalizePlan() {
       m.voices[v] = list;
     }
     m.firstBar = bar;
-    bar += 2 * subs;
+    bar += (state.plan.stepBars || 2) * subs;
   }
 }
 
@@ -340,7 +342,7 @@ function renderMovements() {
     NOTE_NAMES.forEach((n, i) => rootS.add(new Option(n, String(i), false, i === m.root)));
     rootS.onchange = () => { m.root = +rootS.value; refresh(); };
     rootF.appendChild(rootS); head.appendChild(rootF);
-    const stepF = document.createElement("div"); stepF.className = "field steps"; stepF.innerHTML = "<label>Steps (2 bars each)</label>";
+    const stepF = document.createElement("div"); stepF.className = "field steps"; stepF.innerHTML = "<label>Steps (" + (state.plan.stepBars || 2) + " bars each)</label>";
     const stepRow = document.createElement("div");
     const minus = document.createElement("button"); minus.className = "secondary small"; minus.textContent = "−";
     minus.disabled = subs <= 1;
@@ -354,15 +356,15 @@ function renderMovements() {
     del.onclick = () => { state.plan.movements.splice(mi, 1); refresh(); };
     head.appendChild(del);
     const bars = document.createElement("div"); bars.className = "bars";
-    bars.textContent = "bars " + (m.firstBar + 1) + "–" + (m.firstBar + 2 * subs);
+    bars.textContent = "bars " + (m.firstBar + 1) + "–" + (m.firstBar + (state.plan.stepBars || 2) * subs);
     head.appendChild(bars);
     box.appendChild(head);
 
     const table = document.createElement("table");
     table.className = "grid";
     const th = document.createElement("tr");
-    th.innerHTML = "<th></th>" + Array.from({ length: subs }, (_, k) => "<th>bars " + (m.firstBar + 2 * k + 1) + "–" +
-                                                                    (m.firstBar + 2 * k + 2) + "</th>").join("");
+    th.innerHTML = "<th></th>" + Array.from({ length: subs }, (_, k) => "<th>bars " + (m.firstBar + (state.plan.stepBars || 2) * k + 1) + "–" +
+                                                                    (m.firstBar + (state.plan.stepBars || 2) * (k + 1)) + "</th>").join("");
     table.appendChild(th);
     voices.forEach(v => {
       const tr = document.createElement("tr");
@@ -399,7 +401,7 @@ function planAsText() {
   const lines = ["Voices: " + voices.map((v, i) => v + " = channel " + state.channels[i] + " (" + VOICES[i][1] + ")").join(", ")];
   for (const m of state.plan.movements) {
     const subs = m.voices.V1.length;
-    lines.push("", m.name + "  (bars " + (m.firstBar + 1) + "-" + (m.firstBar + 2 * subs) + ", root " +
+    lines.push("", m.name + "  (bars " + (m.firstBar + 1) + "-" + (m.firstBar + (state.plan.stepBars || 2) * subs) + ", root " +
                NOTE_NAMES[m.root % 12] + ", " + m.archetype + ")");
     for (const v of voices)
       lines.push("  " + v + "  " + m.voices[v].map(s => cellName(s) || "--").join(" | "));
@@ -432,7 +434,11 @@ function refresh(full = true) {
   renderLane();
   renderPreview();
   $("title").value = state.plan.title || "";
+  const sel = $("stepBars"), sb = String(state.plan.stepBars || 2);
+  if (![...sel.options].some(o => o.value === sb)) sel.add(new Option(sb + " bars", sb));
+  sel.value = sb;
 }
+$("stepBars").onchange = () => { state.plan.stepBars = +$("stepBars").value; refresh(); };
 
 function download(name, text) {
   const a = document.createElement("a");
@@ -499,7 +505,7 @@ function seedNumber(text) {
   for (const c of String(text)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
   return h >>> 0;
 }
-function rollPlan(form, seedText, restlessness, targetBars) {
+function rollPlan(form, seedText, restlessness, targetBars, stepBars) {
   const rng = mulberry32(seedNumber(form.name + "|" + seedText));
   const pick = list => list[Math.floor(rng() * list.length)];
   const roots = [0, 2, 3, 8, 6, 10, 5, 9];
@@ -507,11 +513,11 @@ function rollPlan(form, seedText, restlessness, targetBars) {
   const allFamilies = Object.keys(FAMILIES);
   const movements = [];
   let bar = 0;
-  // steps (two bars each) per movement: automatic, or spread over the requested length
+  // steps (stepBars each) per movement: automatic, or spread over the requested length
   const keys = [...form.seq];
   let stepCounts = keys.map(key => key === "F" ? 3 : 3 + Math.floor(rng() * 3));
   if (targetBars) {
-    const total = Math.max(keys.length * 2, Math.round(targetBars / 2));
+    const total = Math.max(keys.length * 2, Math.round(targetBars / stepBars));
     const weights = keys.map(key => (key === "F" ? 0.7 : key === "E" ? 1.2 : 1) * (0.8 + 0.4 * rng()));
     const wsum = weights.reduce((a, b) => a + b, 0);
     stepCounts = weights.map(w => Math.max(2, Math.floor(total * w / wsum)));
@@ -542,9 +548,9 @@ function rollPlan(form, seedText, restlessness, targetBars) {
     }
     const archetype = mi === 0 ? "presentation" : key === "E" ? "peak" : key === "D" || key === "F" ? "release" : "build";
     movements.push({ name: fam.name, archetype, root: roots[mi % roots.length], firstBar: bar, voices });
-    bar += steps * 2;
+    bar += steps * stepBars;
   });
-  return { title: form.name + " " + seedText + " (" + bar + " bars)", movements };
+  return { title: form.name + " " + seedText + " (" + bar + " bars)", stepBars, movements };
 }
 FORMS.forEach((f, i) => { const o = document.createElement("option"); o.value = i; o.textContent = f.name; $("rollForm").appendChild(o); });
 $("roll").onclick = () => {
@@ -553,11 +559,11 @@ $("roll").onclick = () => {
   $("rollSeed").value = seed;
   const rest = Math.max(0, Math.min(1, parseFloat($("rollRest").value) || 0));
   const bars = parseInt($("rollBars").value, 10) || 0;
-  state.plan = rollPlan(form, seed, rest, bars);
+  state.plan = rollPlan(form, seed, rest, bars, +$("stepBars").value);
   refresh();
   $("rollStatus").textContent = "Generated '" + form.name + "', seed " + seed + " — " + state.plan.movements.length + " movements, " +
-    state.plan.movements.reduce((n, m) => n + m.voices.V1.length * 2, 0) + " bars" +
-    (bars && bars < form.seq.length * 4 ? " (the shortest this form can be: two steps per movement)" : bars % 2 ? " (lengths are in two-bar steps, so " + bars + " was rounded)" : "") + ".";
+    state.plan.movements.reduce((n, m) => n + m.voices.V1.length * state.plan.stepBars, 0) + " bars" +
+    (bars && bars < form.seq.length * 2 * state.plan.stepBars ? " (the shortest this form can be: two steps per movement)" : bars % state.plan.stepBars ? " (lengths are in " + state.plan.stepBars + "-bar steps, so " + bars + " was rounded)" : "") + ".";
 };
 $("resetPlan").onclick =() => { state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN)); refresh(); };
 $("savePlan").onclick = () => {
