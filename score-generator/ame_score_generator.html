@@ -473,9 +473,13 @@ $("loadPlan").onchange = async ev => {
 $("build").onclick = () => {
   try {
     const { bundle } = buildBundle(state.plan, state.lane, activeVoices(), state.channels.slice(0, state.voiceCount), state.withField);
-    download("ro_joc_de_umbre.json", JSON.stringify(bundle, null, 2) + "\n");
+    const slug = (state.plan.title || "ame_score").toLowerCase().replace(/\([^)]*\)/g, "")
+      .normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "ame_score";
+    const fileName = slug + "_" + state.voiceCount + "v.json";
+    download(fileName, JSON.stringify(bundle, null, 2) + "\n");
     $("buildStatus").className = "hint ok";
-    $("buildStatus").textContent = "Downloaded ro_joc_de_umbre.json — in Mastermind: Score View → Load Score…";
+    $("buildStatus").textContent = "Downloaded " + fileName + " (" + state.voiceCount + " voices) — in Mastermind: Score View → Load Score… " +
+      "(the browser may add \"(1)\" if that name already exists in your Downloads folder — load the newest file).";
   } catch (e) { $("buildStatus").className = "hint bad"; $("buildStatus").textContent = e.message; }
 };
 
