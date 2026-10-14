@@ -70,7 +70,10 @@ In Mastermind's **Score View**, the **AME Score...** button (next to *Generate S
 2. **Voices**: how many (1–4) and each voice's MIDI channel; whether to send the pitch field (CC 110/111).
 3. **The plan**: one card per movement (name, character, pitch-field root, number of two-bar steps); in each card a
    grid with a preset dropdown per voice and step (`— rest —` = the voice is silent in that step). `+ Movement`,
-   `Reset`, `Save plan...` / `Load plan...` (the same plan file the command-line generator reads with `--plan`).
+   `Reset`, `Save plan...` / `Load plan...`; and **Generate a plan**: pick a *form* (a sequence of preset families such as
+   Joc de Umbre arc, Lament and dance, Possessed rush), a *seed* and a *restlessness* (0–1) and the page rolls a whole new plan
+   (same form + seed + restlessness = same plan; the title carries the seed, so each roll saves under its own name). Edit any
+   cell afterwards; the plan file is the same (the same plan file the command-line generator reads with `--plan`).
 4. **Download score**, then *Score View → Load Score...*.
 
 The page and `romanian_shadow.py` produce byte-identical scores from the same plan and presets.

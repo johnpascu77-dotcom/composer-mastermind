@@ -82,6 +82,16 @@
     <h2>3 · The plan — what each voice plays, two bars at a time</h2>
     <p class="hint">Each cell is one two-bar step: pick a preset, or <i>— rest —</i> (the voice gets no new entrance and lets its
       last one finish). Chains and entrances are sent one bar ahead, so they land exactly on the bar line.</p>
+    <div class="row" id="rollRow">
+      <div class="field"><label>Form</label><select id="rollForm"></select></div>
+      <div class="field"><label>Seed (blank = random)</label><input id="rollSeed" type="text" placeholder="e.g. 2026" style="width:130px"></div>
+      <div class="field"><label>Restlessness (0–1)</label><input id="rollRest" type="number" min="0" max="1" step="0.05" value="0.5" style="width:90px"></div>
+      <button class="secondary" id="roll">Generate a plan</button>
+      <span id="rollStatus" class="hint"></span>
+    </div>
+    <p class="hint">Generate a plan builds a whole new plan from a seed: the same form, seed and restlessness always give the same
+      plan. Restlessness is how often voices play rather than rest, and how far a movement strays from its own family of
+      presets. Then edit any cell by hand.</p>
     <div id="movements"></div>
     <div class="row">
       <button class="secondary" id="addMovement">+ Movement</button>
@@ -459,7 +469,79 @@ $("addMovement").onclick = () => {
   state.plan.movements.push({ name: "Movement " + (state.plan.movements.length + 1), archetype: "build", root: 0, firstBar: 0, voices });
   refresh();
 };
-$("resetPlan").onclick = () => { state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN)); refresh(); };
+/* ---- seeded plan generator: a form (sequence of preset families) + a seed ---- */
+const FAMILIES = {
+  A: { name: "Joc strâmb",     presets: [1, 2, 3, 4] },
+  B: { name: "Strigături",     presets: [5, 6, 7, 8] },
+  C: { name: "Joc cu pedală",  presets: [10, 12, 10, 12],    low: [9, 11] },
+  D: { name: "Cântec de jale", presets: [13, 14, 15, 16],    low: [17, 13] },
+  E: { name: "Joc posedat",    presets: [18, 19, 20, 21] },
+  F: { name: "Umbre",          presets: [22, 23, 24] },
+};
+const FORMS = [
+  { name: "Joc de Umbre arc", seq: "ABCDEF" },
+  { name: "Lament and dance", seq: "DAEDF" },
+  { name: "Possessed rush", seq: "AEBEF" },
+  { name: "Pedal meditation", seq: "CDCDF" },
+  { name: "Call and answer", seq: "BABEF" },
+];
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function seedNumber(text) {
+  let h = 2166136261;
+  for (const c of String(text)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function rollPlan(form, seedText, restlessness) {
+  const rng = mulberry32(seedNumber(form.name + "|" + seedText));
+  const pick = list => list[Math.floor(rng() * list.length)];
+  const roots = [0, 2, 3, 8, 6, 10, 5, 9];
+  for (let i = roots.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [roots[i], roots[j]] = [roots[j], roots[i]]; }
+  const allFamilies = Object.keys(FAMILIES);
+  const movements = [];
+  let bar = 0;
+  [...form.seq].forEach((key, mi) => {
+    const fam = FAMILIES[key];
+    const steps = key === "F" ? 3 : 3 + Math.floor(rng() * 3);
+    const intensity = key === "E" ? 1 : key === "B" || key === "C" ? 0.7 : key === "F" ? 0.35 : 0.55;
+    const restChance = Math.max(0.05, Math.min(0.85, 0.7 - 0.55 * restlessness * intensity - 0.25 * intensity));
+    const voices = { V1: [], V2: [], V3: [], V4: [] };
+    for (let k = 0; k < steps; k++) {
+      const row = {};
+      for (const v of ["V1", "V2", "V3", "V4"]) {
+        // V4 is the low voice; a movement with a "low" list gives it that list
+        const own = v === "V4" && fam.low ? fam.low : fam.presets;
+        let pool = own;
+        if (rng() < 0.15 + 0.3 * restlessness) pool = FAMILIES[pick(allFamilies)].presets;
+        row[v] = rng() < restChance ? 0 : pick(pool);
+      }
+      if (mi === 0 && k === 0) row.V1 = row.V1 || pick(fam.presets);
+      if (Object.values(row).every(x => x === 0)) row[pick(["V1", "V2", "V3", "V4"])] = pick(fam.presets);
+      for (const v in row) voices[v].push(row[v]);
+    }
+    const archetype = mi === 0 ? "presentation" : key === "E" ? "peak" : key === "D" || key === "F" ? "release" : "build";
+    movements.push({ name: fam.name, archetype, root: roots[mi % roots.length], firstBar: bar, voices });
+    bar += steps * 2;
+  });
+  return { title: form.name + " " + seedText + " (" + bar + " bars)", movements };
+}
+FORMS.forEach((f, i) => { const o = document.createElement("option"); o.value = i; o.textContent = f.name; $("rollForm").appendChild(o); });
+$("roll").onclick = () => {
+  const form = FORMS[+$("rollForm").value];
+  const seed = $("rollSeed").value.trim() || String(Math.floor(Math.random() * 9000) + 1000);
+  $("rollSeed").value = seed;
+  const rest = Math.max(0, Math.min(1, parseFloat($("rollRest").value) || 0));
+  state.plan = rollPlan(form, seed, rest);
+  refresh();
+  $("rollStatus").textContent = "Generated '" + form.name + "', seed " + seed + " — " + state.plan.movements.length + " movements.";
+};
+$("resetPlan").onclick =() => { state.plan = JSON.parse(JSON.stringify(DEFAULT_PLAN)); refresh(); };
 $("savePlan").onclick = () => {
   const out = JSON.parse(JSON.stringify(state.plan));
   for (const m of out.movements) for (const v of Object.keys(m.voices)) m.voices[v] = m.voices[v].map(s => cellName(s) || 0);
