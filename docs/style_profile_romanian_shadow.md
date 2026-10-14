@@ -10,7 +10,9 @@ its own MIDI channel, and the score decides, every two bars, what each voice doe
 
 ## Set it up (once)
 
-1. **Install the 24 presets** into AME (existing files are kept):
+1. **Install the 28 presets** into AME (existing files are kept; RO 25-28 are the ternary set built on the 3:2 time-factor stop —
+   AME inserts them in name order, so any preset of yours that sorts after `RO` moves up four lane numbers: regenerate old
+   scores after installing):
 
    ```
    python C:\atonal-motive-engine\profiles\romanian_shadow\make_presets.py --install
@@ -66,13 +68,13 @@ In Mastermind's **Score View**, the **AME Score...** button (next to *Generate S
 1. **Read AME preset folder...** and pick `%APPDATA%\AtonalMotiveEngine\ChainPresets` (paste it into the folder
    dialog's address bar). The page reads only the preset *names* and computes AME's lane numbers from them; it
    remembers them for next time. (*Assume the standard lane* is only for trying the page out: the numbers are right
-   only if your folder holds nothing but `RO 01–24`.)
+   only if your folder holds nothing but `RO 01–28`.)
 2. **Voices**: how many (1–4) and each voice's MIDI channel; whether to send the pitch field (CC 110/111).
 3. **The plan**: first the **step length** (2, 3, 4, 6 or 8 bars; default 2). Each cell lasts one step, and a motif longer
    than a step overlaps the next entrance, because a later retrigger never cuts an earlier one. Then one card per movement (name, character, pitch-field root, number of two-bar steps); in each card a
    grid with a preset dropdown per voice and step (`— rest —` = the voice is silent in that step). `+ Movement`,
    `Reset`, `Save plan...` / `Load plan...`; and **Generate a plan**: pick a *form* (a sequence of preset families such as
-   Joc de Umbre arc, Lament and dance, Possessed rush), a *seed* and a *restlessness* (0–1) and the page rolls a whole new plan
+   Joc de Umbre arc, Lament and dance, Possessed rush, Ternary turn with the 3:2 presets RO 25–28; without them installed that form falls back to the first family), a *seed* and a *restlessness* (0–1) and the page rolls a whole new plan
    (same form + seed + restlessness = same plan; the title carries the seed, so each roll saves under its own name). Edit any
    cell afterwards; the plan file is the same (the same plan file the command-line generator reads with `--plan`).
 4. **Download score**, then *Score View → Load Score...*.
@@ -98,7 +100,7 @@ Mastermind folder (or double-click `score-generator\run_romanian_shadow.bat` for
 
    Open `my_plan.json` in any text editor. Per movement you can change the name, `archetype`, `root` (the pitch
    class of the section's pitch field, 0 = C … 11 = B), and `voices`: for each of V1–V4 one entry per step.
-   Add `"stepBars": 4` at the top level for 4-bar steps (default 2); `firstBar` is then recomputed for you. An entry is a **number** (preset `RO 01`–`RO 24`), a **name** (`"16 Close"`, or the start of one such as
+   Add `"stepBars": 4` at the top level for 4-bar steps (default 2); `firstBar` is then recomputed for you. An entry is a **number** (preset `RO 01`–`RO 28`), a **name** (`"16 Close"`, or the start of one such as
    `"RO 13"`), or **0** for a rest. All voices of a movement must have the same number of entries. To lengthen a
    movement, add an entry to every voice; to add a movement, copy a movement block and give it the next `firstBar`
    (2 bars per step).

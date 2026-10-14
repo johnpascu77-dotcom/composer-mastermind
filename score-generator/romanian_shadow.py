@@ -27,7 +27,7 @@ USE IT YOURSELF
     python romanian_shadow.py --channels 5,6,7,8          # other MIDI channels for the voices
 
 A PLAN is the table "which preset does voice V play in sub-section k of movement M": a number is a preset
-"RO nn ..." (1-24), a text is a preset name or the start of one ("16 Close", "RO 13"), 0 or null = the voice
+"RO nn ..." (1-28), a text is a preset name or the start of one ("16 Close", "RO 13"), 0 or null = the voice
 rests (no retrigger). A movement's lists must all have one entry per two bars (its "subs").
 
 Preset numbers are looked up from the AME presets actually installed, so install the profile first:
