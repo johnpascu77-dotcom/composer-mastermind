@@ -141,6 +141,15 @@ def scene(sid, name):
             'transitionStyle': 'hard', 'rampBars': 0}
 
 
+def blueprint_id(plan, voice_count):
+    """Unique per title and voice count, so a 2-voice score never replaces the 4-voice one on load."""
+    import re, unicodedata
+    title = re.sub(r'\([^)]*\)', '', (plan.get('title') or DEFAULT_PLAN['title']).lower())
+    title = ''.join(c for c in unicodedata.normalize('NFD', title) if not unicodedata.combining(c))
+    slug = re.sub(r'[^a-z0-9]+', '-', title).strip('-') or 'ame-score'
+    return slug + '-' + str(voice_count) + 'v'
+
+
 def build(plan, lane, voice_ids, channels, with_field):
     check_plan(plan, voice_ids)
     sections, scenes, used = [], [], set()
@@ -184,7 +193,7 @@ def build(plan, lane, voice_ids, channels, with_field):
             ]
     bundle = {
         'schema': 'ComposerMastermindComposition.v3',
-        'blueprint': {'id': 'ro-joc-de-umbre', 'name': plan.get('title', DEFAULT_PLAN['title']),
+        'blueprint': {'id': blueprint_id(plan, len(voice_ids)), 'name': plan.get('title', DEFAULT_PLAN['title']),
                       'sections': sections},
         'scenes': scenes, 'instances': [], 'motifPresets': [], 'modulatorTargets': targets,
         'modulationRoutes': [],

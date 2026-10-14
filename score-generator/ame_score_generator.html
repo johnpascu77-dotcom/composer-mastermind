@@ -181,6 +181,11 @@ function makeScene(id, name) {
            mutations: [], nextSceneId: "", transitionStyle: "hard", rampBars: 0 };
 }
 
+function blueprintId(plan, voiceCount) {
+  const title = (plan.title || DEFAULT_PLAN.title).toLowerCase().replace(/\([^)]*\)/g, "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return (title.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "ame-score") + "-" + voiceCount + "v";
+}
 function buildBundle(plan, lane, voiceIds, channels, withField) {
   const sections = [], scenes = [], used = new Set();
   plan.movements.forEach((m, mi) => {
@@ -221,7 +226,7 @@ function buildBundle(plan, lane, voiceIds, channels, withField) {
     }
   });
   return { bundle: { schema: "ComposerMastermindComposition.v3",
-                     blueprint: { id: "ro-joc-de-umbre", name: plan.title || DEFAULT_PLAN.title, sections },
+                     blueprint: { id: blueprintId(plan, voiceIds.length), name: plan.title || DEFAULT_PLAN.title, sections },
                      scenes, instances: [], motifPresets: [], modulatorTargets: targets, modulationRoutes: [] },
            used };
 }

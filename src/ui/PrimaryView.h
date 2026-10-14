@@ -69,7 +69,7 @@ private:
     void loadBlueprintClicked();
     void removeBlueprintClicked();
     void primeForPlaybackClicked();
-    void refreshHeaderControls();
+    void refreshHeaderControls(bool syncToCurrent = false);
 
     // Score file row (2026-08-27, user's own request): the simple/Score
     // View is meant to be a self-sufficient "score player" - load a

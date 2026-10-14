@@ -762,7 +762,7 @@ void PrimaryView::loadScoreClicked()
 
         headerStatusLabel.setText("Loaded and primed score from " + file.getFullPathName(),
                                    juce::dontSendNotification);
-        refreshHeaderControls();
+        refreshHeaderControls(true);
         refreshFromCore();
     });
 }
@@ -844,7 +844,7 @@ void PrimaryView::openGeneratorPage(const juce::String& fileName, const juce::St
                                    juce::dontSendNotification);
 }
 
-void PrimaryView::refreshHeaderControls()
+void PrimaryView::refreshHeaderControls(bool syncToCurrent)
 {
     auto& composerCore = processorRef.getComposerCore();
 
@@ -855,6 +855,14 @@ void PrimaryView::refreshHeaderControls()
     for (const auto& blueprint : composerCore.getBlueprintLibrary().getAllBlueprints())
         blueprintIds.push_back(blueprint.id);
     repopulate(blueprintCombo, blueprintIds, false);
+
+    // Show which blueprint is actually loaded: after a score load, and whenever the box would
+    // otherwise be empty (e.g. the editor was reopened while a score keeps playing).
+    Blueprint current;
+    if ((syncToCurrent || blueprintCombo.getSelectedId() <= 0) && composerCore.getCurrentBlueprint(current))
+        for (int i = 0; i < blueprintCombo.getNumItems(); ++i)
+            if (blueprintCombo.getItemText(i).toStdString() == current.id)
+                blueprintCombo.setSelectedItemIndex(i, juce::dontSendNotification);
 }
 
 void PrimaryView::paintLegend(juce::Graphics& g, juce::Rectangle<int> area) const
