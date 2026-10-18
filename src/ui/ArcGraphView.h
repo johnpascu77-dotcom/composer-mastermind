@@ -22,7 +22,7 @@
 // proposals need to be inspectable/editable before anything touches live
 // state. Both roles reuse every interaction unchanged; only which ArcSet
 // gets read/written differs.
-class ArcGraphView : public juce::Component
+class ArcGraphView : public juce::Component, public juce::SettableTooltipClient
 {
 public:
     // captionOverride replaces the default "drag/double-click/right-click"

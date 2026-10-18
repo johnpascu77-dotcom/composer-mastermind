@@ -11,6 +11,8 @@ BlueprintView::BlueprintView(ComposerMastermindAudioProcessor& processor,
     innerTabs.addTab("Arcs", tabColour, &arcGraphView, false);
     innerTabs.addTab("Sections", tabColour, &sectionsView, false);
     innerTabs.applyHighlight();
+    innerTabs.setTabTooltips({"Arcs: edit the five arc curves (energy, tension, density, complexity, coherence) over the bars.",
+                              "Sections: the stretches of bars that make the piece, each playing a scene, with its own arc shaping."});
 }
 
 void BlueprintView::paint(juce::Graphics& g)

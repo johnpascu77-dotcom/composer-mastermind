@@ -29,6 +29,21 @@ void PianoRollView::setEditable(bool shouldBeEditable)
     editable = shouldBeEditable;
 }
 
+juce::String PianoRollView::getTooltip()
+{
+    if (canEditNow())
+        return "Setup roll. Click an empty cell: create a note (drag sideways to set its length). Click a note: resize it. "
+               "Right-click a note: erase it. Shift + drag: move it in time. Alt + drag: change its pitch. "
+               "Alt + Shift + drag: pitch and length. Ctrl + click: lock or unlock a note (locked notes are protected "
+               "from the other gestures and from mutation). Edits stay local until Commit to MPL.";
+
+    if (editable)
+        return "Setup edits one instance's one pattern: pick a single instance and pattern above (Lane view).";
+
+    return "Live score of what the instances play, with a reconstructed playhead. Press and drag on it to drag the "
+           "recorded take out as a .mid file (the Export button chooses as performed or for notation).";
+}
+
 bool PianoRollView::canEditNow() const
 {
     return editable && mode == Mode::Lane && lanes.size() == 1;

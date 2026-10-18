@@ -15,6 +15,14 @@ public:
     {
     }
 
+    // Hover help for each tab, in tab order (call after the tabs have been added).
+    void setTabTooltips(const juce::StringArray& tips)
+    {
+        for (int i = 0; i < getNumTabs() && i < tips.size(); ++i)
+            if (auto* button = getTabbedButtonBar().getTabButton(i))
+                button->setTooltip(tips[i]);
+    }
+
     // Call once after the tabs have been added.
     void applyHighlight()
     {

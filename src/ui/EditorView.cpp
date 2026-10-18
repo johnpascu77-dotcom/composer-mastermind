@@ -34,6 +34,17 @@ EditorView::EditorView(ComposerMastermindAudioProcessor& processor)
     tabs.addTab("Activity Log", tabColour, &activityLogView, false);
     tabs.addTab("Milestones", tabColour, &milestoneView, false);
     tabs.applyHighlight(); // the selected tab is filled, the rest are dark
+    tabs.setTabTooltips({
+        "Instances: register the MPL instances you drive, each with its MIDI channel and role.",
+        "Scenes: snapshots of settings (pattern, grid, swing, rate, targets) sent to instances all at once, with per-instance overrides.",
+        "Mutations: send a mutation (transpose, rotate, invert, retrograde, M7 ...) to an instance now, within the role's budget.",
+        "Blueprint: the arcs (curves of energy, tension, density, complexity, coherence) and the sections that make the piece.",
+        "Presets: the libraries of arc presets, motif presets, role presets and rhythmic-relationship presets.",
+        "Generate: propose a blueprint from a scene and a driving arc, to inspect before committing.",
+        "Modulators: arc dimensions steering parameters of other devices in the host by CC.",
+        "Awareness: what each instance really holds, read back from MPL, and which patterns are in sync.",
+        "Activity Log: everything Composer Mastermind has sent and decided, newest first.",
+        "Milestones: the roadmap and what is built."});
 
     addAndMakeVisible(statusLabel);
     statusLabel.setJustificationType(juce::Justification::centredLeft);

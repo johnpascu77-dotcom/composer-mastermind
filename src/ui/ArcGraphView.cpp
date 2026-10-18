@@ -63,6 +63,14 @@ ArcGraphView::ArcGraphView(ArcSet& arcSetToEdit, const juce::String& captionOver
 
     selectedArcName = kArcInfos[0].name;
     loadWorkingBreakpointsFromArcSet();
+
+    setTooltip("The curve of one arc dimension over the bars. Drag a point to move it, double-click empty space to add one, "
+               "right-click a point to remove it. The arcs steer the playback: energy, tension, density, complexity and "
+               "coherence each drive their own musical parameters.");
+    arcSelectorCombo.setTooltip("Which arc dimension you edit: energy, tension, density, complexity or coherence. "
+                                "Each has its own curve and its own musical consumers (rate, transposition, mutation budget, swing, phrase length, divergence).");
+    arcSelectorLabel.setTooltip("Which arc dimension you edit.");
+    captionLabel.setTooltip("How to edit the curve.");
 }
 
 void ArcGraphView::paint(juce::Graphics& g)

@@ -28,6 +28,7 @@ public:
 
 private:
     MainShellView view;
+    juce::TooltipWindow tooltipWindow { this, 700 }; // without one no setTooltip() text ever shows
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ComposerMastermindAudioProcessorEditor)
 };

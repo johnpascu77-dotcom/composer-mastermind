@@ -86,10 +86,13 @@ struct PianoRollLane
 // Edits mutate the held lane data in place (read back via getLanes()) and
 // fire onStepEdited so the owner (ui/PatternSetupView) can track dirty state
 // and drive Commit - this component has no opinion on saving.
-class PianoRollView : public juce::Component
+class PianoRollView : public juce::Component, public juce::TooltipClient
 {
 public:
     enum class Mode { Overlay, Lane };
+
+    // Hover help: the editing gestures in Setup, the drag-out in Live.
+    juce::String getTooltip() override;
 
     PianoRollView();
 
