@@ -54,7 +54,7 @@ def seedrandomizer():
              'image': 'assets/seedrandomizer-editor.png', 'caption': 'The editor, rendered by SeedRandomizerProcessorCheck.', 'controls': []},
             {'title': 'Seeds, Evolve and key mode', 'note': '**Seed A / Seed B** are saved with the project and automatable; the **Reroll** buttons pick a new one. **Evolve** crossfades between the two draws note by note, so a variation can change slowly and stay replayable.',
              'controls': global_controls(editor, params, 'rerollA.onClick')},
-            {'title': 'Register bands', 'note': 'Up to four bands split by pitch; **every band has its own complete set of settings**. The rows below exist once per band (Band 1 to Band 4). What a band is allowed to do to a note: pitch (a range, not a value), velocity, length, delay, how many notes are affected, and how many sound at all.',
+            {'title': 'Register bands', 'note': 'Up to four bands split by pitch; **every band has its own complete set of settings**. The rows below exist once per band (Band 1 to Band 4). What a band is allowed to do to a note: pitch (a range, not a value), velocity, length, delay, how many notes are affected, how many sound at all, and which MIDI channel the notes of the band leave on.',
              'controls': band_controls(editor, params),
              'notes': ['A range is not a value: **+/-3** allows any whole semitone from -3 to +3, **0 included**, each equally likely in the Uniform shape. Use the **Steps** shape for exact values such as -3 / 0 / +3 only.',
                        'Note-offs follow the shifted pitch, so nothing hangs. Transport stop, a jump back and all-notes-off end every sounding note.']},
