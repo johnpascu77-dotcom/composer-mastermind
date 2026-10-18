@@ -26,6 +26,7 @@ def channelfan():
     sections[-1]['notes'] = [
         '**Default behaviour:** with nothing changed, the mod wheel (CC 1) arriving on any channel is copied to all 16 channels and notes pass untouched. Put ChannelFan before the instrument or rig in a track\'s MIDI chain.',
         '**Notes in One channel mode:** every message that is not fanned (pedal, bend, program change) follows the notes to the chosen channel, so a keyboard stuck on channel 1 behaves as if it had been set to that channel. In Key split mode and in Keep mode the other messages stay on the channel they arrived on.',
+        '**Pitch bend needs the CLAP version in Bitwig.** Bitwig drops the pitch bend a VST3 MIDI effect sends (VST3 has no pitch bend event) and forwards it only from a CLAP effect, so load ChannelFan.clap if bend must reach the instruments. Notes, the mod wheel and other controllers work in both formats.',
         '**Note-offs** always leave on the channel their note-on left on, even if a setting changed in between, and an all-notes-off (CC 123 or 120) releases the held notes on the channels they were really sent to.',
     ]
     sections.append({'title': 'In the ecosystem: what a fanned wheel does', 'notes': [
