@@ -1,6 +1,6 @@
 # Voice allocator — a MIDI-only counterpart to PolySWAM's voice allocation
 
-Status: **scoping only (2026-10-19), nothing built.** Origin: the user is trying Audio Modeling's PolySWAM and finds its
+Status: **v0.1 built 2026-10-19** (`C:\AudioDev\Repos\VoiceAllocator`: engine, checks, offline tool, VST3/CLAP/Standalone plug-in; see its README). Decisions from the user: processing recorded MIDI is the cleaner input but live input with MorphQuantizer as a guard downstream is the vision; first look at the MIDI output, distribute to instruments afterwards with OrchNoteMapper presets; channel = player is fine; legato by overlap is expected by SWAM and every library with a legato option, and generators like Instacomposer write clean cuts on the grid, so the allocator creates the overlap itself. Origin: the user is trying Audio Modeling's PolySWAM and finds its
 "intelligent voice allocation" the best part, but it is consumed inside PolySWAM's engine and cannot be captured as MIDI.
 Goal: a private MIDI tool (VST3/CLAP MIDI effect + offline tool, like the other Orch-family tools) that does the same job and
 **emits the allocation as ordinary per-player MIDI channels**, so it can be recorded, edited and notated.
