@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from guide_lib import render  # noqa: E402
 import specs_new  # noqa: E402
 import specs_channelfan  # noqa: E402
+import specs_voiceallocator  # noqa: E402
 import specs_rest  # noqa: E402
 import specs_more  # noqa: E402
 import specs_ame  # noqa: E402
@@ -15,6 +16,7 @@ SPECS.update(specs_rest.SPECS)
 SPECS.update(specs_more.SPECS)
 SPECS.update(specs_ame.SPECS)
 SPECS.update(specs_channelfan.SPECS)
+SPECS.update(specs_voiceallocator.SPECS)
 
 
 def main():
