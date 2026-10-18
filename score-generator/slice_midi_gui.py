@@ -15,6 +15,7 @@ from tkinter.scrolledtext import ScrolledText
 
 import arc
 import slice_midi_score as sm
+from tk_tooltip import tip
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS_FILE = os.path.join(HERE, "slice_midi_gui_settings.json")
@@ -62,7 +63,9 @@ class App(tk.Tk):
         left = ttk.Frame(self, padding=8)
         left.pack(side="left", fill="y")
         for r, (key, label, default, help_) in enumerate(FIELDS):
-            ttk.Label(left, text=label).grid(row=r, column=0, sticky="w", pady=1)
+            lab = ttk.Label(left, text=label)
+            lab.grid(row=r, column=0, sticky="w", pady=1)
+            tip(lab, help_)
             v = tk.StringVar(value=str(saved.get(key, default)))
             self.vars[key] = v
             if key in choices:
@@ -71,21 +74,34 @@ class App(tk.Tk):
                 w = ttk.Entry(left, textvariable=v, width=40 if key in ("setup", "out") else 31)
             w.grid(row=r, column=1, sticky="w")
             w.bind("<Enter>", lambda e, h=help_: self.status.set(h))
+            tip(w, help_)
             if key in ("setup", "out"):
-                ttk.Button(left, text="...", width=3, command=lambda k=key: self.browse(k)).grid(row=r, column=2)
+                browse = ttk.Button(left, text="...", width=3, command=lambda k=key: self.browse(k))
+                browse.grid(row=r, column=2)
+                tip(browse, "Choose the file in a dialog.")
         r = len(FIELDS)
+        check_tips = {"avoid": "Do not let two layers sound a minor second (one semitone) apart.",
+                      "breaths": "Let quiet stretches drop to silence (the opening never does).",
+                      "stagger": "Start the layers at different points inside the bar instead of all on the downbeat."}
         for key, label, default in CHECKS:
             v = tk.BooleanVar(value=bool(saved.get(key, default)))
             self.vars[key] = v
-            ttk.Checkbutton(left, text=label, variable=v).grid(row=r, column=0, columnspan=2, sticky="w")
+            cb = ttk.Checkbutton(left, text=label, variable=v)
+            cb.grid(row=r, column=0, columnspan=2, sticky="w")
+            tip(cb, check_tips.get(key, ""))
             r += 1
         bt = ttk.Frame(left)
         bt.grid(row=r, column=0, columnspan=3, pady=8, sticky="w")
-        ttk.Button(bt, text="Generate", command=self.generate).pack(side="left")
-        ttk.Button(bt, text="Random seed", command=lambda: self.vars["seed"].set(str(random.randint(1, 99999)))).pack(side="left", padx=6)
+        gen = ttk.Button(bt, text="Generate", command=self.generate)
+        gen.pack(side="left")
+        tip(gen, "Write the MIDI clip and its report, then verify it against the setup. The window shows the checks and the bar-by-bar plan.")
+        rnd = ttk.Button(bt, text="Random seed", command=lambda: self.vars["seed"].set(str(random.randint(1, 99999))))
+        rnd.pack(side="left", padx=6)
+        tip(rnd, "Put a new random seed in the Seed field.")
         ttk.Label(left, textvariable=self.status, wraplength=380, foreground="#555").grid(row=r + 1, column=0, columnspan=3, sticky="w")
         self.text = ScrolledText(self, font=("Consolas", 10), wrap="none")
         self.text.pack(side="right", fill="both", expand=True)
+        tip(self.text, "The verification result and the bar-by-bar plan of the generated clip.")
 
     def browse(self, key):
         if key == "setup":

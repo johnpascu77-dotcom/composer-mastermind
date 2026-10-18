@@ -56,10 +56,10 @@
   <div class="panel">
     <h2>1 · Your AME presets</h2>
     <div class="row">
-      <label class="btn secondary" for="folder">Read AME preset folder…</label>
-      <input id="folder" type="file" webkitdirectory multiple hidden>
-      <button class="secondary" id="useStandard">Assume the standard lane</button>
-      <span id="laneStatus" class="hint"></span>
+      <label title="Point this at your AME preset folder (usually %APPDATA%\AtonalMotiveEngine\ChainPresets). AME numbers its presets: the 7 factory ones, then every preset of the folder sorted by name; the score needs those numbers." class="btn secondary" for="folder">Read AME preset folder…</label>
+      <input title="Point this at your AME preset folder (usually %APPDATA%\AtonalMotiveEngine\ChainPresets). AME numbers its presets: the 7 factory ones, then every preset of the folder sorted by name; the score needs those numbers." id="folder" type="file" webkitdirectory multiple hidden>
+      <button title="Do not read a folder: assume the standard lane (the factory presets plus the Romanian shadow profile installed in the usual order)." class="secondary" id="useStandard">Assume the standard lane</button>
+      <span title="How many presets the lane holds and where they came from." id="laneStatus" class="hint"></span>
     </div>
     <p class="hint">AME numbers its presets: the 7 factory ones, then every preset of your folder sorted by name. The score
       needs those numbers, so point this at your AME preset folder — usually
@@ -71,47 +71,47 @@
     <h2>2 · Voices</h2>
     <div class="row" id="voiceRow"></div>
     <div class="row">
-      <label><input type="checkbox" id="field" checked> Also send each movement's pitch field (CC 110 / 111) for an OrchNoteFilter</label>
+      <label><input title="Also send each movement&#x27;s pitch field (CC 110 and 111) so an OrchNoteFilter downstream can follow the harmony." type="checkbox" id="field" checked> Also send each movement's pitch field (CC 110 / 111) for an OrchNoteFilter</label>
     </div>
     <div class="row">
-      <div class="field" style="flex:1"><label>Score title</label><input id="title" type="text"></div>
+      <div title="The title of the score that is written." class="field" style="flex:1"><label>Score title</label><input title="The title of the score that is written." id="title" type="text"></div>
     </div>
   </div>
 
   <div class="panel">
     <h2>3 · The plan — what each voice plays, one step at a time</h2>
-    <div class="row"><div class="field"><label>Step length</label><select id="stepBars"><option value="2">2 bars</option><option value="3">3 bars</option><option value="4">4 bars</option><option value="6">6 bars</option><option value="8">8 bars</option></select></div>
+    <div class="row"><div title="How long each cell of the plan lasts. A motif longer than a step overlaps the next entrance, so a long motif wants a longer step (or rests)." class="field"><label>Step length</label><select title="How long each cell of the plan lasts. A motif longer than a step overlaps the next entrance, so a long motif wants a longer step (or rests)." id="stepBars"><option value="2">2 bars</option><option value="3">3 bars</option><option value="4">4 bars</option><option value="6">6 bars</option><option value="8">8 bars</option></select></div>
       <span class="hint">How long each cell lasts. A motif longer than a step overlaps the next entrance, so a long motif wants a longer step (or rests).</span></div>
     <p class="hint">Each cell is one step (the length you set above): pick a preset, or <i>— rest —</i> (the voice gets no new entrance and lets its
       last one finish). Chains and entrances are sent one bar ahead, so they land exactly on the bar line.</p>
     <div class="row" id="rollRow">
-      <div class="field"><label>Form</label><select id="rollForm"></select></div>
-      <div class="field"><label>Seed (blank = random)</label><input id="rollSeed" type="text" placeholder="e.g. 2026" style="width:130px"></div>
-      <div class="field"><label>Restlessness (0–1)</label><input id="rollRest" type="number" min="0" max="1" step="0.05" value="0.5" style="width:90px"></div>
-      <div class="field"><label>Length in bars (blank = automatic)</label><input id="rollBars" type="number" min="4" max="400" step="2" placeholder="auto" style="width:90px"></div>
-      <button class="secondary" id="roll">Generate a plan</button>
-      <span id="rollStatus" class="hint"></span>
+      <div title="The form of the generated plan: how the movements and their characters are laid out." class="field"><label>Form</label><select title="The form of the generated plan: how the movements and their characters are laid out." id="rollForm"></select></div>
+      <div title="The seed of the plan generator. The same form, seed and restlessness always give the same plan. Blank: a random seed." class="field"><label>Seed (blank = random)</label><input title="The seed of the plan generator. The same form, seed and restlessness always give the same plan. Blank: a random seed." id="rollSeed" type="text" placeholder="e.g. 2026" style="width:130px"></div>
+      <div title="How often voices play rather than rest, and how far a movement strays from its own family of presets (0 to 1)." class="field"><label>Restlessness (0–1)</label><input title="How often voices play rather than rest, and how far a movement strays from its own family of presets (0 to 1)." id="rollRest" type="number" min="0" max="1" step="0.05" value="0.5" style="width:90px"></div>
+      <div title="The target length of the plan in bars. Blank: automatic." class="field"><label>Length in bars (blank = automatic)</label><input title="The target length of the plan in bars. Blank: automatic." id="rollBars" type="number" min="4" max="400" step="2" placeholder="auto" style="width:90px"></div>
+      <button title="Build a whole new plan from the form, seed and restlessness. You can then edit any cell by hand." class="secondary" id="roll">Generate a plan</button>
+      <span title="What the last generated plan was made from." id="rollStatus" class="hint"></span>
     </div>
     <p class="hint">Generate a plan builds a whole new plan from a seed: the same form, seed and restlessness always give the same
       plan. Restlessness is how often voices play rather than rest, and how far a movement strays from its own family of
       presets. Then edit any cell by hand.</p>
     <div id="movements"></div>
     <div class="row">
-      <button class="secondary" id="addMovement">+ Movement</button>
-      <button class="secondary" id="resetPlan">Reset to the default plan</button>
-      <button class="secondary" id="savePlan">Save plan…</button>
-      <label class="btn secondary" for="loadPlan">Load plan…</label>
-      <input id="loadPlan" type="file" accept=".json,application/json" hidden>
+      <button title="Add a movement to the end of the plan." class="secondary" id="addMovement">+ Movement</button>
+      <button title="Throw away the plan and go back to the default one." class="secondary" id="resetPlan">Reset to the default plan</button>
+      <button title="Save the plan (voices, channels, movements and cells) as a .json file." class="secondary" id="savePlan">Save plan…</button>
+      <label title="Load a plan saved earlier." class="btn secondary" for="loadPlan">Load plan…</label>
+      <input title="Load a plan saved earlier." id="loadPlan" type="file" accept=".json,application/json" hidden>
     </div>
   </div>
 
   <div class="panel">
     <h2>4 · Build</h2>
     <div class="row">
-      <button id="build">Download score</button>
-      <span id="buildStatus" class="hint"></span>
+      <button title="Write the Composer Mastermind score (.json) for this plan. Load it with Load Score... in the Score View." id="build">Download score</button>
+      <span title="The result of the last build: the number of sections and the length." id="buildStatus" class="hint"></span>
     </div>
-    <details open><summary>What will play</summary><pre id="preview"></pre></details>
+    <details open><summary>What will play</summary><pre title="The plan as text: what each voice plays in each movement." id="preview"></pre></details>
   </div>
 </div>
 
@@ -300,6 +300,7 @@ function renderVoices() {
   row.innerHTML = "";
   const count = document.createElement("div");
   count.className = "field";
+  count.title = "How many voices play (1 to 4). Each voice is one AME instance on its own MIDI channel.";
   count.innerHTML = "<label>Voices</label>";
   const sel = document.createElement("select");
   for (let n = 1; n <= 4; n++) sel.add(new Option(String(n), String(n), false, n === state.voiceCount));
@@ -309,6 +310,7 @@ function renderVoices() {
   activeVoices().forEach((v, i) => {
     const f = document.createElement("div");
     f.className = "field";
+    f.title = "The MIDI channel the AME instance of this voice listens on. It must match the channel set in the AME editor.";
     f.innerHTML = "<label>" + v + " · " + VOICES[i][1] + " · MIDI channel</label>";
     const inp = document.createElement("input");
     inp.type = "number"; inp.min = 1; inp.max = 16; inp.value = state.channels[i];
@@ -329,31 +331,31 @@ function renderMovements() {
     box.className = "movement";
     const head = document.createElement("div");
     head.className = "head";
-    const nameF = document.createElement("div"); nameF.className = "field"; nameF.style.flex = "1";
+    const nameF = document.createElement("div"); nameF.className = "field"; nameF.style.flex = "1"; nameF.title = "The name of this movement (it becomes a section name in the score).";
     nameF.innerHTML = "<label>Movement</label>";
     const nameI = document.createElement("input"); nameI.type = "text"; nameI.value = m.name;
     nameI.onchange = () => { m.name = nameI.value || "Movement " + (mi + 1); refresh(); };
     nameF.appendChild(nameI); head.appendChild(nameF);
-    const arcF = document.createElement("div"); arcF.className = "field"; arcF.innerHTML = "<label>Character</label>";
+    const arcF = document.createElement("div"); arcF.className = "field"; arcF.title = "The character of the movement (a section archetype): it sets the energy shape the score gives the movement."; arcF.innerHTML = "<label>Character</label>";
     const arcS = document.createElement("select");
     ARCHETYPES.forEach(a => arcS.add(new Option(a, a, false, a === m.archetype)));
     arcS.onchange = () => { m.archetype = arcS.value; refresh(); };
     arcF.appendChild(arcS); head.appendChild(arcF);
-    const rootF = document.createElement("div"); rootF.className = "field"; rootF.innerHTML = "<label>Pitch field root</label>";
+    const rootF = document.createElement("div"); rootF.className = "field"; rootF.title = "The root of the pitch field sent for this movement (when the pitch field is on): the pitch classes OrchNoteFilter lets through are built on it."; rootF.innerHTML = "<label>Pitch field root</label>";
     const rootS = document.createElement("select");
     NOTE_NAMES.forEach((n, i) => rootS.add(new Option(n, String(i), false, i === m.root)));
     rootS.onchange = () => { m.root = +rootS.value; refresh(); };
     rootF.appendChild(rootS); head.appendChild(rootF);
-    const stepF = document.createElement("div"); stepF.className = "field steps"; stepF.innerHTML = "<label>Steps (" + (state.plan.stepBars || 2) + " bars each)</label>";
+    const stepF = document.createElement("div"); stepF.className = "field steps"; stepF.title = "How many steps (cells) the movement has. Each step lasts the step length set above, for every voice."; stepF.innerHTML = "<label>Steps (" + (state.plan.stepBars || 2) + " bars each)</label>";
     const stepRow = document.createElement("div");
-    const minus = document.createElement("button"); minus.className = "secondary small"; minus.textContent = "−";
+    const minus = document.createElement("button"); minus.className = "secondary small"; minus.textContent = "−"; minus.title = "Remove the last step of this movement.";
     minus.disabled = subs <= 1;
     minus.onclick = () => { for (const v of VOICES.map(x => x[0])) m.voices[v].pop(); refresh(); };
-    const plus = document.createElement("button"); plus.className = "secondary small"; plus.textContent = "+";
+    const plus = document.createElement("button"); plus.className = "secondary small"; plus.textContent = "+"; plus.title = "Add a step (a rest) to the end of this movement.";
     plus.onclick = () => { for (const v of VOICES.map(x => x[0])) m.voices[v].push(0); refresh(); };
     stepRow.append(String(subs) + " ", minus, plus);
     stepF.appendChild(stepRow); head.appendChild(stepF);
-    const del = document.createElement("button"); del.className = "secondary small"; del.textContent = "Remove";
+    const del = document.createElement("button"); del.className = "secondary small"; del.textContent = "Remove"; del.title = "Remove this movement from the plan.";
     del.disabled = state.plan.movements.length <= 1;
     del.onclick = () => { state.plan.movements.splice(mi, 1); refresh(); };
     head.appendChild(del);
@@ -377,6 +379,7 @@ function renderMovements() {
         const s = document.createElement("select");
         const current = cellName(spec);
         s.className = current ? "" : "rest";
+        s.title = "The AME preset voice " + v + " plays in this step, or a rest (no new entrance; the last one finishes). Entrances are sent one bar ahead so they land on the bar line.";
         s.add(new Option("— rest —", "", false, !current));
         const optgroup = (title, items) => {
           if (!items.length) return;

@@ -192,20 +192,28 @@ class App:
         entry = ttk.Entry(row, textvariable=self.vars["seed"], width=12)
         entry.pack(side="left")
         Tooltip(entry, HELP["seed"])
-        ttk.Button(row, text="Random", width=8, command=lambda: self.vars["seed"].set(str(random.randint(1, 2 ** 31 - 1)))).pack(side="left", padx=4)
+        rnd = ttk.Button(row, text="Random", width=8, command=lambda: self.vars["seed"].set(str(random.randint(1, 2 ** 31 - 1))))
+        rnd.pack(side="left", padx=4)
+        Tooltip(rnd, "Put a new random seed in the Seed field.")
 
         buttons = ttk.Frame(middle)
         buttons.pack(fill="x", pady=(10, 0))
         self.generate_button = ttk.Button(buttons, text="Generate score", command=self.generate)
         self.generate_button.pack(fill="x", ipady=8)
-        ttk.Button(buttons, text="Open output folder", command=self.open_folder).pack(fill="x", pady=(6, 0))
-        ttk.Button(buttons, text="Reset all settings", command=self.reset).pack(fill="x", pady=(6, 0))
+        Tooltip(self.generate_button, "Write the Composer Mastermind score, the setup sheet and the timeline for these settings, and check them.")
+        open_btn = ttk.Button(buttons, text="Open output folder", command=self.open_folder)
+        open_btn.pack(fill="x", pady=(6, 0))
+        Tooltip(open_btn, "Open the folder the files are written to.")
+        reset_btn = ttk.Button(buttons, text="Reset all settings", command=self.reset)
+        reset_btn.pack(fill="x", pady=(6, 0))
+        Tooltip(reset_btn, "Put every field back to its default value.")
 
         # ---- right column: preview + results
         preview = ttk.LabelFrame(right, text="Live preview of the slices", padding=6)
         preview.grid(row=0, column=0, sticky="ew")
         self.preview_label = tk.Label(preview, text="", justify="left", anchor="w", wraplength=500, font=("Segoe UI", 10))
         self.preview_label.pack(fill="x")
+        Tooltip(self.preview_label, "What the current settings give: how many slices, how long each is, and whether the score fits the source.")
         preview.bind("<Configure>", lambda e: self.preview_label.configure(wraplength=max(200, e.width - 24)))
 
         self.notebook = ttk.Notebook(right)
@@ -213,6 +221,7 @@ class App:
         self.result_text = self._tab("Result", "Segoe UI")
         self.setup_text = self._tab("Setup sheet", "Consolas")
         self.timeline_text = self._tab("Timeline", "Consolas")
+        Tooltip(self.notebook, "Result: what was generated and the checks. Setup sheet: what to set in MidiSampler and MPL so the score works. Timeline: bar by bar, which slices sound.")
         self._write(self.result_text, "Press 'Generate score'.\n\nThe score is heard 2 bars after the bundle's bar numbers, so the first sound is in Bitwig bar 3.\n"
                                        "After generating, read the 'Setup sheet' tab: it lists what to set in MidiSampler and MPL, and the score only works if they are set up exactly like that.")
 
@@ -253,7 +262,9 @@ class App:
         entry = ttk.Entry(row, textvariable=self.vars[name], width=34)
         entry.pack(side="left", fill="x", expand=True)
         Tooltip(entry, HELP.get(name, ""))
-        ttk.Button(row, text="Browse...", command=command, width=9).pack(side="left", padx=(4, 0))
+        browse = ttk.Button(row, text="Browse...", command=command, width=9)
+        browse.pack(side="left", padx=(4, 0))
+        Tooltip(browse, "Choose the file or folder in a dialog.")
 
     def _tab(self, title, font_name):
         frame = ttk.Frame(self.notebook)
