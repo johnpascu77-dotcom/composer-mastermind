@@ -61,7 +61,7 @@ Start here, in order:
   an MC score + pitch field): first one is `romanian_shadow` — [docs/style_profile_romanian_shadow.md](docs/style_profile_romanian_shadow.md),
   generator `score-generator/romanian_shadow.py` (one AME per voice, editable plan; `--help`), also as a browser page
   `score-generator/ame_score_generator.html` behind Score View's **AME Score...** button.
-- **MidiTools** — `C:\AudioDev\Repos\MidiTools` (own local git repo, no remote yet). Offline piano-roll edit suite inspired by
+- **MidiTools** — `C:\AudioDev\Repos\MidiTools` (own git repo, remote github.com/johnpascu77-dotcom/Miditools, private). Offline piano-roll edit suite inspired by
   Ableton Live 12 MIDI Tools: Connect driven by Slonimsky/modal logic, Chop driven by a rhythm-preset library. Standalone
   app + std-only core library; Phase 0 + Connect (Slonimsky logic) + Chop (rhythm presets, load measures) + 6 Connect logics + Key/Scale + Phase 2 + 3 tools (Recombine, Serial, Velocity, Time Warp, Quantize, Strum, Arpeggiate, Ornament) + a real-time Arpeggiator plugin (VST3+CLAP, Plugin/) built 2026-10-24; live-tested in Bitwig in a ChordHarmonizer -> Arpeggiator -> OrchCapture -> Dorico chain (`Docs/MidiTools_Scoping.md`). Not connected to this repo.
 - **Orch System** — `C:\AudioDev\Repos\` (own separate git repos per plugin: `OrchNoteMapper`, `OrchGate`,
