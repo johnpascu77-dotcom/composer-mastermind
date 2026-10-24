@@ -63,7 +63,7 @@ Start here, in order:
   `score-generator/ame_score_generator.html` behind Score View's **AME Score...** button.
 - **MidiTools** — `C:\AudioDev\Repos\MidiTools` (own local git repo, no remote yet). Offline piano-roll edit suite inspired by
   Ableton Live 12 MIDI Tools: Connect driven by Slonimsky/modal logic, Chop driven by a rhythm-preset library. Standalone
-  app + std-only core library; Phase 0 + Connect (Slonimsky logic) + Chop (rhythm presets, load measures) built 2026-10-24 (`Docs/MidiTools_Scoping.md`). Not connected to this repo.
+  app + std-only core library; Phase 0 + Connect (Slonimsky logic) + Chop (rhythm presets, load measures) + 6 Connect logics + Key/Scale + Phase 2 tools (Recombine, Serial, Velocity, Time Warp, Quantize) built 2026-10-24 (`Docs/MidiTools_Scoping.md`). Not connected to this repo.
 - **Orch System** — `C:\AudioDev\Repos\` (own separate git repos per plugin: `OrchNoteMapper`, `OrchGate`,
   `OrchConductor`; roadmap at `ORCH_SYSTEM_ROADMAP.md` and `OrchConductor\Docs\OrchGate_OrchConductor_Roadmap.md`
   in that folder). A second, independent modular orchestral MIDI plugin family (per-instrument range/keyswitch
